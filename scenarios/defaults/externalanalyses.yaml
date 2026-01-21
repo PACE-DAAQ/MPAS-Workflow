@@ -32,7 +32,8 @@ externalanalyses:
     GFS:
       PANDAC: # only available 20180415T00-20180525T00
         120km:
-          directory: "/glade/campaign/mmm/parc/taosun/pandac/120kmMeshGFS/MPAS_IC_NEW"
+          #directory: "/glade/campaign/mmm/parc/taosun/pandac/120kmMeshGFS/MPAS_IC_NEW"
+          directory: "/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/120kmMeshGFS/MPAS_IC_NEW"
         60km:
           directory: "/glade/campaign/mmm/parc/taosun/pandac/60kmMeshGFS/MPAS_IC_NEW"
         30km:
@@ -46,7 +47,7 @@ externalanalyses:
           - "UngribExternalAnalysis"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
-          Vtable: /glade/campaign/mmm/parc/liuz/pandac_common/vtables/Vtable.GFS.O3MR
+          Vtable: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
           job:
             GetAnalysisFrom:
               retry: '1*PT20S'
@@ -56,7 +57,7 @@ externalanalyses:
           - "LinkUngribbedExternalAnalysis-{{mesh}}"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
-          Vtable: /glade/campaign/mmm/parc/liuz/pandac_common/vtables/Vtable.GFS.O3MR
+          Vtable: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
           directory: /glade/campaign/mmm/parc/liuz/pandac_common/ungrib_GFS_o3
           job:
             GetAnalysisFrom:
@@ -69,7 +70,7 @@ externalanalyses:
           - "UngribExternalAnalysis"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
-          Vtable: /glade/campaign/mmm/parc/liuz/pandac_common/vtables/Vtable.GFS.O3MR
+          Vtable: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
           job:
             GetAnalysisFrom:
               retry: '40*PT10M'

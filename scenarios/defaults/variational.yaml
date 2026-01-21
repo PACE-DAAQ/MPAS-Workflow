@@ -125,7 +125,8 @@ variational:
         bumpLocDir: /glade/campaign/mmm/parc/liuz/pandac_common/BUMP_files/derecho_2.1/60km.bumploc.duplicated.limited.1200km6km
       120km:
         bumpLocPrefix: bumploc_1200.0km_6.0km
-        bumpLocDir: /glade/campaign/mmm/parc/liuz/pandac_common/BUMP_files/20230522_yr5/120km.bumploc.duplicated.limited.1200km6km
+        #bumpLocDir: /glade/campaign/mmm/parc/liuz/pandac_common/BUMP_files/20230522_yr5/120km.bumploc.duplicated.limited.1200km6km
+        bumpLocDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/BUMP_files/20230522_yr5/120km.bumploc.duplicated.limited.1200km6km
 
   # externally-produced background covariance files (var or hybrid)
   covariance:
@@ -153,10 +154,13 @@ variational:
       bumpCovStdDevFile: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/mpas.stddev.nc
       bumpCovVBalDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/VBAL
     120km:
-      bumpCovDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/NICAS
-      bumpCovStdDevFile: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/mpas.stddev.nc
-      bumpCovVBalDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/VBAL
+      #bumpCovDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/NICAS
+      #bumpCovStdDevFile: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/mpas.stddev.nc
+      #bumpCovVBalDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/VBAL
       hybridCoefficientsDir: /glade/campaign/mmm/parc/liuz/pandac_hybrid/120km.allsky_hybrid
+      bumpCovDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/20251204/120km/NICAS
+      bumpCovStdDevFile: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/20251204/120km/mpas.stddev.nc
+      bumpCovVBalDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/20251204/120km/VBAL
 
   # resource requirements
   job:
