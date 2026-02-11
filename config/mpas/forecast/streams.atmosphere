@@ -57,4 +57,188 @@
 	<file name="stream_list.atmosphere.surface"/>
 </stream>
 
+<stream name="anth_bc_emissions"
+        type="input"
+        filename_template="x1.163842-2024-anth_black-carbon.MPAS.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="bc_anth_res"/>
+        <var name="bc_anth_sum"/>
+</stream>
+
+<stream name="anth_oc_emissions"
+        type="input"
+        filename_template="x1.163842-2024-anth_organic-carbon.MPAS.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="oc_anth_res"/>
+        <var name="oc_anth_sum"/>
+</stream>
+
+<stream name="anth_nh3_emissions"
+        type="input"
+        filename_template="x1.163842-2024-anth_ammonia.MPAS.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="nh3_anth_agl"/>
+        <var name="nh3_anth_ags"/>
+        <var name="nh3_anth_awb"/>
+        <var name="nh3_anth_ene"/>
+        <var name="nh3_anth_fef"/>
+        <var name="nh3_anth_ind"/>
+        <var name="nh3_anth_res"/>
+        <var name="nh3_anth_shp"/>
+        <var name="nh3_anth_slv"/>
+        <var name="nh3_anth_sum"/>
+        <var name="nh3_anth_swd"/>
+        <var name="nh3_anth_tnr"/>
+        <var name="nh3_anth_tro"/>
+</stream>
+
+<stream name="anth_so2_emissions"
+        type="input"
+        filename_template="x1.163842-2024-anth_sulfur-dioxide.MPAS.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="so2_anth_sum"/>
+</stream>
+
+<stream name="anth_iso_emissions"
+        type="input"
+        filename_template="x1.163842-2024-anth_sulfur-dioxide.MPAS.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="so2_anth_sum"/>
+</stream>
+
+<stream name="anth_mnt_emissions"
+        type="input"
+        filename_template="x1.163842-2024-anth_sulfur-dioxide.MPAS.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="so2_anth_sum"/>
+</stream>
+
+<stream name="anth_co_emissions"
+        type="input"
+        filename_template="x1.163842-2024-anth_carbon-monoxide.MPAS.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="co_anth_sum"/>
+</stream>
+
+<stream name="biob_bc_emissions"
+        type="input"
+        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="bc_biob_modis"/>
+</stream>
+
+<stream name="biob_oc_emissions"
+        type="input"
+        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="oc_biob_modis"/>
+</stream>
+
+<stream name="biob_ni_emissions"
+        type="input"
+        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="nh3_biob_modis"/>
+</stream>
+
+<stream name="biob_su_emissions"
+        type="input"
+        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="so2_biob_modis"/>
+</stream>
+
+<stream name="biob_co_emissions"
+        type="input"
+        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="co_biob_modis"/>
+</stream>
+<stream name="biob_iso_emissions"
+        type="input"
+        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="iso_biob_modis"/>
+</stream>
+
+<stream name="biob_mnt_emissions"
+        type="input"
+        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="mnt_biob_modis"/>
+</stream>
+
+<stream name="biog_co_emissions"
+        type="input"
+        filename_template="x1.163842-2024-biog_carbon-monoxide.MPAS.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="co_biog_megan"/>
+</stream>
+
+<stream name="biog_iso_emissions"
+        type="input"
+        filename_template="x1.163842-2024-biog_isoprene.MPAS.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="iso_biog_megan"/>
+</stream>
+
+<stream name="biog_mnt_emissions"
+        type="input"
+        filename_template="x1.163842-2024-biog_other-monoterpenes.MPAS.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="mnt_biog_megan"/>
+</stream>
+
+<stream name="biog_apinene_emissions"
+        type="input"
+        filename_template="x1.163842-2024-biog_alpha-pinene.MPAS.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="mnta_biog_megan"/>
+</stream>
+
+<stream name="biog_bpinene_emissions"
+        type="input"
+        filename_template="x1.163842-2024-biog_beta-pinene.MPAS.nc"
+        input_interval="none">
+        immutable="false"
+
+        <var name="mntb_biog_megan"/>
+</stream>
+
 </streams>

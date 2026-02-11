@@ -66,8 +66,8 @@
     config_radtsw_interval     = 'radtswInterval'
     config_o3climatology       = true
     config_bucket_update       = 'none'
-    config_physics_suite       = 'physicsSuite'
-    config_microp_scheme       = 'micropScheme'
+    config_physics_suite       = 'convection_permitting'
+    config_microp_scheme       = 'mp_thompson'
     config_convection_scheme   = 'convectionScheme'
     config_pbl_scheme          = 'pblScheme'
     config_gwdo_scheme         = 'gwdoScheme'
@@ -78,6 +78,11 @@
     config_lsm_scheme          = 'lsmScheme'
     config_microp_re           = true
 /
+    MPAS in mpas-bundle is not a gocartMPAS at this time
+    set hard-coded parameters for now -> won't affect JEDI
+    config_physics_suite       = 'physicsSuite'
+    config_microp_scheme       = 'micropScheme'
+
 &soundings
     config_sounding_interval = 'none'
 /

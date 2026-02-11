@@ -4,17 +4,24 @@
     config_start_time = 'startTime'
     config_run_duration = 'fcLength'
     config_split_dynamics_transport = true
-    config_number_of_sub_steps = 2
+    config_number_of_sub_steps = 4
     config_dynamics_split_steps = 3
+    config_horiz_mixing = '2d_smagorinsky'
+    config_len_disp = diffusionLengthScale
+    config_visc4_2dsmag = 0.05
+    config_scalar_advection = true
+    config_monotonic = true
+    config_coef_3rd_order = 0.25
+    config_epssm = 0.1
+    config_smdiv = 0.1
+    config_positive_definite = false
+/
     config_h_mom_eddy_visc2 = 0.0
     config_h_mom_eddy_visc4 = 0.0
     config_v_mom_eddy_visc2 = 0.0
     config_h_theta_eddy_visc2 = 0.0
     config_h_theta_eddy_visc4 = 0.0
     config_v_theta_eddy_visc2 = 0.0
-    config_horiz_mixing = '2d_smagorinsky'
-    config_len_disp = diffusionLengthScale
-    config_visc4_2dsmag = 0.05
     config_w_adv_order = 3
     config_theta_adv_order = 3
     config_scalar_adv_order = 3
@@ -22,13 +29,7 @@
     config_w_vadv_order = 3
     config_theta_vadv_order = 3
     config_scalar_vadv_order = 3
-    config_scalar_advection = true
-    config_positive_definite = false
-    config_monotonic = true
-    config_coef_3rd_order = 0.25
-    config_epssm = 0.1
-    config_smdiv = 0.1
-/
+
 &damping
     config_zd = 22000.0
     config_xnutr = 0.2
@@ -76,8 +77,12 @@
     config_radt_sw_scheme      = 'radtSWScheme'
     config_sfclayer_scheme     = 'sfcLayerScheme'
     config_lsm_scheme          = 'lsmScheme'
-    config_microp_re           = true
+    config_mynn_mixchems = true
+    config_ntiedtke_ctrchems = true
+    config_ntiedtke_scavchems = true
 /
+    config_microp_re           = true
+
 &soundings
     config_sounding_interval = 'none'
 /
@@ -105,4 +110,34 @@
     config_noahmp_iopt_irrm = 0
     config_noahmp_iopt_infdv = 1
     config_noahmp_iopt_tdrn = 0
+/
+
+&chemistry
+    config_gocart2G_do_CA2Gbc       = true
+    config_gocart2G_do_CA2Gbr       = true
+    config_gocart2G_do_CA2Goc       = true
+    config_gocart2G_do_SOA2G        = true
+    config_gocart2G_do_DU2G         = true
+    config_gocart2G_do_NI2G         = true
+    config_gocart2G_do_SS2G         = true
+    config_gocart2G_do_SU2G         = true
+    config_gocart2G_toRRTMG = true
+    config_gocart2G_toMYNN  = true
+    config_gocart2G_toTHOM = true
+    config_gocart2G_toNTIEDTKE = true
+    config_gocart2G_biobemis_interval = '00_01:00:00'
+    config_gocart2G_opticsBC = 'optics_BC.v1_5.nc'
+    config_gocart2G_opticsBC_RRTMG = 'opticsBands_BC.v1_5.RRTMG.nc'
+    config_gocart2G_opticsOC = 'optics_OC.v1_5.nc'
+    config_gocart2G_opticsOC_RRTMG = 'opticsBands_OC.v1_5.RRTMG.nc'
+    config_gocart2G_opticsBR = 'optics_BRC.v2_5.nc'
+    config_gocart2G_opticsBR_RRTMG = 'opticsBands_BRC.v2_5.RRTMG.nc'
+    config_gocart2G_opticsDU = 'optics_DU.v15_5.nc'
+    config_gocart2G_opticsDU_RRTMG = 'opticsBands_DU.v15_5.RRTMG.nc'
+    config_gocart2G_opticsSS = 'optics_SS.v3_5.nc'
+    config_gocart2G_opticsSS_RRTMG = 'opticsBands_SS.v3_5.RRTMG.nc'
+    config_gocart2G_opticsSU = 'optics_SU.v2_5.nc'
+    config_gocart2G_opticsSU_RRTMG = 'opticsBands_SU.v2_5.RRTMG.nc'
+    config_gocart2G_opticsNI = 'optics_NI.v2_5.nc'
+    config_gocart2G_opticsNI_RRTMG = 'opticsBands_NI.v2_5.RRTMG.nc'
 /
