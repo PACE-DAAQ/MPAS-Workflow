@@ -1,0 +1,45 @@
+experiment:
+  name: '3dvar_2024_OIE60km_WarmStart_TRIAL'
+externalanalyses:
+  resource: "GFS.PANDAC"
+firstbackground:
+  resource: "PANDAC.GFS"
+forecast:
+  # turn off post to reduce overhead
+  post: []
+  job:
+    # to run forecast on gpu's, set GPUPerNode to 4 and
+    # uncomment forecast directory below
+    GPUPerNode: 0
+
+build:
+  mpas bundle: /glade/campaign/ncar/nmmm0072/MPASJEDI/build/mpas-bundle/build/
+  bundle compiler used: gnu-openmpi
+  #forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202602/gocartMPAS
+  forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202602/gocartMPAS_DEBUG
+
+hpc:
+  CriticalAccount: NMMM0063
+  CriticalQueue: main
+  NonCriticalAccount: NMMM0063
+  NonCriticalQueue: main
+  NonCriticalPriority: economy
+  SingleProcAccount: NMMM0063
+  SingleProcQueue: casper@casper-pbs
+
+members:
+  n: 1
+model:
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+observations:
+  resource: PANDACArchive
+variational:
+  DAType: 3dvar
+  nInnerIterations: [50,]
+  # turn off post to reduce overhead
+  post: []
+workflow:
+  first cycle point: 20241031T18
+  final cycle point: 20241101T00

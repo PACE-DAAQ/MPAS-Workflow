@@ -1,0 +1,29 @@
+suite: GenerateExternalAnalyses
+
+externalanalyses:
+  resource: "GFS.RDA"
+  #resource: "GFS.NCEPFTP"
+experiment:
+  name: 'GenerateGFSAnalyses_TRIAL'
+  prefix: ''
+model:
+  outerMesh: 60km
+
+hpc:
+  CriticalAccount: NMMM0063
+  CriticalQueue: main
+  NonCriticalAccount: NMMM0063
+  NonCriticalQueue: main
+  NonCriticalPriority: economy
+  SingleProcAccount: NMMM0063
+  SingleProcQueue: casper@casper-pbs
+
+build:
+  mpas bundle: /glade/campaign/ncar/nmmm0072/MPASJEDI/build/mpas-bundle/build/
+  bundle compiler used: gnu-openmpi
+  #forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202602/gocartMPAS
+
+workflow:
+  first cycle point: 20241031T18
+  final cycle point: 20241101T00
+  max active cycle points: 20

@@ -1,0 +1,49 @@
+suite: ForecastFromExternalAnalyses
+
+externalanalyses:
+  resource: "GFS.PANDAC"
+  resources:
+    GFS:
+      PANDAC: # only available 20251025T00
+        60km:
+          directory: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/60kmMeshGEFSwMERRA2/MPAS_IC_NEW/01
+          #directory: /glade/derecho/scratch/junpark/Example-2/TRIAL_GEFS/DATA/IC/01
+
+experiment:
+  name: 'ForecastFromPrestagedIC_01_GOCART_TRIAL'
+
+extendedforecast:
+  meanTimes: T00
+  lengthHR: 12 #168
+  outIntervalHR: 12
+  #execute: False # uncomment if forecasts are already completed
+  # optionally turn on extended forecast post
+  post: []
+
+hpc:
+  CriticalAccount: NMMM0063
+  CriticalQueue: main
+  NonCriticalAccount: NMMM0063
+  NonCriticalQueue: main
+  NonCriticalPriority: economy
+  SingleProcAccount: NMMM0063
+  SingleProcQueue: casper@casper-pbs
+
+members:
+  n: 1
+
+model:
+  outerMesh: 60km
+
+build:
+  mpas bundle: /glade/campaign/ncar/nmmm0072/MPASJEDI/build/mpas-bundle/build/
+  bundle compiler used: gnu-openmpi
+  forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202602/gocartMPAS
+
+observations: # for optional verification
+  resource: PANDACArchive
+
+workflow:
+  first cycle point: 20241025T00
+  final cycle point: 20241025T00
+  max active cycle points: 1
