@@ -35,7 +35,9 @@ externalanalyses:
           #directory: "/glade/campaign/mmm/parc/taosun/pandac/120kmMeshGFS/MPAS_IC_NEW"
           directory: "/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/120kmMeshGFS/MPAS_IC_NEW"
         60km:
-          directory: "/glade/campaign/mmm/parc/taosun/pandac/60kmMeshGFS/MPAS_IC_NEW"
+          #directory: "/glade/campaign/mmm/parc/taosun/pandac/60kmMeshGFS/MPAS_IC_NEW"
+          #directory: "/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/60kmMeshGEFSwMERRA2/MPAS_IC_NEW/01"
+          directory: "/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/60kmMeshGFS/MPAS_IC_NEW"
         30km:
           directory: "/glade/campaign/mmm/parc/taosun/pandac/30kmMeshGFS/MPAS_IC_NEW"
         60-3km:

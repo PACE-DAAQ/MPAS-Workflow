@@ -150,9 +150,12 @@ variational:
       hybridCoefficientsDir: None
     60km:
       hybridCoefficientsDir: /glade/campaign/mmm/parc/liuz/pandac_hybrid/60km.allsky_hybrid
-      bumpCovDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/NICAS
-      bumpCovStdDevFile: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/mpas.stddev.nc
-      bumpCovVBalDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/VBAL
+      #bumpCovDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/NICAS
+      #bumpCovStdDevFile: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/mpas.stddev.nc
+      #bumpCovVBalDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/VBAL
+      bumpCovDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/NICAS
+      bumpCovStdDevFile: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/mpas.stddev.nc
+      bumpCovVBalDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/VBAL
     120km:
       #bumpCovDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/NICAS
       #bumpCovStdDevFile: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/mpas.stddev.nc
@@ -341,10 +344,10 @@ variational:
           baseSeconds: 600
           secondsPerEnVarMember: 10
         3dvar:
-          nodes: 2
-          PEPerNode: 128
+          nodes: 1
+          PEPerNode: 64
           memory: 235GB
-          baseSeconds: 250
+          baseSeconds: 1200
         ensemble:
           3denvar:
             nodesPerMember: 2

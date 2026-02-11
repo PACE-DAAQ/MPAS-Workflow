@@ -45,10 +45,10 @@ forecast:
       #baseSeconds: 60
       #secondsPerForecastHR: 40
       # more efficient
-      nodes: 1
-      PEPerNode: 128
+      nodes: 2
+      PEPerNode: 64
       baseSeconds: 60
-      secondsPerForecastHR: 70
+      secondsPerForecastHR: 80
     120km:
       nodes: 1
       PEPerNode: 128

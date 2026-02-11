@@ -67,7 +67,8 @@ class Model(Component):
 
     ## MPThompsonTablesDir
     # directory containing MP Thompson tables
-    'MPThompsonTablesDir': ['/glade/campaign/mmm/parc/ivette/pandac/saca/thompson_tables',str],
+    #'MPThompsonTablesDir': ['/glade/campaign/mmm/parc/ivette/pandac/saca/thompson_tables',str],
+    'MPThompsonTablesDir': ['/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/thompson_tables',str],
   }
 
   def __init__(self, config:Config):

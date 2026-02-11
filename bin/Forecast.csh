@@ -183,14 +183,21 @@ rm ./x${meshRatio}.${nCells}.graph.info*
 ln -sfv $GraphInfoDir/x${meshRatio}.${nCells}.graph.info* .
 
 ## link lookup tables
+# may need to check if TBL for NOAHMP is explicitly set here..
 foreach fileGlob ($MPASLookupFileGlobs)
   rm ./*${fileGlob}
   ln -sfv ${MPASLookupDir}/*${fileGlob} .
 end
 
-if (${Microphysics} == 'mp_thompson' ) then
+if (${Microphysics} == 'mp_thompson' ||${Microphysics} == 'mp_thompson_gocart2G' ) then # a
   ln -svf $MPThompsonTablesDir/* .
 endif
+
+# #
+# Link files required for gocart2g
+ln -sfv ${EmissionDir}/* .
+ln -sfv ${BackgroundLUTDir}/* . # this may be required for init_atmosphere, not atmosphere
+ln -sfv ${OpticsDir}/* .
 
 ## link stream_list configs
 foreach staticfile ( \

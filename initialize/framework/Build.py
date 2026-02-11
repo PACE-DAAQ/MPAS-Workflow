@@ -152,7 +152,8 @@ class Build(Component):
               self.log('could not find forecast executable in ' + self['forecast directory'], level=self.MSG_QUIET)
 
       if system == 'derecho':
-        self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_atmosphere')
+      #  self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_atmosphere')
+        self._set('MPASLookupDir', self['forecast directory']) # need to obtain files from the directory of MPAS executable
         self._set('MPASLookupFileGlobs', ['.TBL', '.DBL', 'DATA', 'VERSION'])
       elif system == 'cheyenne':
         self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_'+model['MPASCore'])
@@ -191,6 +192,12 @@ class Build(Component):
     self._set('meanStateExe', 'average_netcdf_files_parallel_mpas.x')
     self._set('meanStateBuildDir', meanStateBuildDir)
     self.log('self meanStateBuildDir ' + self['meanStateBuildDir'], level=self.MSG_DEBUG)
+
+    # gocartMPAS 60km # to do resolution and time
+    self._set('EmissionDir', '/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/emission_202411/60km')
+    # gocartMPAS
+    self._set('BackgroundLUTDir', '/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/backgrounds')
+    self._set('OpticsDir', '/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/optics')
 
     self._cshVars = list(self._vtable.keys())
     self.log('self._cshVars ' + str(self._cshVars), level=self.MSG_NOISY)

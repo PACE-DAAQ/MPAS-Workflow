@@ -61,16 +61,17 @@ model:
       DiffusionLengthScale: 60000.0
       RadiationLWInterval: 00:30:00
       RadiationSWInterval: 00:30:00
-      PhysicsSuite: mesoscale_reference
-      Microphysics: mp_wsm6
+      PhysicsSuite: MPAS-GOCART2G 
+      Microphysics: mp_thompson_gocart2G
       Convection: cu_ntiedtke
-      PBL: bl_ysu
+      PBL: bl_mynn
       Gwdo: bl_ysu_gwdo
       RadiationCloud: cld_fraction
       RadiationLW: rrtmg_lw
       RadiationSW: rrtmg_sw
-      SfcLayer: sf_monin_obukhov_rev
-      LSM: sf_noah
+      SfcLayer: sf_mynn
+      LSM: sf_noahmp
+      #LSM: sf_noah
     120km:
       meshRatio: 1
       nCells: 40962
