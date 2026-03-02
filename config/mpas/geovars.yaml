@@ -300,9 +300,9 @@ fields:
 #      this will go through (NL) Variable Change.
   - field name: vegetation_area_fraction
     mpas template field: u10
-#    mpas identity field: vegetation_area_fraction
+    mpas identity field: vegetation_area_fraction
     mpas io name: vegfra # need scaling or Variable Change
-#    mpas io scaling factor: 0.01 # from MPAS unit [percent] to generic unit [unitless]
+    mpas io scaling factor: 0.01 # from MPAS unit [percent] to generic unit [unitless]
 
   - field name: leaf_area_index
     mpas template field: u10
@@ -408,3 +408,104 @@ fields:
     mpas template field: theta
     mpas identity field: relative_humidity
     mpas io name: relhum
+    mpas io scaling factor: 0.01 # from MPAS unit [percent] to generic unit [unitless]
+
+  - field name: mass_fraction_of_hydrophobic_black_carbon_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_hydrophobic_black_carbon_in_air
+    mpas io name: qbcphobic
+
+  - field name: mass_fraction_of_hydrophilic_black_carbon_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_hydrophilic_black_carbon_in_air
+    mpas io name: qbcphilic
+
+  - field name: mass_fraction_of_hydrophobic_brown_carbon_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_hydrophobic_brown_carbon_in_air
+    mpas io name: qbrphobic
+
+  - field name: mass_fraction_of_hydrophilic_brown_carbon_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_hydrophilic_brown_carbon_in_air
+    mpas io name: qbrphilic
+
+  - field name: mass_fraction_of_hydrophobic_organic_carbon_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_hydrophobic_organic_carbon_in_air
+    mpas io name: qocphobic
+
+  - field name: mass_fraction_of_hydrophilic_organic_carbon_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_hydrophilic_organic_carbon_in_air
+    mpas io name: qocphilic
+
+  - field name: mass_fraction_of_dust001_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_dust001_in_air
+    mpas io name: qdust1
+
+  - field name: mass_fraction_of_dust002_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_dust002_in_air
+    mpas io name: qdust2
+
+  - field name: mass_fraction_of_dust003_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_dust003_in_air
+    mpas io name: qdust3
+
+  - field name: mass_fraction_of_dust004_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_dust004_in_air
+    mpas io name: qdust4
+
+  - field name: mass_fraction_of_dust005_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_dust005_in_air
+    mpas io name: qdust5
+
+  - field name: mass_fraction_of_sea_salt001_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_sea_salt001_in_air
+    mpas io name: qseas1
+
+  - field name: mass_fraction_of_sea_salt002_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_sea_salt002_in_air
+    mpas io name: qseas2
+
+  - field name: mass_fraction_of_sea_salt003_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_sea_salt003_in_air
+    mpas io name: qseas3
+
+  - field name: mass_fraction_of_sea_salt004_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_sea_salt004_in_air
+    mpas io name: qseas4
+
+  - field name: mass_fraction_of_sea_salt005_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_sea_salt005_in_air
+    mpas io name: qseas5
+
+  - field name: mass_fraction_of_sulfate_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_sulfate_in_air
+    mpas io name: qso4
+
+  - field name: mass_fraction_of_nitrate001_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_nitrate001_in_air
+    mpas io name: qni1
+
+  - field name: mass_fraction_of_nitrate002_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_nitrate002_in_air
+    mpas io name: qni2
+
+  - field name: mass_fraction_of_nitrate003_in_air
+    mpas template field: theta
+    mpas identity field: mass_fraction_of_nitrate003_in_air
+    mpas io name: qni3

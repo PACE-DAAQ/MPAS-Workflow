@@ -21,14 +21,15 @@ from initialize.framework.HPC import HPC
 # base set of observation types assimilated in all experiments
 # not included in auto-generated experiment names
 benchmarkObservations = [
+  'aod_oci_pace',
   # anchor
-  'aircraft',
+#  'aircraft',
 #  'gnssrorefncep',
 #  'gnssrobndropp1d',
-  'satwind',
+#  'satwind',
 #  'satwnd',
-  'sfc',
-  'sondes',
+#  'sfc',
+#  'sondes',
   # MW satellite-based
 #  'amsua_aqua',
 #  'amsua_metop-a',
@@ -82,7 +83,8 @@ class Observations(Component):
     'GDASObsErrtable': ['/glade/campaign/mmm/parc/liuz/pandac_common/fixed_input/GSI_errtables/HRRRENS_errtable_10sep2018.r3dv', str],
 
     ## CRTM
-    'CRTMTABLES': ['/glade/work/nystrom/Code/JEDI/jcsda_internal/CRTM_V3_coeffs/', str],
+    #'CRTMTABLES': ['/glade/work/nystrom/Code/JEDI/jcsda_internal/CRTM_V3_coeffs/', str],
+    'CRTMTABLES': ['/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/CRTM_V3_coeffs/', str],
 
     # static directories for bias correction files
     'fixedCoeff': ['/glade/campaign/mmm/parc/jban/pandac_common/obs/satbias', str],

@@ -97,12 +97,16 @@ observations:
         amsua-cld_n19: amsua_n19
         abi-clr_g16: abi_g16
         ahi-clr_himawari8: ahi_himawari8
+        # AOD from PACE OCI: source files are named ociuaa_pace_aod_obs_YYYYMMDDHH.h5 (_obs) will be appended
+        aod_oci_pace: ociuaa_pace_aod
 
       IODADirectory:
         da:
           ##anchor
           #aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
           aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          ## aod
+          aod_oci_pace: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/ociuaa_pace_aod
           gnssrobndropp1d: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
           gnssrobndnbam: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
           gnssrobndmo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
@@ -149,6 +153,9 @@ observations:
           iasi_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
           iasi_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
           iasi_metop-c: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
+
+          ## aod
+          aod_oci_pace: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/ociuaa_pace_aod
 
         hofx:
           ## anchor
@@ -200,6 +207,9 @@ observations:
           iasi_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
           iasi_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
           iasi_metop-c: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
+
+          ## aod
+          aod_oci_pace: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/ociuaa_pace_aod
 
       IODASuperObGrid:
         abi_g16: 15X15

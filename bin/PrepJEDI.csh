@@ -503,6 +503,10 @@ sed -i 's@{{windowBegin}}@'${halfprevISO8601Date}'@' $thisYAML
 # crtm tables
 sed -i 's@{{CRTMTABLES}}@'${CRTMTABLES}'@g' $thisYAML
 
+# aod related parameters
+sed -i 's@{{aodChannel}}@'${aodChannel}'@g' $thisYAML
+sed -i 's@{{aodAerosolOption}}@'${aodAerosolOption}'@g' $thisYAML
+
 # IR/VIS land surface coefficients
 sed -i 's@{{IRVISlandCoeff}}@'${IRVISlandCoeff}'@g' $thisYAML
 
@@ -524,6 +528,7 @@ sed -i 's@{{tropprsMethod}}@'${tropprsMethod}'@g' $prevYAML
 
 # number of IODA pool writers
 sed -i 's@{{maxIODAPoolSize}}@'${maxIODAPoolSize}'@g' $prevYAML
+
 
 # (3) model-related substitutions
 # ===============================

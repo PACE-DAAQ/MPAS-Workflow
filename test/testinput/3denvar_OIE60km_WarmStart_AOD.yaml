@@ -1,5 +1,5 @@
 experiment:
-  name: '3denvar_OIE60km_IAU_WarmStart_TEST_202411'
+  name: '3denvar_OIE60km_WarmStart_AOD_202411'
 externalanalyses:
   resource: "GFS.PANDAC"
 firstbackground:
@@ -33,7 +33,13 @@ observations:
   resource: PANDACArchive
 variational:
   DAType: 3denvar
-  nInnerIterations: [30,]
+  nInnerIterations: [50,]
+  aodChannel: 4
+  aodAerosolOption: aerosols_gocart2g_mpas
+  observers: [
+   aod_oci_pace,
+]
+  radianceThinningDistance: 30.0
   ensemble:
     forecasts:
       resource: "PANDAC.GEFS"

@@ -1,0 +1,23 @@
+- obs space:
+    <<: *ObsSpace
+    name: AodCRTM
+    _obsdatain: &ObsDataIn
+      engine:
+        type: H5File
+        obsfile: {{InDBDir}}/aod_oci_pace_obs_{{thisValidDate}}.h5
+    _obsdataout: &ObsDataOut
+      engine:
+        type: H5File
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_oci_pace_aod{{ObsOutSuffix}}.h5
+    obsdatain:
+      <<: *{{ObsDataIn}}
+    {{ObsDataOut}}
+    simulated variables: [aerosolOpticalDepth]
+    channels: &aodChannels {{aodChannel}}
+  obs error: *ObsErrorDiagonal
+  <<: *horizObsLoc
+  obs operator:
+    <<: *aodCRTMObsOperator
+    obs options:
+      <<: *AODCRTMObsOptions
+      Sensor_ID: v.pace_oci
