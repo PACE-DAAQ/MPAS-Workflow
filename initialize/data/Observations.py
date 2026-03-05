@@ -21,7 +21,7 @@ from initialize.framework.HPC import HPC
 # base set of observation types assimilated in all experiments
 # not included in auto-generated experiment names
 benchmarkObservations = [
-  'aod_oci_pace',
+  'ociuaa_pace_aod',
   # anchor
 #  'aircraft',
 #  'gnssrorefncep',

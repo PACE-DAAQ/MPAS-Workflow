@@ -111,7 +111,7 @@ class Variational(Component):
     # iasi_metop-b
     # iasi_metop-c
     ## AOD (Aerosol Optical Depth) - PACE OCI channel 4 (550nm), GOCART-GEOS5 model
-    # aod_oci_pace
+    # ociuaa_pace_aod
     'observers': [benchmarkObservations, list],
 
     ## nObsIndent
