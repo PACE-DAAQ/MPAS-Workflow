@@ -1,5 +1,5 @@
 experiment:
-  name: '3denvar_OIE60km_IAU_WarmStart_TEST_202411'
+  name: '3denvar_OIE120km_IAU_WarmStart'
 externalanalyses:
   resource: "GFS.PANDAC"
 firstbackground:

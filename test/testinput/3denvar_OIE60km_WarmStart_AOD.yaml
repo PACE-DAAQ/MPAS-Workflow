@@ -1,5 +1,5 @@
 experiment:
-  name: '3denvar_OIE60km_WarmStart_AOD_202411'
+  name: '3denvar_OIE60km_WarmStart_AOD'
 externalanalyses:
   resource: "GFS.PANDAC"
 firstbackground:
@@ -37,7 +37,7 @@ variational:
   aodChannel: 4
   aodAerosolOption: aerosols_gocart2g_mpas
   observers: [
-   aod_oci_pace,
+  ociuaa_pace_aod,
 ]
   radianceThinningDistance: 30.0
   ensemble:
