@@ -5,39 +5,26 @@ externalanalyses:
 firstbackground:
   resource: "PANDAC.GFS"
 forecast:
-  IAU: False
-  post: []
-
-build:
-  mpas bundle: /glade/campaign/ncar/nmmm0072/MPASJEDI/build/mpas-bundle/build/
-  bundle compiler used: gnu-openmpi
-  #forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202602/gocartMPAS
-  forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202602/gocartMPAS_DEBUG
-
+  IAU: True
+  post: [verifyobs, verifymodel]
 hpc:
-  CriticalAccount: NMMM0063
-  CriticalQueue: main
-  NonCriticalAccount: NMMM0063
-  NonCriticalQueue: main
+  CriticalPriority: economy
   NonCriticalPriority: economy
-  SingleProcAccount: NMMM0063
-  SingleProcQueue: casper@casper-pbs
-
 members:
   n: 1
 model:
-  outerMesh: 60km
-  innerMesh: 60km
-  ensembleMesh: 60km
+  outerMesh: 120km
+  innerMesh: 120km
+  ensembleMesh: 120km
 observations:
   resource: PANDACArchive
 variational:
   DAType: 3denvar
-  nInnerIterations: [30,]
+  nInnerIterations: [15,]
   ensemble:
     forecasts:
       resource: "PANDAC.GEFS"
-  post: []
+  post: [verifyobs]
 workflow:
-  first cycle point: 20241031T18
-  final cycle point: 20241101T00
+  first cycle point: 20180414T18
+  final cycle point: 20180415T06
