@@ -1,0 +1,49 @@
+experiment:
+  name: '3denvar_OIE60km_WarmStart_AOD'
+externalanalyses:
+  resource: "GFS.PANDAC"
+firstbackground:
+  resource: "PANDAC.GFS"
+forecast:
+  IAU: False
+  post: []
+
+build:
+  mpas bundle: /glade/campaign/ncar/nmmm0072/MPASJEDI/build/mpas-bundle/build/
+  bundle compiler used: gnu-openmpi
+  #forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202602/gocartMPAS
+  forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202602/gocartMPAS_DEBUG
+
+hpc:
+  CriticalAccount: NMMM0063
+  CriticalQueue: main
+  NonCriticalAccount: NMMM0063
+  NonCriticalQueue: main
+  NonCriticalPriority: economy
+  SingleProcAccount: NMMM0063
+  SingleProcQueue: casper@casper-pbs
+
+members:
+  n: 1
+model:
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+observations:
+  resource: PANDACArchive
+variational:
+  DAType: 3denvar
+  nInnerIterations: [50,]
+  aodChannel: 4
+  aodAerosolOption: aerosols_gocart2g_mpas
+  observers: [
+  ociuaa_pace_aod,
+]
+  radianceThinningDistance: 30.0
+  ensemble:
+    forecasts:
+      resource: "PANDAC.GEFS"
+  post: []
+workflow:
+  first cycle point: 20241031T18
+  final cycle point: 20241101T00

@@ -63,9 +63,9 @@ variational:
             # to the member iterator (i.e., 1 for member 1, 2 for member 2, etc.)
 
           60km:
-            maxMembers: 20
-            directory0: '/glade/campaign/mmm/parc/liuz/pandac_common/fixed_input/60km/EnsForCov/{{prevDateTime}}'
-            filePrefix: EnsForCov
+            maxMembers: 31
+            directory0: '/glade/derecho/scratch/junpark/pandac/60km_EnsFC/{{prevDateTime}}'
+            filePrefix: mpasout
             memberNDigits: 2
 
         DART:
@@ -121,8 +121,10 @@ variational:
         bumpLocPrefix: bumploc_1200.0km_6.0km
         bumpLocDir: /glade/campaign/mmm/parc/liuz/pandac_common/fixed_input/30km/bumploc/h=1200.0km_v=6.0km_06JAN2023code
       60km:
-        bumpLocPrefix: bumploc_1200.0km_6.0km
-        bumpLocDir: /glade/campaign/mmm/parc/liuz/pandac_common/BUMP_files/derecho_2.1/60km.bumploc.duplicated.limited.1200km6km
+        #bumpLocPrefix: bumploc_1200.0km_6.0km
+        #bumpLocDir: /glade/campaign/mmm/parc/liuz/pandac_common/BUMP_files/derecho_2.1/60km.bumploc.duplicated.limited.1200km6km
+        bumpLocPrefix: bumploc_600km6km
+        bumpLocDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/BUMP_files/60km/loc_600km6km
       120km:
         bumpLocPrefix: bumploc_1200.0km_6.0km
         #bumpLocDir: /glade/campaign/mmm/parc/liuz/pandac_common/BUMP_files/20230522_yr5/120km.bumploc.duplicated.limited.1200km6km
@@ -153,7 +155,10 @@ variational:
       #bumpCovDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/NICAS
       #bumpCovStdDevFile: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/mpas.stddev.nc
       #bumpCovVBalDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/VBAL
-      bumpCovDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/NICAS
+      #bumpCovDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/NICAS # from 201804-201806
+      #bumpCovStdDevFile: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/mpas.stddev.nc
+      #bumpCovVBalDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/VBAL
+      bumpCovDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/NICAS # 256 cores for Nov 2024
       bumpCovStdDevFile: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/mpas.stddev.nc
       bumpCovVBalDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/VBAL
     120km:
@@ -314,11 +319,11 @@ variational:
       # Assuming 60 total inner iterations
       60km:
         3denvar:
-          nodes: 2
-          PEPerNode: 128
+          nodes: 4
+          PEPerNode: 64
           memory: 235GB
-          baseSeconds: 200
-          secondsPerEnVarMember: 6
+          baseSeconds: 720
+          secondsPerEnVarMember: 25
         4denvar:
           nodes: 14 #7 subwindow slots
           PEPerNode: 128
@@ -344,10 +349,10 @@ variational:
           baseSeconds: 600
           secondsPerEnVarMember: 10
         3dvar:
-          nodes: 1
-          PEPerNode: 64
+          nodes: 2
+          PEPerNode: 128
           memory: 235GB
-          baseSeconds: 1200
+          baseSeconds: 900
         ensemble:
           3denvar:
             nodesPerMember: 2

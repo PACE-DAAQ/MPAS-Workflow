@@ -103,6 +103,8 @@ observations:
           ##anchor
           #aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
           aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          ## aod
+          ociuaa_pace_aod: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/tempo_obs/ociuaa_pace_aod
           gnssrobndropp1d: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
           gnssrobndnbam: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
           gnssrobndmo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
@@ -149,6 +151,9 @@ observations:
           iasi_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
           iasi_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
           iasi_metop-c: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
+
+          ## aod
+          ociuaa_pace_aod: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/tempo_obs/ociuaa_pace_aod
 
         hofx:
           ## anchor
@@ -200,6 +205,9 @@ observations:
           iasi_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
           iasi_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
           iasi_metop-c: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
+
+          ## aod
+          ociuaa_pace_aod: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/tempo_obs/ociuaa_pace_aod
 
       IODASuperObGrid:
         abi_g16: 15X15
