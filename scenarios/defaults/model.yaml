@@ -1,4 +1,13 @@
 model:
+  # GOCART emission inventories for the forecast streams.atmosphere.
+  # 'streams variant' selects a default (anthropogenic / biogenic / biomass-burning) combination;
+  # the variant -> combination mapping and the inventory -> filename tables live in
+  # bin/SetStreamsVariant.csh (edit there to add combinations or inventories).
+  #   streams variant: cntl | pert01..pert08   (default cntl = cams / cams / finn)
+  # Optionally override a single dimension (empty = use the variant's default):
+  #   anth emissions: cams | ceds | cams-mix
+  #   biob emissions: finn | gfas | qfed
+  #   biog emissions: cams
   resources:
     #{{mesh}}:
     #  meshRatio: 1 for uniform meshes
@@ -54,7 +63,7 @@ model:
       RadiationSW: rrtmg_sw
       SfcLayer: sf_monin_obukhov_rev
       LSM: sf_noah
-    60km:
+    60km: # for gocartMPAS
       meshRatio: 1
       nCells: 163842
       TimeStep: 360.0
@@ -70,8 +79,8 @@ model:
       RadiationLW: rrtmg_lw
       RadiationSW: rrtmg_sw
       SfcLayer: sf_mynn
-      LSM: sf_noahmp
-      #LSM: sf_noah
+      #LSM: sf_noahmp
+      LSM: sf_noah
     120km:
       meshRatio: 1
       nCells: 40962

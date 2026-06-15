@@ -33,6 +33,33 @@ class Build(Component):
     # the executables described herein
     'bundle compiler used': ['gnu-openmpi', str,
       ['gnu-openmpi', 'intel-impi']],
+
+    ## non-bundle build directories
+    # Ungrib (WPS)
+    'wps build directory': ['', str],
+
+    # Mean state calculator
+    'meanstate build directory': ['', str],
+
+    # Obs2IODA-v3
+    'obs2ioda build directory':
+      ['/glade/campaign/mmm/parc/ivette/pandac/codeBuild/obs2iodaV3/build/bin', str],
+
+    # Update ATM vars
+    'updateATMvars build directory': ['/glade/derecho/scratch/junpark/pandac', str],
+
+    ## gocartMPAS data directories
+    # Emission (resolution-dependent; default is 60km, monthly snapshot 202411)
+    'gocart emission directory':
+      ['/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/emission_202411/60km', str],
+
+    # Background LUT
+    'gocart background lut directory':
+      ['/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/backgrounds', str],
+
+    # Optics
+    'gocart optics directory':
+      ['/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/optics', str],
   }
 
   def __init__(self, config:Config, model:Model=None):
@@ -52,11 +79,13 @@ class Build(Component):
       self.variablesWithDefaults['forecast directory'] = ['bundle', str]
 
       # Ungrib
-      wpsBuildDir = '/glade/work/jwittig/repos1/WPS/'
+      self.variablesWithDefaults['wps build directory'] = \
+        ['/glade/work/jwittig/repos1/WPS/', str]
       # Mean state calculator
       # FIXME the source for the app in this directory was copied from
       # /glade/work/guerrett/pandac/work/meanState/spack-stack_gcc-10.1.0_openmpi-4.1.1
-      meanStateBuildDir = '/glade/campaign/mmm/parc/jwittig/meanState/bin'
+      self.variablesWithDefaults['meanstate build directory'] = \
+        ['/glade/campaign/mmm/parc/jwittig/meanState/bin', str]
     elif system == 'cheyenne':
       self.variablesWithDefaults['mpas bundle'] = \
         ['/glade/p/mmm/parc/liuz/pandac_common/mpas-bundle-code-build/mpas_bundle_2.0_gnuSP/build', str]
@@ -66,13 +95,13 @@ class Build(Component):
         ['/glade/p/mmm/parc/liuz/pandac_common/mpas-bundle-code-build/mpas_bundle_2.0_gnuSP/MPAS_intelmpt', str]
 
       # Ungrib
-      wpsBuildDir = '/glade/work/guerrett/pandac/data/GEFS'
+      self.variablesWithDefaults['wps build directory'] = \
+        ['/glade/work/guerrett/pandac/data/GEFS', str]
       # Mean state calculator
-      meanStateBuildDir = '/glade/work/guerrett/pandac/work/meanState/spack-stack_gcc-10.1.0_openmpi-4.1.1'
+      self.variablesWithDefaults['meanstate build directory'] = \
+        ['/glade/work/guerrett/pandac/work/meanState/spack-stack_gcc-10.1.0_openmpi-4.1.1', str]
     else:
       self._msg('unknown host:' + system)
-      wpsBuildDir = ''
-      meanStateBuildDir = ''
 
     super().__init__(config)
 
@@ -152,8 +181,8 @@ class Build(Component):
               self.log('could not find forecast executable in ' + self['forecast directory'], level=self.MSG_QUIET)
 
       if system == 'derecho':
-      #  self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_atmosphere')
-        self._set('MPASLookupDir', self['forecast directory']) # need to obtain files from the directory of MPAS executable
+        self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_atmosphere')
+      #  self._set('MPASLookupDir', self['forecast directory']) # need to obtain files from the directory of MPAS executable
         self._set('MPASLookupFileGlobs', ['.TBL', '.DBL', 'DATA', 'VERSION'])
       elif system == 'cheyenne':
         self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_'+model['MPASCore'])
@@ -178,26 +207,29 @@ class Build(Component):
     # Ungrib
     # ------
     self._set('ungribEXE', 'ungrib.exe')
-    self._set('WPSBuildDir', wpsBuildDir)
+    self._set('WPSBuildDir', self['wps build directory'])
 
     # Obs2IODA-v3
     # -----------
     self._set('obs2iodaEXE', 'obs2ioda_v3')
-    self._set('obs2iodaBuildDir', '/glade/campaign/mmm/parc/ivette/pandac/codeBuild/obs2iodaV3/build/bin')
+    self._set('obs2iodaBuildDir', self['obs2ioda build directory'])
+
+    # Update MPASVars code
+    # -----------
+    self._set('CopyMPASVarEXE', 'copy_mpas_vars.py.org')
+    self._set('CopyMPASVarBuildDir', self['updateATMvars build directory'])
 
     # Mean state calculator
     # ---------------------
     #self._set('meanStateExe', 'mpasjedi_ens_mean_variance.x')
-    #self._set('meanStateBuildDir', '/glade/work/taosun/Derecho/MPAS/JEDI_MPAS/build_intel'+'/bin')
     self._set('meanStateExe', 'average_netcdf_files_parallel_mpas.x')
-    self._set('meanStateBuildDir', meanStateBuildDir)
+    self._set('meanStateBuildDir', self['meanstate build directory'])
     self.log('self meanStateBuildDir ' + self['meanStateBuildDir'], level=self.MSG_DEBUG)
 
-    # gocartMPAS 60km # to do resolution and time
-    self._set('EmissionDir', '/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/emission_202411/60km')
-    # gocartMPAS
-    self._set('BackgroundLUTDir', '/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/backgrounds')
-    self._set('OpticsDir', '/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/optics')
+    # gocartMPAS (resolution-/time-dependent — override per scenario YAML if needed)
+    self._set('EmissionDir', self['gocart emission directory'])
+    self._set('BackgroundLUTDir', self['gocart background lut directory'])
+    self._set('OpticsDir', self['gocart optics directory'])
 
     self._cshVars = list(self._vtable.keys())
     self.log('self._cshVars ' + str(self._cshVars), level=self.MSG_NOISY)

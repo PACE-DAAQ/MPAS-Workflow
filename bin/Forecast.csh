@@ -42,6 +42,9 @@ set ArgICStateDir = "$10"
 # ArgICStatePrefix: prefix of the initial condition state
 set ArgICStatePrefix = "$11"
 
+# UPDATE ATM from COLD-START FROM IC: BOOL
+set updateATMVarsFromCold = "$12"
+
 ## arg checks
 set test = `echo $ArgMember | grep '^[0-9]*$'`
 set isNotInt = ($status)
@@ -150,7 +153,7 @@ if ( ${self_IAU} == True ) then
   set BGFileExt = `$TimeFmtChange ${IAUDate}`.00.00.nc    # analysis - 3h [YYYY-MM-DD_HH.00.00]
   set BGFile   = ${prevCyclingFCDir}/${FCFilePrefix}.${BGFileExt}    # mpasout at (analysis - 3h)
   set BGFileA  = ${CyclingDAInDir}/${BGFilePrefix}.${icFileExt}	  # bg at the analysis time
-  echo ""
+  echo "" 
   echo "IAU needs two background files:"
   echo "IC: ${BGFile}"
   echo "bg: ${BGFileA}"
@@ -199,10 +202,12 @@ ln -sfv ${EmissionDir}/* .
 ln -sfv ${BackgroundLUTDir}/* . # this may be required for init_atmosphere, not atmosphere
 ln -sfv ${OpticsDir}/* .
 
+
 ## link stream_list configs
 foreach staticfile ( \
 stream_list.${MPASCore}.surface \
 stream_list.${MPASCore}.diagnostics \
+stream_list.${MPASCore}.dastate \
 )
   if( -e $staticfile ) rm ./$staticfile
   ln -sfv $ModelConfigDir/forecast/$staticfile .
@@ -210,13 +215,16 @@ end
 
 ## copy/modify dynamic streams file
 if( -e ${StreamsFile}) rm ${StreamsFile}
-cp -v $ModelConfigDir/forecast/${StreamsFile} .
+cp -v $ModelConfigDir/forecast/${StreamsFile} ./${StreamsFile}
 sed -i 's@{{nCells}}@'${nCells}'@' ${StreamsFile}
 sed -i 's@{{outputInterval}}@'${self_FCIntervalHR}':00:00@' ${StreamsFile}
 sed -i 's@{{InvariantFieldsPrefix}}@'${localInvariantFieldsPrefix}'@' ${StreamsFile}
 sed -i 's@{{ICFilePrefix}}@'${ICFilePrefix}'@' ${StreamsFile}
 sed -i 's@{{FCFilePrefix}}@'${FCFilePrefix}'@' ${StreamsFile}
 sed -i 's@{{PRECISION}}@'${model__precision}'@' ${StreamsFile}
+
+## select GOCART emission inventories (anth/biog/biob) and substitute the {{...}} emission placeholders
+source ${mainScriptDir}/bin/SetStreamsVariant.csh
 
 ## Update sea-surface variables from GFS/GEFS analyses
 set localSeaUpdateFile = x${meshRatio}.${nCells}.sfc_update.nc
@@ -381,6 +389,16 @@ else
   cd ${mainScriptDir}
   source config/environmentForecast.csh
   cd -
+
+if ("${updateATMVarsFromCold}" == True) then
+  echo "RUN PYTHON TO UPDATE ATM & BACKGROUNDS from COLD-START IC"
+  # forecast 
+  mv ${icFile} ${icFile}_tmp
+  cp -rL ${ExternalAnalysesWorkDir}/${ArgMesh}/${thisCycleDate}/x1.${nCells}.init.${icFileExt} ${icFile}
+  #module load nco
+  #ncks -A -v qbcphobic,qbcphilic,qbrphobic,qbrphilic,qocphobic,qocphilic,qdust1,qdust2,qdust3,qdust4,qdust5,qni1,qni2,qni3,qso2,qso2v,qso4,qso4v,qseas1,qseas2,qseas3,qseas4,qseas5,qdms,qnh3,qnh4a,qsoapa,qsoapbb,qsoapbg,background_dms,background_h2o2,background_oh,background_no3,background_hno3,background_ptrop,qmsa ${icFile}_tmp ${icFile}
+  python3 ${CopyMPASVarBuildDir}/${CopyMPASVarEXE} ${icFile}_tmp ${icFile}
+endif
 
   set log = log.${MPASCore}.0000.out
   foreach f ($log $ForecastEXE)

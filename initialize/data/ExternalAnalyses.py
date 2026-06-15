@@ -30,9 +30,14 @@ class ExternalAnalyses(Component):
     'resource': str,
   }
 
-  def __init__(self, config:Config, hpc:HPC, meshes:dict):
+  def __init__(self, config:Config, hpc:HPC, meshes:dict, members=None):
     super().__init__(config)
     self.meshes = meshes
+
+    # ensemble support (optional): when a Members component is passed and members.n > 1, each
+    # member is cold-started from its own pre-staged per-member external IC. members=None (the
+    # default used by the cycling suites) preserves the original single-state behavior.
+    self.NN = members.n if members is not None else 1
 
     ###################
     # derived variables
@@ -95,6 +100,21 @@ class ExternalAnalyses(Component):
           self._set(variable, value)
           self._cshVars.append(variable)
 
+    # ensemble member layout (only meaningful when members.n > 1). These are resolved from the
+    # selected resource (e.g. GEFSMERRA.PANDAC in scenarios/defaults/externalanalyses.yaml, or an
+    # inline scenario override) and default to the single-state values when the resource omits them.
+    outerName = meshes['Outer'].name
+    self.memberFmt = self.extractResourceOrDefault(('resources', resource, outerName), 'memberFormat', ' ', str)
+    self.maxMembers = self.extractResourceOrDefault(('resources', resource, outerName), 'maxMembers', 1, int)
+    if self.NN > 1:
+      assert self.NN <= self.maxMembers, (
+        'ExternalAnalyses: members.n='+str(self.NN)+' exceeds maxMembers='+str(self.maxMembers)+
+        ' for resource '+resource)
+      assert 'LinkExternalAnalysis' in self['PrepareExternalAnalysisOuter'], (
+        'ExternalAnalyses: ensemble (members.n>1) is only supported for the pre-staged link path '
+        '(PrepareExternalAnalysisTasks must use LinkExternalAnalysis), not the ungrib/convert '
+        'path; resource='+resource)
+
     # Use external analysis for sea surface updating
     variable = 'PrepareSeaSurfaceUpdate'
     self._set(variable, self['PrepareExternalAnalysisOuter'])
@@ -126,10 +146,14 @@ class ExternalAnalyses(Component):
     self.outputs['state'] = {}
     for meshTyp, mesh in meshes.items():
       self.outputs['state'][meshTyp] = StateEnsemble(mesh)
-      self.outputs['state'][meshTyp].append({
-        'directory': self['ExternalAnalysesDir'+meshTyp],
-        'prefix': self['externalanalyses__filePrefix'+meshTyp],
-      })
+      for mm in range(1, self.NN+1, 1):
+        # per-member IC subdirectory; empty for the single-state (NN==1) case so existing
+        # cycling suites are unaffected.
+        memSub = '' if self.NN == 1 else self.memberFmt.format(mm)
+        self.outputs['state'][meshTyp].append({
+          'directory': self['ExternalAnalysesDir'+meshTyp]+memSub,
+          'prefix': self['externalanalyses__filePrefix'+meshTyp],
+        })
 
   def export(self, dtOffsets:list=[0]):
 
@@ -284,6 +308,9 @@ class ExternalAnalyses(Component):
             self['ExternalAnalysesDir'+meshTyp],
             self['externalanalyses__directory'+meshTyp],
             self['externalanalyses__filePrefix'+meshTyp],
+            self.NN,
+            self.memberFmt,
+            self.maxMembers,
           ]
           linkArgs = ' '.join(['"'+str(a)+'"' for a in args])
 

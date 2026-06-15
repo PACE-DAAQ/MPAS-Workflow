@@ -80,7 +80,7 @@ foreach fileGlob ($MPASLookupFileGlobs)
   ln -sfv ${MPASLookupDir}/*${fileGlob} .
 end
 
-if (${MicrophysicsOuter} == 'mp_thompson' ) then
+if (${MicrophysicsOuter} == 'mp_thompson' ||${MicrophysicsOuter} == 'mp_thompson_gocart2G' ) then
   ln -svf $MPThompsonTablesDir/* .
 endif
 
@@ -103,6 +103,7 @@ sed -i 's@{{ObsOutSuffix}}@@' $myYAML
 # (used to be in 'io pool' section of config/jedi/ObsPlugs/variational/ObsAnchors.yaml)
 sed -i '/_obsdataout/a\          write multiple files: true' $myYAML
 
+ #106-122
 mpiexec ./${myEXE} $myYAML ./jedi.log >& jedi.log.all
 
 #WITH DEBUGGER

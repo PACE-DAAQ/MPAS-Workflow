@@ -157,7 +157,7 @@ foreach fileGlob ($MPASLookupFileGlobs)
   ln -sfv ${MPASLookupDir}/*${fileGlob} .
 end
 
-if ( ${Microphysics} == 'mp_thompson' ) then
+if (${MicrophysicsOuter} == 'mp_thompson' ||${MicrophysicsOuter} == 'mp_thompson_gocart2G' ) then
   ln -svf $MPThompsonTablesDir/* .
 endif
 

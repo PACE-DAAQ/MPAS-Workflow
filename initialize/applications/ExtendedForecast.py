@@ -59,6 +59,11 @@ class ExtendedForecast(Component):
     ## updateSea
     # whether to update surface fields before a forecast (e.g., sst, xice)
     'updateSea': [False, bool],
+
+    ## updateATMVarsFromCold
+    # whether to update the IC atmospheric variables from the cold-start IC
+    # (mirrors forecast: updateATMVarsFromCold; passed to bin/Forecast.csh as the 12th arg)
+    'updateATMVarsFromCold': [False, bool],
   }
 
   def __init__(self,
@@ -90,6 +95,7 @@ class ExtendedForecast(Component):
 
     lengthHR = self['lengthHR']
     outIntervalHR = self['outIntervalHR']
+    self.updateATMVarsFromCold = self['updateATMVarsFromCold']
     extLengths = range(0, lengthHR+outIntervalHR, outIntervalHR)
     self._set('extLengths', extLengths)
     self.ensVerifyMembers = range(1, self.NN+1, 1)
@@ -117,12 +123,15 @@ class ExtendedForecast(Component):
       self.fromInternalAnalysis(ic)
 
   def fromExternalAnalysis(self, states:StateEnsemble):
-    # only singl-state forecasts are supported when initializing from external analyses,
-    # consistent with ExternalAnalyses functionality
-    assert self.NN == 1, (
-      'fromExternalAnalysis.__init__: only compatible with single-member forecasts')
+    # When NN > 1 each member must have its own external IC state (provided by a member-aware
+    # ExternalAnalyses, e.g. resource GEFSMERRA.PANDAC). When NN == 1 this reduces to the original
+    # single-state behavior, so cycling suites that pass a single external state are unaffected.
+    if self.NN > 1:
+      assert len(states) >= self.NN, (
+        'fromExternalAnalysis: ensemble forecast needs one external IC state per member; got '
+        +str(len(states))+' state(s) for '+str(self.NN)+' members')
 
-    # mean analysis
+    # mean / single-state analysis (uses the first external state)
     args = [
       1,
       self['lengthHR'],
@@ -135,13 +144,31 @@ class ExtendedForecast(Component):
       self.workDir+'/{{thisCycleDate}}/mean',
       states[0].directory(),
       states[0].prefix(),
+      self.updateATMVarsFromCold,
     ]
     self.meanAnaArgs = ' '.join(['"'+str(a)+'"' for a in args])
 
-    # ensemble of analyses
+    # ensemble of analyses: each member cold-starts from its own external IC
     self.ensAnaArgs = {}
     for mm in self.ensVerifyMembers:
-      self.ensAnaArgs[str(mm)] = self.meanAnaArgs
+      if self.NN > 1:
+        args = [
+          mm,
+          self['lengthHR'],
+          self['outIntervalHR'],
+          False,
+          self.fc.mesh.name,
+          self['DACycling'],
+          False,
+          self['updateSea'],
+          self.workDir+'/{{thisCycleDate}}'+self.memFmt.format(mm),
+          states[mm-1].directory(),
+          states[mm-1].prefix(),
+          self.updateATMVarsFromCold,
+        ]
+        self.ensAnaArgs[str(mm)] = ' '.join(['"'+str(a)+'"' for a in args])
+      else:
+        self.ensAnaArgs[str(mm)] = self.meanAnaArgs
 
   def fromInternalAnalysis(self, states:StateEnsemble):
     # mean analysis
@@ -187,6 +214,7 @@ class ExtendedForecast(Component):
       self.workDir+'/{{thisCycleDate}}/mean',
       meanInternalAnaIC.directory(),
       meanInternalAnaIC.prefix(),
+      self.updateATMVarsFromCold,
     ]
     self.meanAnaArgs = ' '.join(['"'+str(a)+'"' for a in args])
 
@@ -205,6 +233,7 @@ class ExtendedForecast(Component):
         self.workDir+'/{{thisCycleDate}}'+self.memFmt.format(mm),
         states[mm-1].directory(),
         states[mm-1].prefix(),
+        self.updateATMVarsFromCold,
       ]
       self.ensAnaArgs[str(mm)] = ' '.join(['"'+str(a)+'"' for a in args])
 

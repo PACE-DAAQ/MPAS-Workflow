@@ -38,7 +38,7 @@ class ForecastFromExternalAnalyses(SuiteBase):
     self.c['observations'] = Observations(conf, self.c['hpc'])
     self.c['members'] = Members(conf)
 
-    self.c['externalanalyses'] = ExternalAnalyses(conf, self.c['hpc'], meshes)
+    self.c['externalanalyses'] = ExternalAnalyses(conf, self.c['hpc'], meshes, self.c['members'])
     self.c['initic'] = InitIC(conf, self.c['hpc'], meshes, self.c['externalanalyses'])
 
     # Forecast object is only used to initialize parts of ExtendedForecast

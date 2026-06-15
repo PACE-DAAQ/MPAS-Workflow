@@ -126,6 +126,7 @@
     config_gocart2G_toTHOM = true
     config_gocart2G_toNTIEDTKE = true
     config_gocart2G_biobemis_interval = '00_01:00:00'
+    config_gocart2G_hno3_tau = 86400.0
     config_gocart2G_opticsBC = 'optics_BC.v1_5.nc'
     config_gocart2G_opticsBC_RRTMG = 'opticsBands_BC.v1_5.RRTMG.nc'
     config_gocart2G_opticsOC = 'optics_OC.v1_5.nc'
