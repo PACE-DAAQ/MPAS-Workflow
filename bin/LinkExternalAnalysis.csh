@@ -23,6 +23,16 @@ set ArgExternalDirectory = "$3"
 # ArgFilePrefix: common prefix for external/local files
 set ArgFilePrefix = "$4"
 
+# ArgNMembers: int, number of ensemble members (1 => single deterministic IC)
+set ArgNMembers = "$5"
+
+# ArgMemberFormat: python format string for the per-member subdirectory (e.g. "/{:02d}");
+#                  ignored when ArgNMembers == 1
+set ArgMemberFormat = "$6"
+
+# ArgMaxMembers: int, maximum members available (memberDir wraps modulo this)
+set ArgMaxMembers = "$7"
+
 set test = `echo $ArgDT | grep '^[0-9]*$'`
 set isNotInt = ($status)
 if ( $isNotInt ) then
@@ -53,11 +63,24 @@ set directory = `echo "$ArgExternalDirectory" \
   `
 echo "WorkDir = ${WorkDir}"
 mkdir -p ${WorkDir}
-cd ${WorkDir}
 
 # ================================================================================================
+# Link the pre-staged IC for each ensemble member into its own subdirectory of WorkDir.
+# For ArgNMembers == 1 memberDir returns an empty string, so this links
+#   $directory/$thisValidDate/*.nc -> $WorkDir/   (identical to the original single-IC behavior).
+# For ArgNMembers > 1 member NN is taken from $directory/$thisValidDate<memberSubdir>/ and linked
+# into $WorkDir<memberSubdir>/, where <memberSubdir> comes from ArgMemberFormat (e.g. /01, /02).
 
-ln -sfv $directory/${thisValidDate}/*.$thisMPASFileDate.nc ./
+@ member = 1
+while ( $member <= $ArgNMembers )
+  set memSub = `${memberDir} $ArgNMembers $member "${ArgMemberFormat}" -m ${ArgMaxMembers}`
+  set srcDir = "${directory}/${thisValidDate}${memSub}"
+  set dstDir = "${WorkDir}${memSub}"
+  echo "member ${member}: linking ${srcDir} -> ${dstDir}"
+  mkdir -p ${dstDir}
+  ln -sfv ${srcDir}/*.$thisMPASFileDate.nc ${dstDir}/
+  @ member++
+end
 
 date
 

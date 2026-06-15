@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-'''
+''' 
  (C) Copyright 2023 UCAR
 
  This software is licensed under the terms of the Apache Licence Version 2.0
@@ -49,10 +49,14 @@ class Forecast(Component):
     # whether to use 4D forecast outputs
     'FourD': [False, bool],
 
+    # Update IC with cold-start IC
+    'updateATMVarsFromCold': [False, bool],
+
     ## post
     # list of tasks for Post
     # e.g.: ['verifyobs', 'verifymodel']
     'post': [['verifymodel'], list]
+
   }
 
   def __init__(self,
@@ -84,6 +88,7 @@ class Forecast(Component):
 
     IAU = self['IAU']
     FourD = self['FourD']
+    updateATMVarsFromCold = self['updateATMVarsFromCold']
 
     window = workflow['CyclingWindowHR']
     subwindow = workflow['subwindow']
@@ -150,6 +155,7 @@ class Forecast(Component):
         self.workDir+'/{{thisCycleDate}}'+self.memFmt.format(mm),
         warmIC[mm-1].directory(),
         warmIC[mm-1].prefix(),
+        updateATMVarsFromCold,
       ]
       fcArgs = ' '.join(['"'+str(a)+'"' for a in args])
 

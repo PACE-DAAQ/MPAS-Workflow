@@ -13,15 +13,6 @@
                   io_type="pnetcdf,cdf5"
                   input_interval="initial_only" />
 
-<immutable_stream name="da_state"
-                  type="output"
-                  precision="{{PRECISION}}"
-                  clobber_mode="truncate"
-                  filename_template="{{FCFilePrefix}}.$Y-$M-$D_$h.$m.$s.nc"
-                  packages="jedi_da"
-                  io_type="pnetcdf,cdf5"
-                  output_interval="{{outputInterval}}" />
-
 <immutable_stream name="iau"
                   type="input"
                   precision="{{PRECISION}}"
@@ -30,6 +21,18 @@
                   packages="iau"
                   io_type="pnetcdf,cdf5"
                   input_interval="initial_only" />
+
+<stream name="dastate"
+        type="output"
+        precision="{{PRECISION}}"
+        clobber_mode="truncate"
+        filename_template="{{FCFilePrefix}}.$Y-$M-$D_$h.$m.$s.nc"
+        io_type="pnetcdf,cdf5"
+        clobber_mode="overwrite"
+        io_type="pnetcdf,cdf5"
+        output_interval="{{outputInterval}}" >
+        <file name="stream_list.atmosphere.dastate"/>
+</stream>
 
 <stream name="output"
         type="none"
@@ -59,7 +62,7 @@
 
 <stream name="anth_bc_emissions"
         type="input"
-        filename_template="x1.163842-2024-anth_black-carbon.MPAS.nc"
+        filename_template="{{anthBC}}"
         input_interval="none">
         immutable="false"
 
@@ -69,7 +72,7 @@
 
 <stream name="anth_oc_emissions"
         type="input"
-        filename_template="x1.163842-2024-anth_organic-carbon.MPAS.nc"
+        filename_template="{{anthOC}}"
         input_interval="none">
         immutable="false"
 
@@ -100,7 +103,7 @@
 
 <stream name="anth_so2_emissions"
         type="input"
-        filename_template="x1.163842-2024-anth_sulfur-dioxide.MPAS.nc"
+        filename_template="{{anthSO2}}"
         input_interval="none">
         immutable="false"
 
@@ -109,25 +112,25 @@
 
 <stream name="anth_iso_emissions"
         type="input"
-        filename_template="x1.163842-2024-anth_sulfur-dioxide.MPAS.nc"
+        filename_template="x1.163842-2024-anth_isoprene.MPAS.nc"
         input_interval="none">
         immutable="false"
 
-        <var name="so2_anth_sum"/>
+        <var name="iso_anth_sum"/>
 </stream>
 
 <stream name="anth_mnt_emissions"
         type="input"
-        filename_template="x1.163842-2024-anth_sulfur-dioxide.MPAS.nc"
+        filename_template="x1.163842-2024-anth_monoterpenes.MPAS.nc"
         input_interval="none">
         immutable="false"
 
-        <var name="so2_anth_sum"/>
+        <var name="mnt_anth_sum"/>
 </stream>
 
 <stream name="anth_co_emissions"
         type="input"
-        filename_template="x1.163842-2024-anth_carbon-monoxide.MPAS.nc"
+        filename_template="{{anthCO}}"
         input_interval="none">
         immutable="false"
 
@@ -136,7 +139,7 @@
 
 <stream name="biob_bc_emissions"
         type="input"
-        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        filename_template="{{biobBC}}"
         input_interval="none">
         immutable="false"
 
@@ -145,7 +148,7 @@
 
 <stream name="biob_oc_emissions"
         type="input"
-        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        filename_template="{{biobOC}}"
         input_interval="none">
         immutable="false"
 
@@ -154,7 +157,7 @@
 
 <stream name="biob_ni_emissions"
         type="input"
-        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        filename_template="{{biobNH3}}"
         input_interval="none">
         immutable="false"
 
@@ -163,7 +166,7 @@
 
 <stream name="biob_su_emissions"
         type="input"
-        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        filename_template="{{biobSO2}}"
         input_interval="none">
         immutable="false"
 
@@ -172,7 +175,7 @@
 
 <stream name="biob_co_emissions"
         type="input"
-        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        filename_template="{{biobCO}}"
         input_interval="none">
         immutable="false"
 
@@ -180,7 +183,7 @@
 </stream>
 <stream name="biob_iso_emissions"
         type="input"
-        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        filename_template="{{biobISO}}"
         input_interval="none">
         immutable="false"
 
@@ -189,7 +192,7 @@
 
 <stream name="biob_mnt_emissions"
         type="input"
-        filename_template="FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly.nc"
+        filename_template="{{biobMNT}}"
         input_interval="none">
         immutable="false"
 
@@ -198,7 +201,7 @@
 
 <stream name="biog_co_emissions"
         type="input"
-        filename_template="x1.163842-2024-biog_carbon-monoxide.MPAS.nc"
+        filename_template="{{biogCO}}"
         input_interval="none">
         immutable="false"
 
@@ -207,7 +210,7 @@
 
 <stream name="biog_iso_emissions"
         type="input"
-        filename_template="x1.163842-2024-biog_isoprene.MPAS.nc"
+        filename_template="{{biogISO}}"
         input_interval="none">
         immutable="false"
 
@@ -216,7 +219,7 @@
 
 <stream name="biog_mnt_emissions"
         type="input"
-        filename_template="x1.163842-2024-biog_other-monoterpenes.MPAS.nc"
+        filename_template="{{biogMNT}}"
         input_interval="none">
         immutable="false"
 
@@ -225,7 +228,7 @@
 
 <stream name="biog_apinene_emissions"
         type="input"
-        filename_template="x1.163842-2024-biog_alpha-pinene.MPAS.nc"
+        filename_template="{{biogAPIN}}"
         input_interval="none">
         immutable="false"
 
@@ -234,7 +237,7 @@
 
 <stream name="biog_bpinene_emissions"
         type="input"
-        filename_template="x1.163842-2024-biog_beta-pinene.MPAS.nc"
+        filename_template="{{biogBPIN}}"
         input_interval="none">
         immutable="false"
 

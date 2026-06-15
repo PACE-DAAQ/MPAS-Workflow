@@ -1,0 +1,54 @@
+suite: ForecastFromExternalAnalyses
+
+externalanalyses:
+  resource: "GFS.PANDAC"
+  resources:
+    GFS:
+      PANDAC:
+        60km:
+          directory: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/60kmMeshGFS/MPAS_IC
+          #directory: /glade/derecho/scratch/junpark/Example-2/TRIAL_GEFS/DATA/IC/01
+
+experiment:
+  name: 'ForecastFromPrestagedIC_GFS_20241014_24HR_NOAH_20260608'
+
+extendedforecast:
+  meanTimes: T00
+  lengthHR: 24
+  outIntervalHR: 12
+  #execute: False # uncomment if forecasts are already completed
+  # optionally turn on extended forecast post
+  post: []
+
+hpc:
+  CriticalAccount: NMMM0063
+  CriticalQueue: main
+  NonCriticalAccount: NMMM0063
+  NonCriticalQueue: main
+  NonCriticalPriority: premium
+  SingleProcAccount: NMMM0063
+  SingleProcQueue: develop
+
+members:
+  n: 1
+
+build:
+  mpas bundle: /glade/derecho/scratch/junpark/DEBUG/SD/mpas-bundle/build4
+  bundle compiler used: gnu-openmpi
+  #forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202605/gocartMPAS_COMPILE_TEST
+  gocart emission directory: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/emission/all
+
+model:
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+  # scenario-wide fallback for any member beyond the 'member variants' list
+  streams variant: cntl
+
+observations: # for optional verification
+  resource: PANDACArchive
+
+workflow:
+  first cycle point: 20241014T00
+  final cycle point: 20241014T00
+  max active cycle points: 1

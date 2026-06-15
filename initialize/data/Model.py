@@ -58,7 +58,7 @@ class Model(Component):
     ## GraphInfoDir
     # directory containing x{{meshRatio}}.{{nCells}}.graph.info* files
     #'GraphInfoDir': ['/glade/derecho/scratch/taosun/pandac/MPAS_GRAPH', str],
-    'GraphInfoDir': ['/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/MPAS_GRAPH', str],
+    'GraphInfoDir': ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/MPAS_GRAPH', str],
 
     ## precision
     # floating-point precision of all application output
@@ -68,7 +68,33 @@ class Model(Component):
     ## MPThompsonTablesDir
     # directory containing MP Thompson tables
     #'MPThompsonTablesDir': ['/glade/campaign/mmm/parc/ivette/pandac/saca/thompson_tables',str],
-    'MPThompsonTablesDir': ['/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/thompson_tables',str],
+    'MPThompsonTablesDir': ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/thompson_tables',str],
+
+    ## streams variant
+    # Selects a default GOCART emission-inventory combination (anthropogenic / biogenic /
+    # biomass-burning) for the forecast streams.atmosphere. The variant -> combination mapping
+    # lives in bin/SetStreamsVariant.csh; edit that switch to add or change combinations.
+    # OPTIONS: cntl, pert01..pert08 (see bin/SetStreamsVariant.csh). Empty string behaves like cntl.
+    # The shell switch is the authoritative list, so the value is intentionally not enum-validated
+    # here -- variants added in the shell do not require a Python change.
+    'streams variant': ['cntl', str],
+
+    ## anth emissions / biob emissions / biog emissions
+    # Optional per-dimension overrides of the 'streams variant' inventory combination. When set,
+    # each overrides only its own dimension; when empty, the variant's default is used. The
+    # inventory-name -> filename tables live in bin/SetStreamsVariant.csh.
+    # OPTIONS: anth emissions: cams|ceds|cams-mix ; biob emissions: finn|gfas|qfed ; biog emissions: cams
+    'anth emissions': ['', str],
+    'biob emissions': ['', str],
+    'biog emissions': ['', str],
+
+    ## member variants
+    # Optional per-ensemble-member emission variants. When non-empty, ensemble member NN (1-based,
+    # from Forecast.csh $ArgMember) uses memberVariants[NN] instead of the scenario-wide 'streams
+    # variant'; members beyond the list fall back to 'streams variant'. Entries are the same names
+    # as 'streams variant' (cntl, pert01..pert08, ...). Empty => all members share 'streams variant'.
+    # The selection is applied in bin/SetStreamsVariant.csh.
+    'member variants': [[], list],
   }
 
   def __init__(self, config:Config):
@@ -97,6 +123,10 @@ class Model(Component):
     self._set('StreamsFileInit', 'streams.init_'+MPASCore)
     self._set('NamelistFileInit', 'namelist.init_'+MPASCore)
     self._set('NamelistFileWPS', 'namelist.wps')
+
+    # The forecast streams.atmosphere is a single template; the emission-inventory combination is
+    # selected at run time by bin/SetStreamsVariant.csh from 'streams variant' (exported as
+    # streamsVariant) plus the optional anth/biob/biog emissions overrides.
 
     self.__meshes = {}
     for meshTyp in ['outer', 'inner', 'ensemble']:

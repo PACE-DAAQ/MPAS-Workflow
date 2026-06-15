@@ -1,0 +1,73 @@
+# Pure ensemble (GOCART2G) forecast from pre-staged per-member GEFS+MERRA initial conditions,
+# with per-member GOCART emission perturbations.
+#
+# Two independent per-member dimensions are combined here:
+#   1. IC perturbation  : each member cold-starts from its OWN pre-staged MPAS init IC (GEFS
+#      meteorology + MERRA-2 GOCART aerosols already inside the file), selected by the member-aware
+#      ExternalAnalyses resource "GEFSMERRA.PANDAC" (defined in scenarios/defaults/externalanalyses.yaml).
+#      Member NN is linked from
+#      <directory>/<thisValidDate>/<NN>/  via memberFormat "/{:02d}".
+#   2. emission perturbation : each member uses its own GOCART emission inventory combination via
+#      'model: member variants' (applied in bin/SetStreamsVariant.csh by ensemble member index).
+#
+# Suite: ForecastFromExternalAnalyses (pure forecast, no DA). The ensemble forecasts are produced by
+# ExtendedForecast; set `ensTimes` to the cycle UTC time(s) and members.n > 1 to fan out per member.
+
+suite: ForecastFromExternalAnalyses
+
+experiment:
+  name: 'gocart2g_ensFC_OIE60km_GEFSMERRA_PR_TEST'
+
+members:
+  n: 27
+
+externalanalyses:
+  # resource defined in scenarios/defaults/externalanalyses.yaml (directory/maxMembers/memberFormat there).
+  # To point at a different pre-staged location, re-add a `resources: {GEFSMERRA: {PANDAC: {60km: {...}}}}`
+  # override block here; per-key it falls back to the defaults.
+  resource: "GEFSMERRA.PANDAC"
+
+build:
+  mpas bundle: /glade/derecho/scratch/junpark/DEBUG/SD/mpas-bundle/build4
+  bundle compiler used: gnu-openmpi
+  #forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202605/gocartMPAS_COMPILE_TEST
+  gocart emission directory: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/emission/all
+
+model:
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+  # scenario-wide fallback for any member beyond the 'member variants' list
+  streams variant: cntl
+  # per-member emission variants (one entry per ensemble member; same names as 'streams variant').
+  # The variant -> inventory mapping lives in bin/SetStreamsVariant.csh (cntl, pert01..pert08).
+  member variants: [
+    cntl,   pert01, pert02, pert03, pert04, pert05, pert06, pert07, pert08,
+    cntl,   pert01, pert02, pert03, pert04, pert05, pert06, pert07, pert08,
+    cntl,   pert01, pert02, pert03, pert04, pert05, pert06, pert07, pert08,
+  ]
+
+extendedforecast:
+  ensTimes: T00          # run an ensemble of extended forecasts at this cycle time (needs members.n > 1)
+  lengthHR: 24
+  outIntervalHR: 12
+  post: []               # add verifymodel/verifyobs if desired
+
+observations: # for optional verification
+  resource: PANDACArchive
+
+hpc:
+  CriticalAccount: NMMM0063
+  CriticalQueue: main
+  CriticalPriority: premium
+  NonCriticalAccount: NMMM0063
+  NonCriticalQueue: main
+  NonCriticalPriority: premium
+  SingleProcAccount: NMMM0063
+  SingleProcQueue: develop
+
+workflow:
+  # UPDATE to a cycle covered by your pre-staged GEFS+MERRA ensemble
+  first cycle point: 20241025T00
+  final cycle point: 20241025T00
+  max active cycle points: 9

@@ -33,11 +33,10 @@ externalanalyses:
       PANDAC: # only available 20180415T00-20180525T00
         120km:
           #directory: "/glade/campaign/mmm/parc/taosun/pandac/120kmMeshGFS/MPAS_IC_NEW"
-          directory: "/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/120kmMeshGFS/MPAS_IC_NEW"
+          directory: "/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/120kmMeshGFS/MPAS_IC_NEW"
         60km:
           #directory: "/glade/campaign/mmm/parc/taosun/pandac/60kmMeshGFS/MPAS_IC_NEW"
-          #directory: "/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/60kmMeshGEFSwMERRA2/MPAS_IC_NEW/01"
-          directory: "/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/60kmMeshGFS/MPAS_IC_NEW"
+          directory: "/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/60kmMeshGFS/MPAS_IC"
         30km:
           directory: "/glade/campaign/mmm/parc/taosun/pandac/30kmMeshGFS/MPAS_IC_NEW"
         60-3km:
@@ -49,7 +48,7 @@ externalanalyses:
           - "UngribExternalAnalysis"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
-          Vtable: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
+          Vtable: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
           job:
             GetAnalysisFrom:
               retry: '1*PT20S'
@@ -59,7 +58,7 @@ externalanalyses:
           - "LinkUngribbedExternalAnalysis-{{mesh}}"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
-          Vtable: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
+          Vtable: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
           directory: /glade/campaign/mmm/parc/liuz/pandac_common/ungrib_GFS_o3
           job:
             GetAnalysisFrom:
@@ -72,10 +71,18 @@ externalanalyses:
           - "UngribExternalAnalysis"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
-          Vtable: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
+          Vtable: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
           job:
             GetAnalysisFrom:
               retry: '40*PT10M'
+    GEFSMERRA:
+      PANDAC: # per-member GEFS met + MERRA-2 GOCART aerosols, pre-staged as MPAS init ICs (link only)
+        60km:
+          # pre-staged per-member ICs at <directory>/<thisValidDate>/<NN>/x1.*.init.*.nc;
+          # everything else (filePrefix, PrepareExternalAnalysisTasks, retry, ...) inherits from `defaults`.
+          directory: "/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/60kmMeshGEFSwMERRA2/MPAS_IC"
+          maxMembers: 27
+          memberFormat: "/{:02d}"
     GDAS:
       NCEPFTP:
         common:
