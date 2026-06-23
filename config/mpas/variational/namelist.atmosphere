@@ -66,8 +66,8 @@
     config_radtsw_interval     = 'radtswInterval'
     config_o3climatology       = true
     config_bucket_update       = 'none'
-    config_physics_suite       = 'physicsSuite'
-    config_microp_scheme       = 'micropScheme'
+    config_physics_suite       = 'convection_permitting'
+    config_microp_scheme       = 'mp_thompson'
     config_convection_scheme   = 'convectionScheme'
     config_pbl_scheme          = 'pblScheme'
     config_gwdo_scheme         = 'gwdoScheme'
@@ -78,6 +78,10 @@
     config_lsm_scheme          = 'lsmScheme'
     config_microp_re           = true
 /
+    FIXME: found that MPAS-JEDI application can't be ran with MPAS-GOCART2G physics suite 
+         since model is not conducted, using them won't affect JEDI -> recheck 
+    config_physics_suite       = 'physicsSuite'
+    config_microp_scheme       = 'micropScheme'
 
 &soundings
     config_sounding_interval = 'none'
