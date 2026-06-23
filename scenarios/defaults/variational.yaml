@@ -64,7 +64,7 @@ variational:
 
           60km:
             maxMembers: 27
-            directory0: '/glade/derecho/scratch/junpark/pandac/60km_EnsFC_NOAH/{{prevDateTime}}'
+            directory0: '/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/60kmMeshGEFSwMERRA2/60km_EnsFC_NOAH/{{prevDateTime}}'
             filePrefix: mpasout
             memberNDigits: 2
 

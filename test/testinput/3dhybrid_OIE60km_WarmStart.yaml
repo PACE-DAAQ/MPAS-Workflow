@@ -12,7 +12,6 @@ forecast:
 build:
   mpas bundle: /glade/campaign/ncar/nmmm0081/Src/mpas-bundle/build
   bundle compiler used: gnu-openmpi
-  #forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202605/gocartMPAS_COMPILE_TEST
   gocart emission directory: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/emission/all
 
 hpc:
