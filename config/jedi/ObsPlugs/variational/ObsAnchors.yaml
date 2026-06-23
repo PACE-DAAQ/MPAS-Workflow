@@ -55,5 +55,19 @@ _aod crtm: &aodCRTMObsOperator
     TauCoeff_Format: netCDF
     model units coeff: 1e9
 
+_aod crtm binary: &aodCRTMObsOperator_binary
+  name: AodCRTM
+  Absorbers: [H2O, O3]
+  obs options: &AODCRTMObsOptions_binary
+    EndianType: little_endian
+    CoefficientPath: {{CRTMTABLES}}
+    AerosolCoeff_File: AerosolCoeff.GOCART-GEOS5.nc4
+    Aerosol_Model: GOCART-GEOS5
+    AerosolCoeff_Format: netCDF
+    AerosolOption: {{aodAerosolOption}}
+    SpcCoeff_Format: binary
+    TauCoeff_Format: binary
+    model units coeff: 1e9
+
 _multi iteration filter: &multiIterationFilter
   apply at iterations: 0,1,2,3,4,5

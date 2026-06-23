@@ -1,0 +1,28 @@
+- obs space:
+    <<: *ObsSpace
+    name: AodCRTM
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: {{InDBDir}}/modis_terra_aod_obs_{{thisValidDate}}.h5
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: {{OutDBDir}}/{{obsPrefix}}_modis_terra_aod.h5
+    simulated variables: [aerosolOpticalDepth]
+    channels: &aodChannels {{aodChannel}}
+  obs error: *ObsErrorDiagonal
+  obs operator:
+    name: AodCRTM
+    Absorbers: [H2O, O3]
+    obs options:
+      Sensor_ID: v.modis_terra
+      EndianType: little_endian
+      CoefficientPath: {{CRTMTABLES}}
+      AerosolCoeff_File: AerosolCoeff.GOCART-GEOS5.nc4
+      Aerosol_Model: GOCART-GEOS5
+      AerosolCoeff_Format: netCDF
+      AerosolOption: {{aodAerosolOption}}
+      SpcCoeff_Format: binary
+      TauCoeff_Format: binary
+      model units coeff: 1e9

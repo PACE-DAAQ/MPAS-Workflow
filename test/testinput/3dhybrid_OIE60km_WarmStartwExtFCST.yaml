@@ -1,0 +1,72 @@
+experiment:
+  name: '3dhybrid_OIE60km_WarmStart_AOD_30_PACE_OCI_FromOCT15_v3_NOAH' 
+externalanalyses:
+  resource: "GFS.PANDAC"
+firstbackground:
+  resource: "PANDAC.GFS"
+forecast:
+  IAU: False
+  updateATMVarsFromCold: True
+  post: []
+
+build:
+  mpas bundle: /glade/campaign/ncar/nmmm0081/Src/mpas-bundle/build
+  bundle compiler used: gnu-openmpi
+  #forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202605/gocartMPAS_COMPILE_TEST
+  gocart emission directory: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/emission/all
+
+hpc:
+  CriticalAccount: NMMM0063
+  CriticalQueue: main
+  CriticalPriority: premium
+  NonCriticalAccount: NMMM0063
+  NonCriticalQueue: main
+  NonCriticalPriority: premium
+  SingleProcAccount: NMMM0063
+  SingleProcQueue: develop
+#  SingleProcQueue: casper@casper-pbs
+
+members:
+  n: 1
+model:
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+  streams variant: cntl
+
+observations:
+  resource: PANDACArchive
+variational:
+  DAType: 3dhybrid
+  ensembleCovarianceWeight: 0.8
+  staticCovarianceWeight: 0.2
+  nInnerIterations: [50,]
+  aodChannel: 4
+  aodAerosolOption: aerosols_gocart2g_mpas
+  observers: [
+  oci_uaa_pace_aod,
+  modis_aqua_aod,
+  viirs_aod_db_npp
+]
+  monitors: [
+  modis_aqua_aod,
+  viirs_aod_db_npp
+]
+  radianceThinningDistance: 60.0
+  ensemble:
+    forecasts:
+      resource: "PANDAC.GEFS"
+  post: []
+
+extendedforecast:
+  execute: True
+  updateATMVarsFromCold: True
+  meanTimes: T00
+  ensTimes: None
+  lengthHR: 120
+  outIntervalHR: 12
+  DACycling: true
+
+workflow:
+  first cycle point: 20241014T18
+  final cycle point: 20241201T00

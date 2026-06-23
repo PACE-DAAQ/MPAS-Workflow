@@ -63,8 +63,8 @@ variational:
             # to the member iterator (i.e., 1 for member 1, 2 for member 2, etc.)
 
           60km:
-            maxMembers: 31
-            directory0: '/glade/derecho/scratch/junpark/pandac/60km_EnsFC/{{prevDateTime}}'
+            maxMembers: 27
+            directory0: '/glade/derecho/scratch/junpark/pandac/60km_EnsFC_NOAH/{{prevDateTime}}'
             filePrefix: mpasout
             memberNDigits: 2
 
@@ -123,12 +123,16 @@ variational:
       60km:
         #bumpLocPrefix: bumploc_1200.0km_6.0km
         #bumpLocDir: /glade/campaign/mmm/parc/liuz/pandac_common/BUMP_files/derecho_2.1/60km.bumploc.duplicated.limited.1200km6km
-        bumpLocPrefix: bumploc_600km6km
-        bumpLocDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/BUMP_files/60km/loc_600km6km
+        #bumpLocPrefix: bumploc_600km6km
+        #bumpLocDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/BUMP_files/60km/loc_600km6km
+        #bumpLocPrefix: bumploc_600km30km
+        #bumpLocDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/BUMP_files/60km/loc_600km30km
+        bumpLocPrefix: bumploc_1200km30km
+        bumpLocDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/BUMP_files/60km/loc_1200km30km
       120km:
         bumpLocPrefix: bumploc_1200.0km_6.0km
         #bumpLocDir: /glade/campaign/mmm/parc/liuz/pandac_common/BUMP_files/20230522_yr5/120km.bumploc.duplicated.limited.1200km6km
-        bumpLocDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/BUMP_files/20230522_yr5/120km.bumploc.duplicated.limited.1200km6km
+        bumpLocDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/BUMP_files/20230522_yr5/120km.bumploc.duplicated.limited.1200km6km
 
   # externally-produced background covariance files (var or hybrid)
   covariance:
@@ -138,6 +142,26 @@ variational:
     - air_temperature
     - water_vapor_mixing_ratio_wrt_moist_air
     - air_pressure_at_surface
+    - mass_fraction_of_hydrophobic_black_carbon_in_air
+    - mass_fraction_of_hydrophilic_black_carbon_in_air
+    - mass_fraction_of_hydrophobic_brown_carbon_in_air
+    - mass_fraction_of_hydrophilic_brown_carbon_in_air
+    - mass_fraction_of_hydrophobic_organic_carbon_in_air
+    - mass_fraction_of_hydrophilic_organic_carbon_in_air
+    - mass_fraction_of_dust001_in_air
+    - mass_fraction_of_dust002_in_air
+    - mass_fraction_of_dust003_in_air
+    - mass_fraction_of_dust004_in_air
+    - mass_fraction_of_dust005_in_air
+    - mass_fraction_of_sea_salt001_in_air
+    - mass_fraction_of_sea_salt002_in_air
+    - mass_fraction_of_sea_salt003_in_air
+    - mass_fraction_of_sea_salt004_in_air
+    - mass_fraction_of_sea_salt005_in_air
+    - mass_fraction_of_sulfate_in_air
+    - mass_fraction_of_nitrate001_in_air
+    - mass_fraction_of_nitrate002_in_air
+    - mass_fraction_of_nitrate003_in_air
     bumpCovPrefix: mpas
     bumpCovVBalPrefix: mpas
     #{{innerMesh}}:
@@ -155,20 +179,17 @@ variational:
       #bumpCovDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/NICAS
       #bumpCovStdDevFile: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/mpas.stddev.nc
       #bumpCovVBalDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/VBAL
-      #bumpCovDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/NICAS # from 201804-201806
-      #bumpCovStdDevFile: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/mpas.stddev.nc
-      #bumpCovVBalDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/VBAL
-      bumpCovDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/NICAS # 256 cores for Nov 2024
-      bumpCovStdDevFile: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/mpas.stddev.nc
-      bumpCovVBalDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/60km/VBAL
+      bumpCovDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/Bflow/60km/NICAS # 256 cores for Nov 2024
+      bumpCovStdDevFile: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/Bflow/60km/HDIAG_VAR/merge/mpas.stddev.nc
+      bumpCovVBalDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/Bflow/60km/VBAL
     120km:
       #bumpCovDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/NICAS
       #bumpCovStdDevFile: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/mpas.stddev.nc
       #bumpCovVBalDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/VBAL
       hybridCoefficientsDir: /glade/campaign/mmm/parc/liuz/pandac_hybrid/120km.allsky_hybrid
-      bumpCovDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/20251204/120km/NICAS
-      bumpCovStdDevFile: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/20251204/120km/mpas.stddev.nc
-      bumpCovVBalDir: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/Bflow/20251204/120km/VBAL
+      bumpCovDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/Bflow/20251204/120km/NICAS
+      bumpCovStdDevFile: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/Bflow/20251204/120km/mpas.stddev.nc
+      bumpCovVBalDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/Bflow/20251204/120km/VBAL
 
   # resource requirements
   job:
@@ -319,8 +340,8 @@ variational:
       # Assuming 60 total inner iterations
       60km:
         3denvar:
-          nodes: 4
-          PEPerNode: 64
+          nodes: 4 #8
+          PEPerNode: 64 #32
           memory: 235GB
           baseSeconds: 720
           secondsPerEnVarMember: 25
@@ -331,10 +352,10 @@ variational:
           baseSeconds: 600
           secondsPerEnVarMember: 10
         3dhybrid:
-          nodes: 2
-          PEPerNode: 128
+          nodes: 4
+          PEPerNode: 64
           memory: 235GB
-          baseSeconds: 250
+          baseSeconds: 1200
           secondsPerEnVarMember: 6
         3dhybrid-allsky:
           nodes: 2
