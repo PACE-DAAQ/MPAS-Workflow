@@ -9,10 +9,8 @@ forecast:
   post: []
 
 build:
-  mpas bundle: /glade/campaign/ncar/nmmm0072/MPASJEDI/build/mpas-bundle/build/
+  mpas bundle: /glade/campaign/ncar/nmmm0081/Src/mpas-bundle/build
   bundle compiler used: gnu-openmpi
-  #forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202602/gocartMPAS
-  forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202602/gocartMPAS_DEBUG
 
 hpc:
   CriticalAccount: NMMM0063

@@ -7,7 +7,6 @@ externalanalyses:
       PANDAC: # only available 20251025T00
         60km:
           directory: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/pandac/60kmMeshGEFSwMERRA2/MPAS_IC_NEW/01
-          #directory: /glade/derecho/scratch/junpark/Example-2/TRIAL_GEFS/DATA/IC/01
 
 experiment:
   name: 'ForecastFromPrestagedIC_01_GOCART_TRIAL'
@@ -36,9 +35,8 @@ model:
   outerMesh: 60km
 
 build:
-  mpas bundle: /glade/campaign/ncar/nmmm0072/MPASJEDI/build/mpas-bundle/build/
+  mpas bundle: /glade/campaign/ncar/nmmm0081/Src/mpas-bundle/build
   bundle compiler used: gnu-openmpi
-  forecast directory: /glade/derecho/scratch/junpark/gocartMPAS/gocartMPAS-A/GOCART2-2G/202602/gocartMPAS
 
 observations: # for optional verification
   resource: PANDACArchive

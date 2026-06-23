@@ -46,7 +46,7 @@ class Build(Component):
       ['/glade/campaign/mmm/parc/ivette/pandac/codeBuild/obs2iodaV3/build/bin', str],
 
     # Update ATM vars
-    'updateATMvars build directory': ['/glade/derecho/scratch/junpark/pandac', str],
+    'updateATMvars build directory': ['/glade/campaign/ncar/nmmm0081/Src/script', str],
 
     ## gocartMPAS data directories
     # Emission (resolution-dependent; default is 60km, monthly snapshot 202411)
@@ -216,7 +216,7 @@ class Build(Component):
 
     # Update MPASVars code
     # -----------
-    self._set('CopyMPASVarEXE', 'copy_mpas_vars.py.org')
+    self._set('CopyMPASVarEXE', 'copy_mpas_vars.py')
     self._set('CopyMPASVarBuildDir', self['updateATMvars build directory'])
 
     # Mean state calculator
