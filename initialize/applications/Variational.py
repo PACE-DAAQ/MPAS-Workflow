@@ -110,13 +110,26 @@ class Variational(Component):
     # iasi_metop-a
     # iasi_metop-b
     # iasi_metop-c
-    ## AOD (Aerosol Optical Depth) - PACE OCI channel 4 (550nm), GOCART-GEOS5 model
-    # ociuaa_pace_aod
+    ## AOD (Aerosol Optical Depth)
+    # oci_uaa_pace_aod 4(9)
+    # spexone_pace_aod 8(18)
+    # modis_aqua_aod 1(1)
+    # modis_terra_aod 1(1)
+    # viirs_aod_db_n20 1(1)
+    # viirs_aod_dt_n20 1(1)
+    # viirs_aod_db_npp 1(1)
+    # viirs_aod_dt_npp 1(1)
+
     'observers': [benchmarkObservations, list],
 
     ## nObsIndent
     # number of spaces to precede members of the 'observers' list in the JEDI YAML
     'nObsIndent': [4, int],
+
+    ## monitors
+    # subset of 'observers' that are monitored (H(x) computed, QC applied) but NOT assimilated.
+    # Adds 'monitoring only: true' to each named observer's entry in the assembled JEDI YAML.
+    'monitors': [[], list],
 
     ## biasCorrection
     # whether to use bias correction coefficients from VarBC

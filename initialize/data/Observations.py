@@ -21,7 +21,7 @@ from initialize.framework.HPC import HPC
 # base set of observation types assimilated in all experiments
 # not included in auto-generated experiment names
 benchmarkObservations = [
-  'ociuaa_pace_aod',
+  'oci_uaa_pace_aod',
   # anchor
 #  'aircraft',
 #  'gnssrorefncep',
@@ -84,7 +84,7 @@ class Observations(Component):
 
     ## CRTM
     #'CRTMTABLES': ['/glade/work/nystrom/Code/JEDI/jcsda_internal/CRTM_V3_coeffs/', str],
-    'CRTMTABLES': ['/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/CRTM_V3_coeffs/', str],
+    'CRTMTABLES': ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/CRTM_V3_coeffs/', str],
 
     # static directories for bias correction files
     'fixedCoeff': ['/glade/campaign/mmm/parc/jban/pandac_common/obs/satbias', str],

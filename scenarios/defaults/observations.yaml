@@ -97,117 +97,139 @@ observations:
         amsua-cld_n19: amsua_n19
         abi-clr_g16: abi_g16
         ahi-clr_himawari8: ahi_himawari8
+        viirs_aod_db_npp: viirs_aod_db_npp-thinned0p8 # Thinned
 
       IODADirectory:
         da:
           ##anchor
-          #aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          #aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
           ## aod
-          ociuaa_pace_aod: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/tempo_obs/ociuaa_pace_aod
-          gnssrobndropp1d: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrobndnbam: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrobndmo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrobndmo-nopseudo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrorefncep: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrorefncep_tunedErrors: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          #satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          #sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          #sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          satwnd: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          oci_uaa_pace_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/oci_uaa_pace_aod
+          spexone_pace_aod: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/tempo_obs/spexone_pace_aod
+          modis_aqua_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/modis_aqua_aod
+          modis_terra_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/modis_terra_aod
+          viirs_aod_db_n20: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_db_n20
+          viirs_aod_dt_n20: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_dt_n20
+          viirs_aod_db_npp: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_db_npp-thinned0p8
+          viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_dt_npp
+          gnssrobndropp1d: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrobndnbam: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrobndmo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrobndmo-nopseudo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrorefncep: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrorefncep_tunedErrors: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          #satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          #sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          #sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          satwnd: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
 
           ## amsua
-          amsua_aqua: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_n15: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_aqua: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_n15: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_aqua: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_n15: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_aqua: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_n15: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
 
           ## mhs
-          mhs_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          mhs_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          mhs_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          mhs_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          mhs_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          mhs_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          mhs_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          mhs_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
 
           ## abi
-          abi_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
-          abi-clr_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi-clr_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
 
           ## ahi
-          ahi_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
-          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
 
           ## iasi
-          iasi_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
-          iasi_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
-          iasi_metop-c: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
+          iasi_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
+          iasi_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
+          iasi_metop-c: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
 
           ## aod
-          ociuaa_pace_aod: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/tempo_obs/ociuaa_pace_aod
+          oci_uaa_pace_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/oci_uaa_pace_aod
+          spexone_pace_aod: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/tempo_obs/spexone_pace_aod
+          modis_aqua_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/modis_aqua_aod
+          modis_terra_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/modis_terra_aod
+          viirs_aod_db_n20: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_db_n20
+          viirs_aod_dt_n20: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_dt_n20
+          viirs_aod_db_npp: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_db_npp-thinned0p8
+          viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_dt_npp
 
         hofx:
           ## anchor
-          #aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          gnssrobndropp1d: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrobndnbam: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrobndmo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrobndmo-nopseudo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrorefncep: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrorefncep_tunedErrors: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          #satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          #sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          #sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          satwnd: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          #aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          gnssrobndropp1d: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrobndnbam: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrobndmo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrobndmo-nopseudo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrorefncep: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrorefncep_tunedErrors: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          #satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          #sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          #sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          satwnd: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
 
           ## amsua
-          amsua_aqua: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          amsua_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          amsua_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          amsua_n15: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          amsua_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          amsua_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          amsua-cld_aqua: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          amsua-cld_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          amsua-cld_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          amsua-cld_n15: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          amsua-cld_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          amsua-cld_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          amsua_aqua: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          amsua_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          amsua_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          amsua_n15: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          amsua_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          amsua_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          amsua-cld_aqua: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          amsua-cld_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          amsua-cld_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          amsua-cld_n15: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          amsua-cld_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          amsua-cld_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
 
           ## mhs
-          mhs_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          mhs_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          mhs_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          mhs_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          mhs_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          mhs_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          mhs_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          mhs_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
 
           ## abi
-          abi_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
-          abi-clr_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi-clr_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
 
           ## ahi
-          ahi_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
-          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
 
           ## iasi
-          iasi_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
-          iasi_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
-          iasi_metop-c: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
+          iasi_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
+          iasi_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
+          iasi_metop-c: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi/6h
 
           ## aod
-          ociuaa_pace_aod: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/tempo_obs/ociuaa_pace_aod
+          oci_uaa_pace_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/oci_uaa_pace_aod
+          spexone_pace_aod: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/tempo_obs/spexone_pace_aod
+          modis_aqua_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/modis_aqua_aod
+          modis_terra_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/modis_terra_aod
+          viirs_aod_db_n20: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_db_n20
+          viirs_aod_dt_n20: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_dt_n20
+          viirs_aod_db_npp: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_db_npp-thinned0p8
+          viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_dt_npp
 
       IODASuperObGrid:
         abi_g16: 15X15
@@ -258,107 +280,107 @@ observations:
       IODADirectory:
         da:
           ##anchor
-          #aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          gnssrobndropp1d: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          gnssrobndnbam: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          gnssrobndmo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          gnssrobndmo-nopseudo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          gnssrorefncep: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          gnssrorefncep_tunedErrors: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          #satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          #satwnd: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          #sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          #sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          satwnd: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          #aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          gnssrobndropp1d: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          gnssrobndnbam: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          gnssrobndmo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          gnssrobndmo-nopseudo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          gnssrorefncep: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          gnssrorefncep_tunedErrors: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          #satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          #satwnd: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          #sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          #sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          satwnd: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
 
           ## amsua
-          amsua_aqua: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua_n15: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua-cld_aqua: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua-cld_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua-cld_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua-cld_n15: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua-cld_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua-cld_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua_aqua: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua_n15: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua-cld_aqua: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua-cld_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua-cld_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua-cld_n15: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua-cld_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua-cld_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
 
           ## mhs
-          mhs_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          mhs_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          mhs_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          mhs_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          mhs_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          mhs_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          mhs_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          mhs_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
 
           ## abi
-          abi_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
-          abi-clr_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi-clr_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
 
           ## ahi
-          ahi_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
-          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
 
           ## iasi
-          iasi_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
-          iasi_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
-          iasi_metop-c: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
+          iasi_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
+          iasi_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
+          iasi_metop-c: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
 
         hofx:
           ## anchor
-          #aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          gnssrobndropp1d: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrobndnbam: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrobndmo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrobndmo-nopseudo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrorefncep: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrorefncep_tunedErrors: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          #satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          #satwnd: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          #sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          #sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          satwnd: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          #aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          gnssrobndropp1d: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrobndnbam: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrobndmo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrobndmo-nopseudo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrorefncep: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrorefncep_tunedErrors: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          #satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          #satwnd: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          #sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          #sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          satwnd: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
 
           ## amsua
-          amsua_aqua: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_n15: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_aqua: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_n15: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_aqua: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_n15: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_aqua: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_n15: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
 
           ## mhs
-          mhs_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          mhs_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          mhs_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          mhs_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          mhs_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          mhs_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          mhs_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          mhs_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
 
           ## abi
-          abi_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
-          abi-clr_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi-clr_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
 
           ## ahi
-          ahi_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
-          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
 
           ## iasi
-          iasi_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
-          iasi_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
-          iasi_metop-c: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
+          iasi_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
+          iasi_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
+          iasi_metop-c: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
 
       IODASuperObGrid:
         abi_g16: 15X15
@@ -410,7 +432,7 @@ observations:
         da:
           ##anchor
           #aircraft: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
-          aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
           gnssrobndropp1d: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
           gnssrobndnbam: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
           gnssrobndmo: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
@@ -421,10 +443,10 @@ observations:
           #satwnd: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
           #sfc: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
           #sondes: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
-          satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          satwnd: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          satwnd: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
 
           ## amsua
           amsua_aqua: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
@@ -462,7 +484,7 @@ observations:
         hofx:
           ## anchor
           #aircraft: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
-          aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
           gnssrobndropp1d: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
           gnssrobndnbam: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
           gnssrobndmo: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
@@ -473,10 +495,10 @@ observations:
           #satwnd: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
           #sfc: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
           #sondes: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
-          satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          satwnd: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          satwnd: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
 
           ## amsua
           amsua_aqua: /glade/scratch/jban/pandac/obsiodav3_intScanP_20230812/2018/raw_obs
@@ -555,18 +577,18 @@ observations:
 
       IODADirectory:
         da:
-          common: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/GenerateObs/Observations
-          abi_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
-          abi-clr_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
-          ahi_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
-          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          common: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/GenerateObs/Observations
+          abi_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi-clr_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          ahi_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
 
         hofx:
-          common: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/GenerateObs/Observations
-          abi_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
-          abi-clr_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
-          ahi_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
-          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          common: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/GenerateObs/Observations
+          abi_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi-clr_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          ahi_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
 
       IODASuperObGrid:
         abi_g16: 15X15
@@ -602,108 +624,108 @@ observations:
 
         da:
           ##anchor
-          #aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          gnssrobndropp1d: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          gnssrobndnbam: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          gnssrobndmo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          gnssrobndmo-nopseudo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          gnssrorefncep: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          gnssrorefncep_tunedErrors: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          #satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          #satwnd: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          #sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          #sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          satwnd: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          #aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          gnssrobndropp1d: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          gnssrobndnbam: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          gnssrobndmo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          gnssrobndmo-nopseudo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          gnssrorefncep: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          gnssrorefncep_tunedErrors: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          #satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          #satwnd: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          #sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          #sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          satwnd: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
 
           ## amsua
-          amsua_aqua: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua_n15: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua-cld_aqua: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua-cld_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua-cld_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua-cld_n15: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua-cld_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          amsua-cld_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua_aqua: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua_n15: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua-cld_aqua: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua-cld_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua-cld_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua-cld_n15: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua-cld_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          amsua-cld_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
 
           ## mhs
-          mhs_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          mhs_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          mhs_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
-          mhs_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          mhs_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          mhs_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          mhs_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
+          mhs_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/no_bias
 
           ## abi
-          abi_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
-          abi-clr_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi-clr_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
 
           ## ahi
-          ahi_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
-          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
 
           ## iasi
-          iasi_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
-          iasi_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
-          iasi_metop-c: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
+          iasi_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
+          iasi_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
+          iasi_metop-c: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
 
         hofx:
           ## anchor
-          #aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          aircraft: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          gnssrobndropp1d: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrobndnbam: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrobndmo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrobndmo-nopseudo: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrorefncep: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          gnssrorefncep_tunedErrors: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          #satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          #satwnd: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
-          #sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          #sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
-          satwind: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          satwnd: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sfc: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
-          sondes: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obs2ioda/conv_obs
+          #aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          aircraft: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          gnssrobndropp1d: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrobndnbam: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrobndmo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrobndmo-nopseudo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrorefncep: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          gnssrorefncep_tunedErrors: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          #satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          #satwnd: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/raw_obs
+          #sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          #sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
+          satwind: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          satwnd: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sfc: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
+          sondes: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obs2ioda/conv_obs
 
           ## amsua
-          amsua_aqua: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_n15: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_aqua: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_n15: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          amsua-cld_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_aqua: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_n15: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_aqua: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_n15: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          amsua-cld_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
 
           ## mhs
-          mhs_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          mhs_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          mhs_n18: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
-          mhs_n19: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          mhs_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          mhs_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          mhs_n18: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
+          mhs_n19: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/bias_corr
 
           ## abi
           abi_g16: /glade/campaign/mmm/parc/ivette/pandac/saca/obs/ioda_v3_60-3km
-          #abi_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
-          abi-clr_g16: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          #abi_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
+          abi-clr_g16: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/ABIASR/IODANC_THIN15KM_SUPEROB15X15_no-bias-correct
 
           ## ahi
-          ahi_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
-          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
+          ahi-clr_himawari8: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/AHIASR/IODANC_SUPEROB15X15_no-bias-correct
 
           ## iasi
-          iasi_metop-a: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
-          iasi_metop-b: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
-          iasi_metop-c: /glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
+          iasi_metop-a: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
+          iasi_metop-b: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
+          iasi_metop-c: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/iasi_thin145km
 
       IODASuperObGrid:
         abi_g16: 15X15

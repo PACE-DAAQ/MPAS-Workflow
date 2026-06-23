@@ -146,7 +146,7 @@ foreach fileGlob ($MPASLookupFileGlobs)
   ln -sfv ${MPASLookupDir}/*${fileGlob} .
 end
 
-if (${MicrophysicsOuter} == 'mp_thompson' ) then
+if (${MicrophysicsOuter} == 'mp_thompson' ||${MicrophysicsOuter} == 'mp_thompson_gocart2G' ) then
   ln -svf $MPThompsonTablesDir/* .
 endif
 
@@ -376,6 +376,16 @@ foreach instrument ($observers)
       echo "${instrument} data is present and selected; adding ${instrument} to the YAML"
       sed 's@^@'"$obsIndent"'@' ${SUBYAML}.yaml >> $observationsYAML
       @ found++
+      # 'monitoring only' is an observer-level key belonging to the base block; inject it right
+      # after the base stub (and before filters) for observers listed in the scenario 'monitors' key
+      if ("$subdir" == base) then
+        foreach m ($monitors)
+          if ("$instrument" == "$m") then
+            echo "${obsIndent}  monitoring only: true" >> $observationsYAML
+            break
+          endif
+        end
+      endif
     else
       echo "${instrument} data is selected, but missing; NOT adding ${instrument} to the YAML"
     endif
