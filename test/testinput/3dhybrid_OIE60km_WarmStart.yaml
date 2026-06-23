@@ -44,11 +44,15 @@ variational:
   aodAerosolOption: aerosols_gocart2g_mpas
   observers: [
   oci_uaa_pace_aod,
+  sfc,
+  sondes,
   modis_aqua_aod,
   viirs_aod_db_npp
 ]
   monitors: [
   modis_aqua_aod,
+  sfc,
+  sondes,
   viirs_aod_db_npp
 ]
   radianceThinningDistance: 60.0
