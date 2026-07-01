@@ -1,0 +1,12 @@
+  obs filters:
+  # convert model HofX (kg/m3) to observed units (ug/m3) via a 1e9 scaling
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedHofX/particulatematter2p5Surface
+      type: float
+      function:
+        name: ObsFunction/LinearCombination
+        options:
+          variables: [HofX0/particulatematter2p5Surface]
+          coefs: [1e9]
+  # additional QC (Domain Check / Bounds Check / Gaussian Thinning) can be added here as needed
