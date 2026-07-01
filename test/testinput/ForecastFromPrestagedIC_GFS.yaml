@@ -24,7 +24,7 @@ hpc:
   CriticalQueue: main
   NonCriticalAccount: NMMM0063
   NonCriticalQueue: main
-  NonCriticalPriority: premium
+  NonCriticalPriority: regular
   SingleProcAccount: NMMM0063
   SingleProcQueue: develop
 
