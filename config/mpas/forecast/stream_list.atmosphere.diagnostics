@@ -127,3 +127,11 @@ ssEXTTAU
 suEXTTAU
 brEXTTAU
 niEXTTAU
+firesize_avg
+firesize_std
+frp_avg
+frp_std
+k1_injH_bot
+k2_injH_top
+injH_bot
+injH_top

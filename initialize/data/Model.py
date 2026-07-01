@@ -95,6 +95,13 @@ class Model(Component):
     # as 'streams variant' (cntl, pert01..pert08, ...). Empty => all members share 'streams variant'.
     # The selection is applied in bin/SetStreamsVariant.csh.
     'member variants': [[], list],
+
+    ## PRM (plume rise model) namelist flags (&plumerisemodel in config/mpas/forecast/namelist.atmosphere)
+    # Exported as doBburnPrm / doFrp and substituted into the namelist by bin/Forecast.csh.
+    # 'do bburn prm': enable biomass-burning plume rise (config_do_bburnPRM).
+    # 'do frp'      : use Fire Radiative Power instead of area-based emissions (config_do_FRP).
+    'do bburn prm': [False, bool],
+    'do frp': [False, bool],
   }
 
   def __init__(self, config:Config):

@@ -244,4 +244,13 @@
         <var name="mntb_biog_megan"/>
 </stream>
 
+<stream name="prm_lbc_area_avg"
+        type="input"
+        filename_template="{{prmArea}}"
+        input_interval="none">
+        immutable="false"
+        
+        <var name="area_biob_modis"/>
+</stream>
+
 </streams>

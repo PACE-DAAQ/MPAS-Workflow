@@ -202,6 +202,9 @@ ln -sfv ${EmissionDir}/* .
 ln -sfv ${BackgroundLUTDir}/* . # this may be required for init_atmosphere, not atmosphere
 ln -sfv ${OpticsDir}/* .
 
+# Link PRM (plume rise model) static AREA input (always used by the forecast template)
+ln -sfv ${PRMAreaDir}/* .
+
 
 ## link stream_list configs
 foreach staticfile ( \
@@ -222,6 +225,10 @@ sed -i 's@{{InvariantFieldsPrefix}}@'${localInvariantFieldsPrefix}'@' ${StreamsF
 sed -i 's@{{ICFilePrefix}}@'${ICFilePrefix}'@' ${StreamsFile}
 sed -i 's@{{FCFilePrefix}}@'${FCFilePrefix}'@' ${StreamsFile}
 sed -i 's@{{PRECISION}}@'${model__precision}'@' ${StreamsFile}
+
+## resolve the PRM (plume rise model) AREA filename (mesh-tokenized) into the streams file
+set prmAreaFile = `echo "${PRMAreaFile}" | sed 's@{{nCells}}@'${nCells}'@'`
+sed -i 's@{{prmArea}}@'${prmAreaFile}'@' ${StreamsFile}
 
 ## select GOCART emission inventories (anth/biog/biob) and substitute the {{...}} emission placeholders
 source ${mainScriptDir}/bin/SetStreamsVariant.csh
@@ -360,6 +367,12 @@ sed -i 's@radtLWScheme@'${RadiationLW}'@' $NamelistFile
 sed -i 's@radtSWScheme@'${RadiationSW}'@' $NamelistFile
 sed -i 's@sfcLayerScheme@'${SfcLayer}'@' $NamelistFile
 sed -i 's@lsmScheme@'${LSM}'@' $NamelistFile
+
+## PRM (plume rise model) flags -> Fortran logicals (lower-case True/False from config/auto/model.csh)
+set prmBburn = `echo "${doBburnPrm}" | tr '[A-Z]' '[a-z]'`
+set prmFRP   = `echo "${doFrp}" | tr '[A-Z]' '[a-z]'`
+sed -i 's@PRMbburnFlag@'${prmBburn}'@' $NamelistFile
+sed -i 's@PRMfrpFlag@'${prmFRP}'@' $NamelistFile
 
 if ( ${ArgFCLengthHR} == 0 ) then
   ## zero-length forecast case (NOT CURRENTLY USED)
