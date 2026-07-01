@@ -16,7 +16,7 @@
 suite: ForecastFromExternalAnalyses
 
 experiment:
-  name: 'gocart2g_ensFC_OIE60km_GEFSMERRA_PR_TEST'
+  name: 'gocart2g_ensFC_OIE60km_GEFSMERRA_7DAY'
 
 members:
   n: 27
@@ -38,6 +38,7 @@ model:
   ensembleMesh: 60km
   # scenario-wide fallback for any member beyond the 'member variants' list
   streams variant: cntl
+  do bburn prm: true
   # per-member emission variants (one entry per ensemble member; same names as 'streams variant').
   # The variant -> inventory mapping lives in bin/SetStreamsVariant.csh (cntl, pert01..pert08).
   member variants: [
@@ -48,7 +49,7 @@ model:
 
 extendedforecast:
   ensTimes: T00          # run an ensemble of extended forecasts at this cycle time (needs members.n > 1)
-  lengthHR: 24
+  lengthHR: 168
   outIntervalHR: 12
   post: []               # add verifymodel/verifyobs if desired
 

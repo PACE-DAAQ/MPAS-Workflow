@@ -9,7 +9,7 @@ externalanalyses:
           directory: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/60kmMeshGFS/MPAS_IC
 
 experiment:
-  name: 'ForecastFromPrestagedIC_GFS_20241014_24HR_NOAH_20260608'
+  name: 'ForecastFromPrestagedIC_GFS_20241014_24HR_NOAH_PRM'
 
 extendedforecast:
   meanTimes: T00
@@ -42,6 +42,7 @@ model:
   ensembleMesh: 60km
   # scenario-wide fallback for any member beyond the 'member variants' list
   streams variant: cntl
+  do bburn prm: true   # enable biomass-burning plume rise for this forecast (config_do_bburnPRM)
 
 observations: # for optional verification
   resource: PANDACArchive

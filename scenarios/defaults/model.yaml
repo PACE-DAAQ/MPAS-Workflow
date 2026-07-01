@@ -8,6 +8,9 @@ model:
   #   anth emissions: cams | ceds | cams-mix
   #   biob emissions: finn | gfas | qfed
   #   biog emissions: cams
+  # PRM (plume rise model) namelist flags for &plumerisemodel (defaults shown; both off by default):
+  #   do bburn prm: false   # config_do_bburnPRM  (set true to enable biomass-burning plume rise)
+  #   do frp: false         # config_do_FRP
   resources:
     #{{mesh}}:
     #  meshRatio: 1 for uniform meshes

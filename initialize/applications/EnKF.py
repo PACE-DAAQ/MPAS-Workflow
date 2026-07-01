@@ -80,6 +80,11 @@ class EnKF(Component):
     # number of spaces to precede members of the 'observers' list in the JEDI YAML
     'nObsIndent': [2, int],
 
+    ## monitors
+    # subset of 'observers' that are monitored (H(x) computed, QC applied) but NOT assimilated.
+    # Adds 'monitoring only: true' to each named observer's entry in the assembled JEDI YAML.
+    'monitors': [[], list],
+
     ## biasCorrection
     # whether to use bias correction coefficients from VarBC
     # OPTIONS: False (not enabled yet)

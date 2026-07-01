@@ -60,6 +60,14 @@ class Build(Component):
     # Optics
     'gocart optics directory':
       ['/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/optics', str],
+
+    ## PRM (plume rise model) static input
+    # directory holding the biomass-burning AREA file linked into every gocart forecast
+    'prm area directory':
+      ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/prm', str],
+    # AREA filename; '{{nCells}}' is resolved to the mesh nCells at run time in bin/Forecast.csh
+    'prm area file':
+      ['FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.{{nCells}}.static_daily_oct01-nov30.nc', str],
   }
 
   def __init__(self, config:Config, model:Model=None):
@@ -230,6 +238,10 @@ class Build(Component):
     self._set('EmissionDir', self['gocart emission directory'])
     self._set('BackgroundLUTDir', self['gocart background lut directory'])
     self._set('OpticsDir', self['gocart optics directory'])
+
+    # PRM (plume rise model) static AREA input
+    self._set('PRMAreaDir', self['prm area directory'])
+    self._set('PRMAreaFile', self['prm area file'])
 
     self._cshVars = list(self._vtable.keys())
     self.log('self._cshVars ' + str(self._cshVars), level=self.MSG_NOISY)
