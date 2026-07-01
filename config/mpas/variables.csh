@@ -70,6 +70,7 @@ set StandardStateVariables = ( \
   tslb \
   pressure_p \
   relative_humidity \
+  particulatematter2p5Surface \
 )
 
 set MPASJEDIVariablesFiles = (\

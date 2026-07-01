@@ -1,0 +1,21 @@
+- obs space:
+    <<: *ObsSpace
+    name: openaq_pm25_particulatematter2p5Surface
+    _obsdatain: &ObsDataIn
+      engine:
+        type: H5File
+        obsfile: {{InDBDir}}/openaq_pm25_obs_{{thisValidDate}}.h5
+        missing file action: warn
+    _obsdataout: &ObsDataOut
+      engine:
+        type: H5File
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_openaq_pm25{{ObsOutSuffix}}.h5
+    obsdatain:
+      <<: *{{ObsDataIn}}
+    {{ObsDataOut}}
+    simulated variables: [particulatematter2p5Surface]
+  obs error: *ObsErrorDiagonal
+  <<: *horizObsLoc
+  obs operator:
+    name: Identity
+    variables: [particulatematter2p5Surface]

@@ -113,6 +113,8 @@ observations:
           viirs_aod_dt_n20: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_dt_n20
           viirs_aod_db_npp: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_db_npp-thinned0p8
           viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_dt_npp
+          ## surface PM2.5
+          openaq_pm25: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/openaq_pm25
           gnssrobndropp1d: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
           gnssrobndnbam: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
           gnssrobndmo: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/obsiodav3_intScanP_20230927/2018/conv_obs
@@ -230,6 +232,8 @@ observations:
           viirs_aod_dt_n20: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_dt_n20
           viirs_aod_db_npp: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_db_npp-thinned0p8
           viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/viirs_aod_dt_npp
+          ## surface PM2.5
+          openaq_pm25: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/openaq_pm25
 
       IODASuperObGrid:
         abi_g16: 15X15
