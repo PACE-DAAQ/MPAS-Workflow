@@ -7,6 +7,6 @@
       function:
         name: ObsFunction/LinearCombination
         options:
-          variables: [HofX0/particulatematter2p5Surface]
+          variables: [HofX/particulatematter2p5Surface]
           coefs: [1e9]
   # additional QC (Domain Check / Bounds Check / Gaussian Thinning) can be added here as needed

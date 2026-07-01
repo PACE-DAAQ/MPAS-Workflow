@@ -17,10 +17,10 @@ build:
 hpc:
   CriticalAccount: NMMM0063
   CriticalQueue: main
-  CriticalPriority: premium
+  CriticalPriority: regular
   NonCriticalAccount: NMMM0063
   NonCriticalQueue: main
-  NonCriticalPriority: premium
+  NonCriticalPriority: regular
   SingleProcAccount: NMMM0063
   SingleProcQueue: develop
 #  SingleProcQueue: casper@casper-pbs
