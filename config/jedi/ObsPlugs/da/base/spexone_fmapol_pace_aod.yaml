@@ -4,16 +4,16 @@
     _obsdatain: &ObsDataIn
       engine:
         type: H5File
-        obsfile: {{InDBDir}}/spexone_pace_aod_obs_{{thisValidDate}}.h5
+        obsfile: {{InDBDir}}/spexone_fmapol_pace_aod_obs_{{thisValidDate}}.h5
     _obsdataout: &ObsDataOut
       engine:
         type: H5File
-        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_spexone_pace_aod{{ObsOutSuffix}}.h5
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_spexone_fmapol_pace_aod{{ObsOutSuffix}}.h5
     obsdatain:
       <<: *{{ObsDataIn}}
     {{ObsDataOut}}
     simulated variables: [aerosolOpticalDepth]
-    channels: 8 # 550 nm among 18 channelss
+    channels: 22 # 548nm (closest to 550 nm) among 22 channels
   obs error: *ObsErrorDiagonal
   <<: *horizObsLoc
   obs operator:

@@ -1,5 +1,5 @@
 experiment:
-  name: '3dhybrid_OIE60km_WarmStart_AOD_30_PACE_OCI_FromOCT15_v3_NOAH' 
+  name: 'test1'
 externalanalyses:
   resource: "GFS.PANDAC"
 firstbackground:
@@ -74,4 +74,4 @@ extendedforecast:
 
 workflow:
   first cycle point: 20241014T18
-  final cycle point: 20241201T00
+  final cycle point: 20241015T00
