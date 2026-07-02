@@ -166,7 +166,7 @@ observations:
           spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod
           aeronet_l15_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l15_aod
 
-          ## Surface PM2.5
+          ## surface PM2.5
           openaq_pm25: /glade/campaign/ncar/nmmm0081/input/obs/openaq_pm25
 
         hofx:
@@ -233,7 +233,7 @@ observations:
           spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod
           aeronet_l15_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l15_aod
 
-          ## Surface PM2.5
+          ## surface PM2.5
           openaq_pm25: /glade/campaign/ncar/nmmm0081/input/obs/openaq_pm25
 
       IODASuperObGrid:
