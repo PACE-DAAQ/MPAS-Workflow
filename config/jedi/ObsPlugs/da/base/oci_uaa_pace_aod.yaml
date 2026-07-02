@@ -21,4 +21,4 @@
     <<: *aodCRTMObsOperator
     obs options:
       <<: *AODCRTMObsOptions
-      Sensor_ID: v.pace_oci
+      Sensor_ID: v.oci_uaa

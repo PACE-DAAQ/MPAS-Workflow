@@ -13,11 +13,11 @@
       <<: *{{ObsDataIn}}
     {{ObsDataOut}}
     simulated variables: [aerosolOpticalDepth]
-    channels: 22 # 548nm (closest to 550 nm) among 22 channels
+    channels: 8,22,31 # 548nm (closest to 550 nm) among 34 channels
   obs error: *ObsErrorDiagonal
   <<: *horizObsLoc
   obs operator:
     <<: *aodCRTMObsOperator
     obs options:
       <<: *AODCRTMObsOptions
-      Sensor_ID: v.pace_spexone
+      Sensor_ID: v.spexone_fmapol

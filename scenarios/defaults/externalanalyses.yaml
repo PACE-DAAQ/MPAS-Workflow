@@ -48,7 +48,7 @@ externalanalyses:
           - "UngribExternalAnalysis"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
-          Vtable: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
+          Vtable: /glade/campaign/ncar/nmmm0081/input/mpas/Vtables/Vtable.GFS.O3MR
           job:
             GetAnalysisFrom:
               retry: '1*PT20S'
@@ -58,7 +58,7 @@ externalanalyses:
           - "LinkUngribbedExternalAnalysis-{{mesh}}"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
-          Vtable: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
+          Vtable: /glade/campaign/ncar/nmmm0081/input/mpas/Vtables/Vtable.GFS.O3MR
           directory: /glade/campaign/mmm/parc/liuz/pandac_common/ungrib_GFS_o3
           job:
             GetAnalysisFrom:
@@ -71,7 +71,7 @@ externalanalyses:
           - "UngribExternalAnalysis"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
-          Vtable: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
+          Vtable: /glade/campaign/ncar/nmmm0081/input/mpas/Vtables/Vtable.GFS.O3MR
           job:
             GetAnalysisFrom:
               retry: '40*PT10M'

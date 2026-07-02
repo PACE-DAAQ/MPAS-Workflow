@@ -20,4 +20,4 @@
     <<: *aodCRTMObsOperator
     obs options:
       <<: *AODCRTMObsOptions
-      Sensor_ID: v.pace_spexone
+      Sensor_ID: v.spexone_remotap
