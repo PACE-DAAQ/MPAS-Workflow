@@ -1,5 +1,5 @@
 experiment:
-  name: 'test_verifyobs'
+  name: '3dhybrid_OIE60km_WarmStart_AOD_30_PACE_OCI_FromOCT15_v3_NOAH_CYCLE_ONLY'
 externalanalyses:
   resource: "GFS.PANDAC"
 firstbackground:
@@ -61,7 +61,7 @@ variational:
   ensemble:
     forecasts:
       resource: "PANDAC.GEFS"
-  post: [verifyobs]
+  post: []
 workflow:
   first cycle point: 20241014T18
-  final cycle point: 20241015T00
+  final cycle point: 20241201T00
