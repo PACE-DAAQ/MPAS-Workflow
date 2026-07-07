@@ -14,7 +14,7 @@
       <<: *{{ObsDataIn}}
     {{ObsDataOut}}
     simulated variables: [aerosolOpticalDepth]
-    channels: 2,4,6,8
+    channels: 1-8
   obs error: *ObsErrorDiagonal
   <<: *horizObsLoc
   obs operator:

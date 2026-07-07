@@ -16,7 +16,7 @@
     action:
       name: reject
 #  - filter: Background Check
-#    channels: 8
+#    channels: 2
 #    threshold: 3.0
 #    action:
 #      name: inflate error
@@ -30,7 +30,7 @@
 #    defer to post: true
 #    filter variables:
 #    - name: aerosolOpticalDepth
-#      channels: 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+#      channels: 1-4
   - filter: Perform Action
     filter variables:
     - name: aerosolOpticalDepth

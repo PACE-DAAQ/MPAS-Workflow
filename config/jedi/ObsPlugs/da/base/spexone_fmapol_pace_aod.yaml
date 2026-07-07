@@ -13,7 +13,7 @@
       <<: *{{ObsDataIn}}
     {{ObsDataOut}}
     simulated variables: [aerosolOpticalDepth]
-    channels: 8,22,31 # 548nm (closest to 550 nm) among 34 channels
+    channels: 7,22,32 # 443, 548, and 677nm for 550nm and AE comparison
   obs error: *ObsErrorDiagonal
   <<: *horizObsLoc
   obs operator:
