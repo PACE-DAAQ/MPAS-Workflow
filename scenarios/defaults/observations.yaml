@@ -99,11 +99,6 @@ observations:
         ahi-clr_himawari8: ahi_himawari8
         viirs_aod_db_npp: viirs_aod_db_npp-thinned0p8 # Thinned
         viirs_aod_db_n20: viirs_aod_db_n20-thinned0p8 # Thinned
-        oci_uaa_pace_aod-exp2: oci_uaa_pace_aod 
-        oci_uaa_pace_aod-exp13: oci_uaa_pace_aod 
-        spexone_fmapol_pace_aod-exp3: spexone_fmapol_pace_aod
-        spexone_remotap_pace_aod-exp3: spexone_remotap_pace_aod
-        harp2_fmapol_pace_aod-exp3: harp2_fmapol_pace_aod
 
       IODADirectory:
         da:
