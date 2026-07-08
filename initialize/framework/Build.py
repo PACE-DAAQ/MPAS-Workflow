@@ -46,25 +46,25 @@ class Build(Component):
       ['/glade/campaign/mmm/parc/ivette/pandac/codeBuild/obs2iodaV3/build/bin', str],
 
     # Update ATM vars
-    'updateATMvars build directory': ['/glade/campaign/ncar/nmmm0081/Src/script', str],
+    #'updateATMvars build directory': ['/glade/campaign/ncar/nmmm0081/Src/script', str],
 
     ## gocartMPAS data directories
     # Emission (resolution-dependent; default is 60km, monthly snapshot 202411)
     'gocart emission directory':
-      ['/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/emission_202411/60km', str],
+      ['/glade/campaign/ncar/nmmm0081/input/mpas/emissions/all', str],
 
     # Background LUT
     'gocart background lut directory':
-      ['/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/backgrounds', str],
+      ['/glade/campaign/ncar/nmmm0081/input/initialization/gocart2g_bkg', str],
 
     # Optics
     'gocart optics directory':
-      ['/glade/campaign/ncar/nmmm0072/Data/MPAS-Workflow/gocart2g/optics', str],
+      ['/glade/campaign/ncar/nmmm0081/input/mpas/optics/latest', str]
 
     ## PRM (plume rise model) static input
     # directory holding the biomass-burning AREA file linked into every gocart forecast
     'prm area directory':
-      ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/prm', str],
+      ['/glade/campaign/ncar/nmmm0081/input/mpas/emissions/PRM', str]
     # AREA filename; '{{nCells}}' is resolved to the mesh nCells at run time in bin/Forecast.csh
     'prm area file':
       ['FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.{{nCells}}.static_daily_oct01-nov30.nc', str],
@@ -224,8 +224,8 @@ class Build(Component):
 
     # Update MPASVars code
     # -----------
-    self._set('CopyMPASVarEXE', 'copy_mpas_vars.py')
-    self._set('CopyMPASVarBuildDir', self['updateATMvars build directory'])
+    #self._set('CopyMPASVarEXE', 'copy_mpas_vars.py')
+    #self._set('CopyMPASVarBuildDir', self['updateATMvars build directory'])
 
     # Mean state calculator
     # ---------------------
