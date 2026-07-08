@@ -15,12 +15,12 @@
     maxvalue: 4.9
     action:
       name: reject
-#  - filter: Background Check
-#    channels: *aodChannels
-#    threshold: 3.0
-#    action:
-#      name: inflate error
-#      inflation factor: 3.0
+  - filter: Background Check
+    channels: *aodChannels
+    threshold: 3.0
+    action:
+      name: inflate error
+      inflation factor: 3.0
   - filter: Gaussian Thinning
     horizontal_mesh: {{RADTHINDISTANCE}}
 #    select_mean: true
