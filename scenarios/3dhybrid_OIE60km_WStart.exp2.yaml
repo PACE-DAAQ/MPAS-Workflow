@@ -54,7 +54,7 @@ variational:
   sfc,
   sondes,
   aircraft,
-  oci_uaa_pace_aod-exp2,
+  oci_uaa_pace_aod,
   modis_aqua_aod,
   viirs_aod_db_npp,
   openaq_pm25,
@@ -67,7 +67,7 @@ variational:
   sfc,
   sondes,
   aircraft,
-  #oci_uaa_pace_aod-exp2,
+  #oci_uaa_pace_aod,
   modis_aqua_aod,
   viirs_aod_db_npp,
   openaq_pm25,
@@ -87,7 +87,7 @@ verifymodel:
   script directory: /glade/work/swei/projects/mmm.pace_aod/repos/mpas-bundle/mpas-jedi/graphics/
 
 extendedforecast:
-  execute: False
+  execute: True
   updateATMVarsFromCold: True
   updateSea: True
   meanTimes: T00
