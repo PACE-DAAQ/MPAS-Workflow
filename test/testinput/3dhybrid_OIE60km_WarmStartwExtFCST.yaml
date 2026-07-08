@@ -12,7 +12,10 @@ forecast:
 build:
   mpas bundle: /glade/campaign/ncar/nmmm0081/Src/mpas-bundle/build
   bundle compiler used: gnu-openmpi
-  gocart emission directory: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/emission/all
+  gocart emission directory: /glade/campaign/ncar/nmmm0081/input/mpas/emissions/all/
+  gocart background lut directory: /glade/campaign/ncar/nmmm0081/input/initialization/gocart2g_bkg
+  gocart optics directory: /glade/campaign/ncar/nmmm0081/input/mpas/optics/latest/
+  prm area directory: /glade/campaign/ncar/nmmm0081/input/mpas/emissions/PRM
 
 hpc:
   CriticalAccount: NMMM0063
