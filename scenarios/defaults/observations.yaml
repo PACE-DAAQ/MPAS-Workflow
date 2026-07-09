@@ -162,7 +162,7 @@ observations:
           viirs_aod_db_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_npp-thinned0p8
           viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_npp
           harp2_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/harp2_fmapol_pace_aod
-          spexone_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod
+          spexone_remotap_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod
           spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod
           aeronet_l15_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l15_aod
 
@@ -229,7 +229,7 @@ observations:
           viirs_aod_db_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_npp-thinned0p8
           viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_npp
           harp2_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/harp2_fmapol_pace_aod
-          spexone_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod
+          spexone_remotap_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod
           spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod
           aeronet_l15_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l15_aod
 

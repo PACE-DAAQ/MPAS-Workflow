@@ -410,7 +410,8 @@ if ("${updateATMVarsFromCold}" == True) then
   cp -rL ${ExternalAnalysesWorkDir}/${ArgMesh}/${thisCycleDate}/x1.${nCells}.init.${icFileExt} ${icFile}
   #module load nco
   #ncks -A -v qbcphobic,qbcphilic,qbrphobic,qbrphilic,qocphobic,qocphilic,qdust1,qdust2,qdust3,qdust4,qdust5,qni1,qni2,qni3,qso2,qso2v,qso4,qso4v,qseas1,qseas2,qseas3,qseas4,qseas5,qdms,qnh3,qnh4a,qsoapa,qsoapbb,qsoapbg,background_dms,background_h2o2,background_oh,background_no3,background_hno3,background_ptrop,qmsa ${icFile}_tmp ${icFile}
-  python3 ${CopyMPASVarBuildDir}/${CopyMPASVarEXE} ${icFile}_tmp ${icFile}
+  #python3 ${CopyMPASVarBuildDir}/${CopyMPASVarEXE} ${icFile}_tmp ${icFile}
+  python3 ${mainScriptDir}/tools/copy_mpas_vars.py ${icFile}_tmp ${icFile}
 endif
 
   set log = log.${MPASCore}.0000.out
