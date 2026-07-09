@@ -57,8 +57,7 @@ class Model(Component):
   variablesWithDefaults = {
     ## GraphInfoDir
     # directory containing x{{meshRatio}}.{{nCells}}.graph.info* files
-    #'GraphInfoDir': ['/glade/derecho/scratch/taosun/pandac/MPAS_GRAPH', str],
-    'GraphInfoDir': ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/MPAS_GRAPH', str],
+    'GraphInfoDir': ['/glade/derecho/scratch/taosun/pandac/MPAS_GRAPH', str],
 
     ## precision
     # floating-point precision of all application output
@@ -67,8 +66,7 @@ class Model(Component):
 
     ## MPThompsonTablesDir
     # directory containing MP Thompson tables
-    #'MPThompsonTablesDir': ['/glade/campaign/mmm/parc/ivette/pandac/saca/thompson_tables',str],
-    'MPThompsonTablesDir': ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/thompson_tables',str],
+    'MPThompsonTablesDir': ['/glade/campaign/mmm/parc/ivette/pandac/saca/thompson_tables',str],
 
     ## streams variant
     # Selects a default GOCART emission-inventory combination (anthropogenic / biogenic /
