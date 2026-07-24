@@ -1,5 +1,5 @@
 experiment:
-  name: '3dhybrid_OIE60km_WarmStart_AOD_30_PACE_OCI_FromOCT15_v3_NOAH_CYCLE_ONLY'
+  name: '3dhybrid_OIE60km_WarmStart_AOD_30_PACE_OCI_FromOCT15_GEMS_GOCI_MONITOR'
 externalanalyses:
   resource: "GFS.PANDAC"
 firstbackground:
@@ -30,6 +30,7 @@ hpc:
 
 members:
   n: 1
+
 model:
   outerMesh: 60km
   innerMesh: 60km
@@ -38,6 +39,8 @@ model:
 
 observations:
   resource: PANDACArchive
+  CRTMTABLES: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/CRTM_V3_coeffs/
+
 variational:
   DAType: 3dhybrid
   ensembleCovarianceWeight: 0.8
@@ -51,14 +54,18 @@ variational:
   sondes,
   modis_aqua_aod,
   viirs_aod_db_npp,
-  openaq_pm25
+  openaq_pm25,
+  gems_aod,
+  goci_aod
 ]
   monitors: [
   modis_aqua_aod,
   sfc,
   sondes,
   viirs_aod_db_npp,
-  openaq_pm25
+  openaq_pm25,
+  gems_aod,
+  goci_aod
 ]
   radianceThinningDistance: 60.0
   ensemble:

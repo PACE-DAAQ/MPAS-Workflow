@@ -165,6 +165,8 @@ observations:
           spexone_remotap_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod
           spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod
           aeronet_l15_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l15_aod
+          gems_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/gems_aod/
+          goci_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/goci_aod/
 
           ## surface PM2.5
           openaq_pm25: /glade/campaign/ncar/nmmm0081/input/obs/openaq_pm25
@@ -232,6 +234,8 @@ observations:
           spexone_remotap_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod
           spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod
           aeronet_l15_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l15_aod
+          gems_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/gems_aod/
+          goci_aod: /glade/campaign/ncar/nmmm0081/Data/obs_pandac/goci_aod/
 
           ## surface PM2.5
           openaq_pm25: /glade/campaign/ncar/nmmm0081/input/obs/openaq_pm25

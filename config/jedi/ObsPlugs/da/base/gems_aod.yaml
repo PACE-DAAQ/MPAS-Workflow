@@ -1,0 +1,24 @@
+- obs space:
+    <<: *ObsSpace
+    name: AodCRTM
+    _obsdatain: &ObsDataIn
+      engine:
+        type: H5File
+        obsfile: {{InDBDir}}/gems_aod_obs_{{thisValidDate}}.h5
+        missing file action: warn
+    _obsdataout: &ObsDataOut
+      engine:
+        type: H5File
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_gems_aod{{ObsOutSuffix}}.h5
+    obsdatain:
+      <<: *{{ObsDataIn}}
+    {{ObsDataOut}}
+    simulated variables: [aerosolOpticalDepth]
+    channels: &aodChannels {{aodChannel}}
+  obs error: *ObsErrorDiagonal
+  <<: *horizObsLoc
+  obs operator:
+    <<: *aodCRTMObsOperator_binary
+    obs options:
+      <<: *AODCRTMObsOptions_binary
+      Sensor_ID: v.viirs-m_npp
