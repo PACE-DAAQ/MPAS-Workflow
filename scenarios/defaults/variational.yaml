@@ -179,7 +179,7 @@ variational:
       #bumpCovDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/NICAS
       #bumpCovStdDevFile: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/mpas.stddev.nc
       #bumpCovVBalDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/VBAL
-      bumpCovDir: /glade/campaign/ncar/nmmm0081/input/jedi/bump/60km/static_b # 256 cores for Nov 2024
+      bumpCovDir: /glade/campaign/ncar/nmmm0081/input/jedi/bump/60km/nicas # 256 cores for Nov 2024
       bumpCovStdDevFile: /glade/campaign/ncar/nmmm0081/input/jedi/bump/60km/hdiag_var/merge/mpas.stddev.nc
       bumpCovVBalDir: /glade/campaign/ncar/nmmm0081/input/jedi/bump/60km/v_bal
     120km:
