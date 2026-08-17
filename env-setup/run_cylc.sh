@@ -138,6 +138,7 @@ run_cylc()
   local readonly scenario_root=${scenario_name%%_*}
   log "scenario_name=$scenario_name scenario_root=$scenario_root"
   for name in $workflow_names; do
+    echo $name
     workflow_name=$(echo $name | grep "${scenario_root}.*$suffix")
     if [ -n "$workflow_name" ]; then
       break

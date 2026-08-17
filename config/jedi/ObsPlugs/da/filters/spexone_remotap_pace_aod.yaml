@@ -10,25 +10,31 @@
   - filter: Bounds Check
     filter variables:
     - name: aerosolOpticalDepth
-      channels: 1-8
+      channels: 4,8,14
     minvalue: 0
     maxvalue: 4.9
     action:
       name: reject
 #  - filter: Background Check
-#    channels: 4
+#    channels: 8
 #    threshold: 3.0
 #    action:
 #      name: inflate error
 #      inflation factor: 3.0
   - filter: Gaussian Thinning
     horizontal_mesh: {{RADTHINDISTANCE}}
-    #select_mean: true
+#    select_mean: true
     action:
       name: reduce obs space
+#  - filter: RejectList
+#    defer to post: true
+#    filter variables:
+#    - name: aerosolOpticalDepth
+#      channels: 1-18
   - filter: Perform Action
     filter variables:
     - name: aerosolOpticalDepth
-      channels: 1-8
+      channels: 4,8,14
     action:
       name: passivate
+

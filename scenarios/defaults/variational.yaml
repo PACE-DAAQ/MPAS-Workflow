@@ -64,7 +64,7 @@ variational:
 
           60km:
             maxMembers: 27
-            directory0: '/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/60kmMeshGEFSwMERRA2/60km_EnsFC_NOAH/{{prevDateTime}}'
+            directory0: '/glade/campaign/ncar/nmmm0081/input/jedi/bump/60km/EnsFcst_Noah_wMERRA2/{{prevDateTime}}'
             filePrefix: mpasout
             memberNDigits: 2
 
@@ -128,7 +128,7 @@ variational:
         #bumpLocPrefix: bumploc_600km30km
         #bumpLocDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/BUMP_files/60km/loc_600km30km
         bumpLocPrefix: bumploc_1200km30km
-        bumpLocDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/BUMP_files/60km/loc_1200km30km
+        bumpLocDir: /glade/campaign/ncar/nmmm0081/input/jedi/bump/60km/localization/loc_1200km30km
       120km:
         bumpLocPrefix: bumploc_1200.0km_6.0km
         #bumpLocDir: /glade/campaign/mmm/parc/liuz/pandac_common/BUMP_files/20230522_yr5/120km.bumploc.duplicated.limited.1200km6km
@@ -179,9 +179,9 @@ variational:
       #bumpCovDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/NICAS
       #bumpCovStdDevFile: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/mpas.stddev.nc
       #bumpCovVBalDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/60km/VBAL
-      bumpCovDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/Bflow/60km/NICAS # 256 cores for Nov 2024
-      bumpCovStdDevFile: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/Bflow/60km/HDIAG_VAR/merge/mpas.stddev.nc
-      bumpCovVBalDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/Bflow/60km/VBAL
+      bumpCovDir: /glade/campaign/ncar/nmmm0081/input/jedi/bump/60km/nicas # 256 cores for Nov 2024
+      bumpCovStdDevFile: /glade/campaign/ncar/nmmm0081/input/jedi/bump/60km/hdiag_var/merge/mpas.stddev.nc
+      bumpCovVBalDir: /glade/campaign/ncar/nmmm0081/input/jedi/bump/60km/v_bal
     120km:
       #bumpCovDir: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/NICAS
       #bumpCovStdDevFile: /glade/campaign/mmm/parc/bjung/pandac_common/Bflow/20251204/120km/mpas.stddev.nc

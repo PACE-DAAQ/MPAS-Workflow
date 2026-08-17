@@ -4,20 +4,21 @@
     _obsdatain: &ObsDataIn
       engine:
         type: H5File
-        obsfile: {{InDBDir}}/ociuaa_pace_aod_obs_{{thisValidDate}}.h5
+        obsfile: {{InDBDir}}/aeronet_l15_aod_obs_{{thisValidDate}}.h5
+        missing file action: warn
     _obsdataout: &ObsDataOut
       engine:
         type: H5File
-        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_ociuaa_pace_aod{{ObsOutSuffix}}.h5
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_aeronet_l15_aod{{ObsOutSuffix}}.h5
     obsdatain:
       <<: *{{ObsDataIn}}
     {{ObsDataOut}}
     simulated variables: [aerosolOpticalDepth]
-    channels: &aodChannels {{aodChannel}}
+    channels: 1-8
   obs error: *ObsErrorDiagonal
   <<: *horizObsLoc
   obs operator:
     <<: *aodCRTMObsOperator
     obs options:
       <<: *AODCRTMObsOptions
-      Sensor_ID: v.pace_oci
+      Sensor_ID: v.aeronet

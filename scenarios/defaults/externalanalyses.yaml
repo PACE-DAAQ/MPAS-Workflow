@@ -36,7 +36,7 @@ externalanalyses:
           directory: "/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/120kmMeshGFS/MPAS_IC_NEW"
         60km:
           #directory: "/glade/campaign/mmm/parc/taosun/pandac/60kmMeshGFS/MPAS_IC_NEW"
-          directory: "/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/60kmMeshGFS/MPAS_IC"
+          directory: "/glade/campaign/ncar/nmmm0081/input/jedi/externalAnalyses/60kmMeshGFS"
         30km:
           directory: "/glade/campaign/mmm/parc/taosun/pandac/30kmMeshGFS/MPAS_IC_NEW"
         60-3km:
@@ -48,7 +48,7 @@ externalanalyses:
           - "UngribExternalAnalysis"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
-          Vtable: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
+          Vtable: /glade/campaign/ncar/nmmm0081/input/mpas/Vtables/Vtable.GFS.O3MR
           job:
             GetAnalysisFrom:
               retry: '1*PT20S'
@@ -58,7 +58,7 @@ externalanalyses:
           - "LinkUngribbedExternalAnalysis-{{mesh}}"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
-          Vtable: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
+          Vtable: /glade/campaign/ncar/nmmm0081/input/mpas/Vtables/Vtable.GFS.O3MR
           directory: /glade/campaign/mmm/parc/liuz/pandac_common/ungrib_GFS_o3
           job:
             GetAnalysisFrom:
@@ -71,7 +71,7 @@ externalanalyses:
           - "UngribExternalAnalysis"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
-          Vtable: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/vtables/Vtable.GFS.O3MR
+          Vtable: /glade/campaign/ncar/nmmm0081/input/mpas/Vtables/Vtable.GFS.O3MR
           job:
             GetAnalysisFrom:
               retry: '40*PT10M'
@@ -80,7 +80,7 @@ externalanalyses:
         60km:
           # pre-staged per-member ICs at <directory>/<thisValidDate>/<NN>/x1.*.init.*.nc;
           # everything else (filePrefix, PrepareExternalAnalysisTasks, retry, ...) inherits from `defaults`.
-          directory: "/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/60kmMeshGEFSwMERRA2/MPAS_IC"
+          directory: "/glade/campaign/ncar/nmmm0081/input/jedi/externalAnalyses/60kmMeshGEFSwMERRA2"
           maxMembers: 27
           memberFormat: "/{:02d}"
     GDAS:

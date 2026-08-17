@@ -4,21 +4,20 @@
     _obsdatain: &ObsDataIn
       engine:
         type: H5File
-        obsfile: {{InDBDir}}/oci_uaa_pace_aod_obs_{{thisValidDate}}.h5
-        missing file action: warn
+        obsfile: {{InDBDir}}/spexone_remotap_pace_aod_obs_{{thisValidDate}}.h5
     _obsdataout: &ObsDataOut
       engine:
         type: H5File
-        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_oci_uaa_pace_aod{{ObsOutSuffix}}.h5
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_spexone_remotap_pace_aod{{ObsOutSuffix}}.h5
     obsdatain:
       <<: *{{ObsDataIn}}
     {{ObsDataOut}}
     simulated variables: [aerosolOpticalDepth]
-    channels: 1-8
+    channels: 1-18 # 550 nm among 18 channels
   obs error: *ObsErrorDiagonal
   <<: *horizObsLoc
   obs operator:
     <<: *aodCRTMObsOperator
     obs options:
       <<: *AODCRTMObsOptions
-      Sensor_ID: v.oci_uaa
+      Sensor_ID: v.spexone_remotap
