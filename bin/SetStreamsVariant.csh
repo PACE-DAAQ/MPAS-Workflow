@@ -22,8 +22,33 @@
 # To add a new emission inventory, add a case to the corresponding switch in section (3).
 ####################################################################################################
 
+# Mesh/year are known at Forecast run time; avoid hard-wiring x1.163842/2024.
+if ( ! $?nCells ) then
+  echo "ERROR SetStreamsVariant.csh: nCells is not defined" > ./FAIL
+  exit 1
+endif
+if ( ! $?meshRatio ) then
+  echo "ERROR SetStreamsVariant.csh: meshRatio is not defined" > ./FAIL
+  exit 1
+endif
+set emissionGrid = "x${meshRatio}.${nCells}"
+if ( ! $?thisCycleDate ) then
+  echo "ERROR SetStreamsVariant.csh: thisCycleDate is not defined" > ./FAIL
+  exit 1
+endif
+set emissionYear = `echo ${thisCycleDate} | cut -c 1-4`
+
+# PRM fire-statistics file. PRMAreaFile is the legacy workflow variable name.
+# Current PRM-author guidance makes only fire-size average mandatory; the same
+# file may also contain optional AREA std and FRP avg/std. Resolve one filename
+# here so Forecast and GOCART2G init_atmosphere use it consistently.
+if ( $?PRMAreaFile ) then
+  set prmAreaFileResolved = `echo "${PRMAreaFile}" | sed 's@{{nCells}}@'${nCells}'@' | sed 's@{{year}}@'${emissionYear}'@' | sed 's@{{grid}}@'${emissionGrid}'@'`
+  sed -i 's@{{prmArea}}@'${prmAreaFileResolved}'@' ${StreamsFile}
+endif
+
 # shared FINN biomass-burning file (used by the 'finn' inventory and as the QFED iso/mnt fallback)
-set FINN = "FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_hourly_netcdf3.nc"
+set FINN = "FINNv2.5.1_modvrs_nrt_MOZART_${emissionYear}_${emissionGrid}.static_hourly_netcdf3.nc"
 
 # an unset or empty variant behaves like the control combination
 if ( ! $?streamsVariant ) set streamsVariant = cntl
@@ -87,30 +112,42 @@ echo "SetStreamsVariant.csh (INFO): emission inventories: anth=$vAnth biog=$vBio
 # --------------------------------------------------------------------------------------------------
 # (3) inventory -> per-species filenames                                  [EDIT HERE to add inventories]
 # --------------------------------------------------------------------------------------------------
-# (3a) anthropogenic (only BC/OC/SO2/CO vary; NH3/ISO/MNT stay CAMS, hardcoded in the template)
+# (3a) anthropogenic. BC/OC/SO2/CO/NH3 follow the selected anthropogenic inventory.
+# ISO/MNT remain CAMS because the current CEDS ensemble definition does not provide
+# compatible speciated VOC streams for those two fields.
 switch ($vAnth)
   case cams:
-    set anthBC  = "x1.163842-2024-anth_black-carbon.MPAS.nc"
-    set anthOC  = "x1.163842-2024-anth_organic-carbon.MPAS.nc"
-    set anthSO2 = "x1.163842-2024-anth_sulfur-dioxide.MPAS.nc"
-    set anthCO  = "x1.163842-2024-anth_carbon-monoxide.MPAS.nc"
+    set anthBC  = "${emissionGrid}-${emissionYear}-anth_black-carbon.MPAS.nc"
+    set anthOC  = "${emissionGrid}-${emissionYear}-anth_organic-carbon.MPAS.nc"
+    set anthSO2 = "${emissionGrid}-${emissionYear}-anth_sulfur-dioxide.MPAS.nc"
+    set anthCO  = "${emissionGrid}-${emissionYear}-anth_carbon-monoxide.MPAS.nc"
+    set anthNH3 = "${emissionGrid}-${emissionYear}-anth_ammonia.MPAS.nc"
     breaksw
   case ceds:
-    set anthBC  = "CEDS_Glb_2024_MPAS.x1.163842.grid.BC.nc"
-    set anthOC  = "CEDS_Glb_2024_MPAS.x1.163842.grid.OC.nc"
-    set anthSO2 = "CEDS_Glb_2024_MPAS.x1.163842.grid.SO2.nc"
-    set anthCO  = "CEDS_Glb_2024_MPAS.x1.163842.grid.CO.nc"
+    set anthBC  = "CEDS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.BC.nc"
+    set anthOC  = "CEDS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.OC.nc"
+    set anthSO2 = "CEDS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.SO2.nc"
+    set anthCO  = "CEDS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.CO.nc"
+    set anthNH3 = "CEDS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.NH3.nc"
     breaksw
   case cams-mix:
-    set anthBC  = "x1.163842-2024-CAMS_MIX_anth_black-carbon.MPAS.nc"
-    set anthOC  = "x1.163842-2024-CAMS_MIX_anth_organic-carbon.MPAS.nc"
-    set anthSO2 = "x1.163842-2024-CAMS_MIX_anth_sulfur-dioxide.MPAS.nc"
-    set anthCO  = "x1.163842-2024-CAMS_MIX_anth_carbon-monoxide.MPAS.nc"
+    set anthBC  = "${emissionGrid}-${emissionYear}-CAMS_MIX_anth_black-carbon.MPAS.nc"
+    set anthOC  = "${emissionGrid}-${emissionYear}-CAMS_MIX_anth_organic-carbon.MPAS.nc"
+    set anthSO2 = "${emissionGrid}-${emissionYear}-CAMS_MIX_anth_sulfur-dioxide.MPAS.nc"
+    set anthCO  = "${emissionGrid}-${emissionYear}-CAMS_MIX_anth_carbon-monoxide.MPAS.nc"
+    # CAMS regional-mix products in the current ensemble did not define a separate NH3
+    # product, so keep NH3 from the CAMS global inventory unless/until a mixed NH3
+    # product is explicitly added.
+    set anthNH3 = "${emissionGrid}-${emissionYear}-anth_ammonia.MPAS.nc"
     breaksw
   default:
     echo "ERROR in SetStreamsVariant.csh : unknown anth emissions '$vAnth'" > ./FAIL
     exit 1
 endsw
+
+# ISO/MNT remain CAMS for all anthropogenic variants.
+set anthISO = "${emissionGrid}-${emissionYear}-anth_isoprene.MPAS.nc"
+set anthMNT = "${emissionGrid}-${emissionYear}-anth_monoterpenes.MPAS.nc"
 
 # (3b) biomass burning (7 species; QFED has no iso/mnt, falls back to FINN)
 switch ($vBiob)
@@ -119,20 +156,20 @@ switch ($vBiob)
     set biobCO = "$FINN" ; set biobISO = "$FINN" ; set biobMNT = "$FINN"
     breaksw
   case gfas:
-    set biobBC  = "GFAS_Glb_2024_MPAS.x1.163842.grid.bc.hourly.nc"
-    set biobOC  = "GFAS_Glb_2024_MPAS.x1.163842.grid.oc.hourly.nc"
-    set biobNH3 = "GFAS_Glb_2024_MPAS.x1.163842.grid.nh3.hourly.nc"
-    set biobSO2 = "GFAS_Glb_2024_MPAS.x1.163842.grid.so2.hourly.nc"
-    set biobCO  = "GFAS_Glb_2024_MPAS.x1.163842.grid.co.hourly.nc"
-    set biobISO = "GFAS_Glb_2024_MPAS.x1.163842.grid.iso.hourly.nc"
-    set biobMNT = "GFAS_Glb_2024_MPAS.x1.163842.grid.mnt.hourly.nc"
+    set biobBC  = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.bc.hourly.nc"
+    set biobOC  = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.oc.hourly.nc"
+    set biobNH3 = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.nh3.hourly.nc"
+    set biobSO2 = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.so2.hourly.nc"
+    set biobCO  = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.co.hourly.nc"
+    set biobISO = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.iso.hourly.nc"
+    set biobMNT = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.mnt.hourly.nc"
     breaksw
   case qfed:
-    set biobBC  = "QFED_Glb_2024_MPAS.x1.163842.grid.bc.hourly.nc"
-    set biobOC  = "QFED_Glb_2024_MPAS.x1.163842.grid.oc.hourly.nc"
-    set biobNH3 = "QFED_Glb_2024_MPAS.x1.163842.grid.nh3.hourly.nc"
-    set biobSO2 = "QFED_Glb_2024_MPAS.x1.163842.grid.so2.hourly.nc"
-    set biobCO  = "QFED_Glb_2024_MPAS.x1.163842.grid.co.hourly.nc"
+    set biobBC  = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.bc.hourly.nc"
+    set biobOC  = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.oc.hourly.nc"
+    set biobNH3 = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.nh3.hourly.nc"
+    set biobSO2 = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.so2.hourly.nc"
+    set biobCO  = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.co.hourly.nc"
     set biobISO = "$FINN"
     set biobMNT = "$FINN"
     breaksw
@@ -144,11 +181,11 @@ endsw
 # (3c) biogenic (5 species; single inventory for now)
 switch ($vBiog)
   case cams:
-    set biogCO   = "x1.163842-2024-biog_carbon-monoxide.MPAS.nc"
-    set biogISO  = "x1.163842-2024-biog_isoprene.MPAS.nc"
-    set biogMNT  = "x1.163842-2024-biog_other-monoterpenes.MPAS.nc"
-    set biogAPIN = "x1.163842-2024-biog_alpha-pinene.MPAS.nc"
-    set biogBPIN = "x1.163842-2024-biog_beta-pinene.MPAS.nc"
+    set biogCO   = "${emissionGrid}-${emissionYear}-biog_carbon-monoxide.MPAS.nc"
+    set biogISO  = "${emissionGrid}-${emissionYear}-biog_isoprene.MPAS.nc"
+    set biogMNT  = "${emissionGrid}-${emissionYear}-biog_other-monoterpenes.MPAS.nc"
+    set biogAPIN = "${emissionGrid}-${emissionYear}-biog_alpha-pinene.MPAS.nc"
+    set biogBPIN = "${emissionGrid}-${emissionYear}-biog_beta-pinene.MPAS.nc"
     breaksw
   default:
     echo "ERROR in SetStreamsVariant.csh : unknown biog emissions '$vBiog'" > ./FAIL
@@ -162,6 +199,9 @@ sed -i 's@{{anthBC}}@'"$anthBC"'@'     ${StreamsFile}
 sed -i 's@{{anthOC}}@'"$anthOC"'@'     ${StreamsFile}
 sed -i 's@{{anthSO2}}@'"$anthSO2"'@'   ${StreamsFile}
 sed -i 's@{{anthCO}}@'"$anthCO"'@'     ${StreamsFile}
+sed -i 's@{{anthNH3}}@'"$anthNH3"'@'   ${StreamsFile}
+sed -i 's@{{anthISO}}@'"$anthISO"'@'   ${StreamsFile}
+sed -i 's@{{anthMNT}}@'"$anthMNT"'@'   ${StreamsFile}
 sed -i 's@{{biobBC}}@'"$biobBC"'@'     ${StreamsFile}
 sed -i 's@{{biobOC}}@'"$biobOC"'@'     ${StreamsFile}
 sed -i 's@{{biobNH3}}@'"$biobNH3"'@'   ${StreamsFile}

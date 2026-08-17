@@ -1,0 +1,12 @@
+# Current prescribed oxidants/backgrounds are already-prepared GMI climatology.
+# The project instructions identify the campaign holding below; no authoritative
+# raw-GMI regeneration recipe is provided there, so v1.4 does not invent one.
+source directories:
+  - /glade/campaign/ncar/nmmm0081/Data/BKG_DATA
+  - ${GOCART_BACKGROUND_DIR}
+required files:
+  - BACKGROUND_ptrop.dat
+  - BACKGROUND_dms.dat
+  - BACKGROUND_sulf.dat
+# The model may require additional files in the selected release. The staging
+# code links the complete directory and validates the explicit required list.

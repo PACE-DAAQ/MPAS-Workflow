@@ -1,0 +1,33 @@
+# Fragment to merge into a cycling scenario.
+# Site archive root verified from list.Data.txt:
+# /glade/campaign/ncar/nmmm0081/Data
+model:
+  # Table-1 member ordering
+  member variants: [cntl, pert01, pert02, pert03, pert04, pert05, pert06, pert07, pert08]
+
+emissions:
+  mode: workflow
+  # Keep this true for the full 9-member table until CAMS-MIX is generated from
+  # its original global+regional ingredients. Members 1-6 can run fully raw
+  # with false once CAMS/CEDS/FINN/GFAS/QFED configs are complete.
+  seed prebuilt: true
+  prepare: [mesh, cams-anth, cams-biog, finn, ceds, gfas, qfed]
+  finn config: config/emissions/finn.example.yaml
+  prm source: finn
+  ceds config: config/emissions/ceds.example.yaml
+  gfas config: config/emissions/gfas.example.yaml
+  qfed config: config/emissions/qfed.example.yaml
+  # CAMS config paths remain release/site specific (e.g. raw ECCAD holdings).
+  cams anth config: /path/to/raw-source-cams-anth.yaml
+  cams biog config: /path/to/raw-source-cams-biog.yaml
+
+initic:
+  chemistry mode: workflow
+  chemistry source config: config/chemistry/merra2_source.example.yaml
+  chemistry processor directory: ${INIT_MPAS_GOCART2G_DIR}
+  chemistry background directory: /glade/campaign/ncar/nmmm0081/Data/BKG_DATA
+
+build:
+  # Direct authoritative project holdings rather than another workflow copy.
+  gocart background lut directory: /glade/campaign/ncar/nmmm0081/Data/BKG_DATA
+  gocart optics directory: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/optics

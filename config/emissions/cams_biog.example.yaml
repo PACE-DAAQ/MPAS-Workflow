@@ -1,0 +1,15 @@
+# NOTE: list.Data.txt shows no local raw CAMS/orig directory under /glade/campaign/ncar/nmmm0081/Data/EMIS/CAMS.
+# In source-first mode keep the raw CAMS path explicit; prebuilt mode/seed uses /glade/campaign/ncar/nmmm0081/Data/EMIS/CAMS.
+# Workflow-native CAMS biogenic configuration.
+year: 2024
+species:
+  - alpha-pinene: mnta
+  - beta-pinene: mntb
+  - carbon-monoxide: co
+  - isoprene: iso
+  - other-monoterpenes: mnt
+inp_file_format: /path/to/CAMS-GLOB-BIO_v3.1_SPC_{year}.nc
+
+# Leave [] only if each species file has exactly one physical (time,lat,lon)
+# field. Otherwise name the field explicitly.
+sectors: []

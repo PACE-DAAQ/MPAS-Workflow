@@ -135,6 +135,8 @@ python modules/classes under `initialize/*`.
 including online vs. offline.  External analyses are used for verification and for optionally
 initializing a cold-start forecast at the first cycle of an experiment.
 
+`scenarios/defaults/emissions.yaml`: controls optional workflow-native GOCART2G emission preprocessing. The default `prebuilt` mode preserves the existing static emission directory; `workflow` mode stages the prebuilt files and can regenerate CAMS anthropogenic/biogenic and FINN inventories using native MPAS mesh information. The same code supports uniform, variable-resolution, global, and regional MPAS meshes.
+
 `scenarios/defaults/firstbackground.csh`: controls how the first DA cycle background state is supplied,
 including online vs. offline and deterministic vs. ensemble
 
@@ -498,3 +500,14 @@ Contributors:
  - Steven Vahl
  - Yali Wu
  - Yonggang Yu
+
+### Mesh-native emissions and GOCART2G chemistry inputs
+
+The optional source-first component derives MPAS geometry from the active mesh,
+generates/caches SCRIP and conservative ESMF weights for regular-grid
+inventories, maps FINN points with a spherical KD-tree, prepares PRM fire-size
+inputs, and can generate MERRA2-GMI chemistry intermediates for GOCART2G cold
+starts. It is opt-in; existing prebuilt workflows remain the default.
+
+See `README_EMISSIONS.md`, `EMISSIONS_REFACTOR.md`,
+`SOURCE_FIRST_WORKFLOW.md`, `PRM_COMPATIBILITY.md`, and `ISSUE_ALIGNMENT.md`.

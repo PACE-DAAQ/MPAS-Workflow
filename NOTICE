@@ -21,3 +21,6 @@ Contributors:
  - Steven Vahl
  - Yali Wu
  - Yonggang Yu
+
+Emissions preprocessing attribution:
+ - Original ESMF emissions-regridding methodology and utility lineage: Duseong Jo (2021)

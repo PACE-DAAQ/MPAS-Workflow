@@ -65,12 +65,14 @@ source config/auto/experiment.csh
 source config/auto/externalanalyses.csh
 source config/auto/members.csh
 source config/auto/model.csh
+if ( -e config/auto/emissions.csh ) source config/auto/emissions.csh
 source config/auto/invariantstream.csh
 source config/auto/workflow.csh
 set yymmdd = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 1-8`
 set hh = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 10-11`
 set thisCycleDate = ${yymmdd}${hh}
 set thisValidDate = ${thisCycleDate}
+set emissionYear = `echo ${thisCycleDate} | cut -c 1-4`
 
 # substitute thisCycleDate/thisValidDate in ArgWorkDir and ArgICStateDir as needed
 set self_WorkDir = ${ExperimentDirectory}/`echo "${ArgWorkDir}" \
@@ -83,6 +85,17 @@ set self_icStateDir = ${ExperimentDirectory}/`echo "${ArgICStateDir}" \
   `
 
 source ./bin/getCycleVars.csh
+
+# In workflow-native mode, PrepareEmissions has already staged an experiment-local
+# directory for this mesh. Preserve Build.EmissionDir in prebuilt mode.
+if ( $?emissionsMode ) then
+  if ( "$emissionsMode" == "workflow" ) then
+    set EmissionDir = "${ExperimentDirectory}/${EmissionsWorkDir}"
+    # PrepareEmissions stages/generates the four-field PRM fire-statistics file in the same
+    # experiment-local directory, so variable-resolution runs are self-contained.
+    set PRMAreaDir = "${ExperimentDirectory}/${EmissionsWorkDir}"
+  endif
+endif
 
 # nCells
 if ("$ArgMesh" == "$outerMesh") then
@@ -200,6 +213,24 @@ endif
 # Link files required for gocart2g
 ln -sfv ${EmissionDir}/* .
 ln -sfv ${BackgroundLUTDir}/* . # this may be required for init_atmosphere, not atmosphere
+
+# Validate the scenario-selected GOCART2G optics tables before linking.
+# The corresponding variables are exported from model.yaml via config/auto/model.csh.
+set requiredOptics = ( \
+  "${opticsBc}" "${opticsBcRrtmg}" \
+  "${opticsOc}" "${opticsOcRrtmg}" \
+  "${opticsBrc}" "${opticsBrcRrtmg}" \
+  "${opticsDu}" "${opticsDuRrtmg}" \
+  "${opticsSs}" "${opticsSsRrtmg}" \
+  "${opticsSu}" "${opticsSuRrtmg}" \
+  "${opticsNi}" "${opticsNiRrtmg}" \
+)
+foreach opticsFile ( ${requiredOptics} )
+  if ( ! -e "${OpticsDir}/${opticsFile}" ) then
+    echo "$0 (ERROR): required GOCART2G optics file not found: ${OpticsDir}/${opticsFile}" > ./FAIL
+    exit 1
+  endif
+end
 ln -sfv ${OpticsDir}/* .
 
 # Link PRM (plume rise model) static AREA input (always used by the forecast template)
@@ -227,7 +258,8 @@ sed -i 's@{{FCFilePrefix}}@'${FCFilePrefix}'@' ${StreamsFile}
 sed -i 's@{{PRECISION}}@'${model__precision}'@' ${StreamsFile}
 
 ## resolve the PRM (plume rise model) AREA filename (mesh-tokenized) into the streams file
-set prmAreaFile = `echo "${PRMAreaFile}" | sed 's@{{nCells}}@'${nCells}'@'`
+set emissionGrid = "x${meshRatio}.${nCells}"
+set prmAreaFile = `echo "${PRMAreaFile}" | sed 's@{{nCells}}@'${nCells}'@' | sed 's@{{year}}@'${emissionYear}'@' | sed 's@{{grid}}@'${emissionGrid}'@'`
 sed -i 's@{{prmArea}}@'${prmAreaFile}'@' ${StreamsFile}
 
 ## select GOCART emission inventories (anth/biog/biob) and substitute the {{...}} emission placeholders
@@ -368,6 +400,22 @@ sed -i 's@radtSWScheme@'${RadiationSW}'@' $NamelistFile
 sed -i 's@sfcLayerScheme@'${SfcLayer}'@' $NamelistFile
 sed -i 's@lsmScheme@'${LSM}'@' $NamelistFile
 
+## GOCART2G optics filenames selected through model.yaml / config/auto/model.csh
+sed -i 's@{{opticsBc}}@'${opticsBc}'@' $NamelistFile
+sed -i 's@{{opticsBcRrtmg}}@'${opticsBcRrtmg}'@' $NamelistFile
+sed -i 's@{{opticsOc}}@'${opticsOc}'@' $NamelistFile
+sed -i 's@{{opticsOcRrtmg}}@'${opticsOcRrtmg}'@' $NamelistFile
+sed -i 's@{{opticsBrc}}@'${opticsBrc}'@' $NamelistFile
+sed -i 's@{{opticsBrcRrtmg}}@'${opticsBrcRrtmg}'@' $NamelistFile
+sed -i 's@{{opticsDu}}@'${opticsDu}'@' $NamelistFile
+sed -i 's@{{opticsDuRrtmg}}@'${opticsDuRrtmg}'@' $NamelistFile
+sed -i 's@{{opticsSs}}@'${opticsSs}'@' $NamelistFile
+sed -i 's@{{opticsSsRrtmg}}@'${opticsSsRrtmg}'@' $NamelistFile
+sed -i 's@{{opticsSu}}@'${opticsSu}'@' $NamelistFile
+sed -i 's@{{opticsSuRrtmg}}@'${opticsSuRrtmg}'@' $NamelistFile
+sed -i 's@{{opticsNi}}@'${opticsNi}'@' $NamelistFile
+sed -i 's@{{opticsNiRrtmg}}@'${opticsNiRrtmg}'@' $NamelistFile
+
 ## PRM (plume rise model) flags -> Fortran logicals (lower-case True/False from config/auto/model.csh)
 set prmBburn = `echo "${doBburnPrm}" | tr '[A-Z]' '[a-z]'`
 set prmFRP   = `echo "${doFrp}" | tr '[A-Z]' '[a-z]'`
@@ -407,10 +455,10 @@ if ("${updateATMVarsFromCold}" == True) then
   echo "RUN PYTHON TO UPDATE ATM & BACKGROUNDS from COLD-START IC"
   # forecast 
   mv ${icFile} ${icFile}_tmp
-  cp -rL ${ExternalAnalysesWorkDir}/${ArgMesh}/${thisCycleDate}/x1.${nCells}.init.${icFileExt} ${icFile}
+  cp -rL ${ExternalAnalysesWorkDir}/${ArgMesh}/${thisCycleDate}/x${meshRatio}.${nCells}.init.${icFileExt} ${icFile}
   #module load nco
   #ncks -A -v qbcphobic,qbcphilic,qbrphobic,qbrphilic,qocphobic,qocphilic,qdust1,qdust2,qdust3,qdust4,qdust5,qni1,qni2,qni3,qso2,qso2v,qso4,qso4v,qseas1,qseas2,qseas3,qseas4,qseas5,qdms,qnh3,qnh4a,qsoapa,qsoapbb,qsoapbg,background_dms,background_h2o2,background_oh,background_no3,background_hno3,background_ptrop,qmsa ${icFile}_tmp ${icFile}
-  #python3 ${CopyMPASVarBuildDir}/${CopyMPASVarEXE} ${icFile}_tmp ${icFile}
+  # Use the workflow-local copy helper from the latest mpas-gocart2g branch.
   python3 ${mainScriptDir}/tools/copy_mpas_vars.py ${icFile}_tmp ${icFile}
 endif
 

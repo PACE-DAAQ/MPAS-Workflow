@@ -1,0 +1,36 @@
+# NOTE: list.Data.txt shows no local raw CAMS/orig directory under /glade/campaign/ncar/nmmm0081/Data/EMIS/CAMS.
+# In source-first mode keep the raw CAMS path explicit; prebuilt mode/seed uses /glade/campaign/ncar/nmmm0081/Data/EMIS/CAMS.
+# Workflow-native CAMS anthropogenic configuration.
+# The active Cylc cycle year overrides `year` when called by PrepareEmissions.
+year: 2024
+species:
+  - black-carbon: bc
+  - organic-carbon: oc
+  - ammonia: nh3
+  - carbon-monoxide: co
+  - sulphur-dioxide: so2
+  - isoprene: iso
+  - monoterpenes: mnt
+
+# SPC is replaced first with the long species name, then with the short token
+# if the first filename does not exist.
+inp_file_format: /path/to/CAMS-GLOB-ANT_v5.3_SPC_{year}.nc
+
+# [] means all (time,lat,lon) emission variables in each source file.
+sectors: []
+
+# Excluded sectors are subtracted from `sum` AND written as zero fields.  This
+# prevents CAMS AWB from re-entering MPAS NH3 when FINN fire NH3 is also used.
+sector_exclude: [awb]
+
+# Optional multiplicative sensitivity factors.  Example NH3 factor applies to
+# all CAMS ammonia sectors and the sum. Sector-specific factors keep SUM
+# consistent by applying the corresponding sector anomaly to SUM.
+scaling:
+  default: 1.0
+  species:
+    nh3: 1.0
+  # sectors:
+  #   awb: 1.0
+  # fields:
+  #   nh3_anth_sum: 1.0

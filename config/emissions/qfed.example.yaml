@@ -1,0 +1,73 @@
+# QFED v2.5.r1-geos-esm -> MPAS.
+# Exact 2024 source filenames/variable names are based on the nmmm0081 archive.
+inventory: QFED
+year: 2024
+source:
+  # Product-specific source files are set under each output below.
+  files: /glade/campaign/ncar/nmmm0081/Data/EMIS/QFED/orig/qfed2.emis_bc.061.{year}.nc4
+  time: time
+  latitude: [lat, latitude]
+  longitude: [lon, longitude]
+
+time:
+  # The archived 2024 consolidated QFED files contain 92 daily records,
+  # 1 Oct--31 Dec, timestamped at 12 UTC.  Each record is treated as the
+  # daily mean for its calendar day and repeated to all 24 MPAS hours.
+  start: "{year}-10-01T00:00:00"
+  end: "{year}-12-31T23:00:00"
+  target frequency: hourly
+  target step hours: 1
+  source temporal semantics: daily_mean
+  # Only if a whole daily record is absent do we interpolate between days.
+  missing: linear
+  max interpolation gap days: 3
+  allow extrapolation: false
+
+outputs:
+  - file: QFED_Glb_{year}_MPAS.{grid}.grid.bc.hourly.nc
+    source files: /glade/campaign/ncar/nmmm0081/Data/EMIS/QFED/orig/qfed2.emis_bc.061.{year}.nc4
+    fields:
+      bc_biob_modis:
+        source variable: biomass
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 12.011
+  - file: QFED_Glb_{year}_MPAS.{grid}.grid.oc.hourly.nc
+    source files: /glade/campaign/ncar/nmmm0081/Data/EMIS/QFED/orig/qfed2.emis_oc.061.{year}.nc4
+    fields:
+      oc_biob_modis:
+        source variable: biomass
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 12.011
+  - file: QFED_Glb_{year}_MPAS.{grid}.grid.nh3.hourly.nc
+    source files: /glade/campaign/ncar/nmmm0081/Data/EMIS/QFED/orig/qfed2.emis_nh3.061.{year}.nc4
+    fields:
+      nh3_biob_modis:
+        source variable: biomass
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 17.031
+  - file: QFED_Glb_{year}_MPAS.{grid}.grid.so2.hourly.nc
+    source files: /glade/campaign/ncar/nmmm0081/Data/EMIS/QFED/orig/qfed2.emis_so2.061.{year}.nc4
+    fields:
+      so2_biob_modis:
+        source variable: biomass
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 64.066
+  - file: QFED_Glb_{year}_MPAS.{grid}.grid.co.hourly.nc
+    source files: /glade/campaign/ncar/nmmm0081/Data/EMIS/QFED/orig/qfed2.emis_co.061.{year}.nc4
+    fields:
+      co_biob_modis:
+        source variable: biomass
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 28.0101
+# ISO/MNT intentionally remain FINN fallbacks in SetStreamsVariant.csh because
+# the archived QFED files do not provide those two MPAS species.
+
+scaling:
+  default: 1.0
+  species:
+    nh3: 1.0

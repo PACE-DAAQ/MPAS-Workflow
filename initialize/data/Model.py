@@ -57,7 +57,8 @@ class Model(Component):
   variablesWithDefaults = {
     ## GraphInfoDir
     # directory containing x{{meshRatio}}.{{nCells}}.graph.info* files
-    'GraphInfoDir': ['/glade/derecho/scratch/taosun/pandac/MPAS_GRAPH', str],
+    #'GraphInfoDir': ['/glade/derecho/scratch/taosun/pandac/MPAS_GRAPH', str],
+    'GraphInfoDir': ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/MPAS_GRAPH', str],
 
     ## precision
     # floating-point precision of all application output
@@ -66,7 +67,8 @@ class Model(Component):
 
     ## MPThompsonTablesDir
     # directory containing MP Thompson tables
-    'MPThompsonTablesDir': ['/glade/campaign/mmm/parc/ivette/pandac/saca/thompson_tables',str],
+    #'MPThompsonTablesDir': ['/glade/campaign/mmm/parc/ivette/pandac/saca/thompson_tables',str],
+    'MPThompsonTablesDir': ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/thompson_tables',str],
 
     ## streams variant
     # Selects a default GOCART emission-inventory combination (anthropogenic / biogenic /
@@ -93,6 +95,25 @@ class Model(Component):
     # as 'streams variant' (cntl, pert01..pert08, ...). Empty => all members share 'streams variant'.
     # The selection is applied in bin/SetStreamsVariant.csh.
     'member variants': [[], list],
+
+    ## GOCART2G aerosol optics files
+    # Runtime namelist selections. These override Registry defaults without
+    # requiring a gocartMPAS rebuild. Files are expected under OpticsDir.
+    # Keep each monochromatic/RRTMG pair on the same optics version.
+    'optics bc': ['optics_BC.v1_5.nc', str],
+    'optics bc rrtmg': ['opticsBands_BC.v1_5.RRTMG.nc', str],
+    'optics oc': ['optics_OC.v1_5.nc', str],
+    'optics oc rrtmg': ['opticsBands_OC.v1_5.RRTMG.nc', str],
+    'optics brc': ['optics_BRC.v2_5.nc', str],
+    'optics brc rrtmg': ['opticsBands_BRC.v2_5.RRTMG.nc', str],
+    'optics du': ['optics_DU.v15_5.nc', str],
+    'optics du rrtmg': ['opticsBands_DU.v15_5.RRTMG.nc', str],
+    'optics ss': ['optics_SS.v3_5.nc', str],
+    'optics ss rrtmg': ['opticsBands_SS.v3_5.RRTMG.nc', str],
+    'optics su': ['optics_SU.v2_5.nc', str],
+    'optics su rrtmg': ['opticsBands_SU.v2_5.RRTMG.nc', str],
+    'optics ni': ['optics_NI.v2_5.nc', str],
+    'optics ni rrtmg': ['opticsBands_NI.v2_5.RRTMG.nc', str],
 
     ## PRM (plume rise model) namelist flags (&plumerisemodel in config/mpas/forecast/namelist.atmosphere)
     # Exported as doBburnPrm / doFrp and substituted into the namelist by bin/Forecast.csh.

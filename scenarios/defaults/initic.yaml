@@ -30,3 +30,17 @@ initic:
       seconds: 120
       nodes: 1
       PEPerNode: 128
+
+  # Optional source-first GOCART2G cold-start chemistry initialization.
+  # off      : preserve existing meteorology-only init_atmosphere behavior.
+  # prebuilt : read MERRA2:* intermediates from chemistry prebuilt directory.
+  # workflow : PrepareChemIC starts from raw MERRA2/GMI resources using
+  #            config/chemistry/merra2_source.example.yaml.
+  chemistry mode: off
+  chemistry source config: ''
+  chemistry processor directory: ''
+  chemistry work directory: 'ChemIC/{{thisValidDate}}'
+  chemistry prebuilt directory: ''
+  # Empty => Build.gocart background lut directory; may be set to the ACOM
+  # campaign BACKGROUND holding documented by MPAS-GOCART2G Instructions.
+  chemistry background directory: ''

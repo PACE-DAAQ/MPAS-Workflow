@@ -16,6 +16,7 @@ from initialize.applications.Members import Members
 from initialize.config.Config import Config
 
 from initialize.data.ExternalAnalyses import ExternalAnalyses
+from initialize.data.Emissions import Emissions
 from initialize.data.FirstBackground import FirstBackground
 from initialize.data.Model import Model
 from initialize.data.Observations import Observations
@@ -37,16 +38,17 @@ class Cycle(SuiteBase):
     self.c['model'] = Model(conf)
     self.c['build'] = Build(conf, self.c['model'])
     meshes = self.c['model'].getMeshes()
+    self.c['emissions'] = Emissions(conf, self.c['hpc'], meshes['Outer'])
     self.c['observations'] = Observations(conf, self.c['hpc'])
     self.c['members'] = Members(conf)
 
     self.c['externalanalyses'] = ExternalAnalyses(conf, self.c['hpc'], meshes)
-    self.c['initic'] = InitIC(conf, self.c['hpc'], meshes, self.c['externalanalyses'])
+    self.c['initic'] = InitIC(conf, self.c['hpc'], meshes, self.c['externalanalyses'], self.c['emissions'])
 
     self.c['da'] = DA(conf, self.c['hpc'], self.c['observations'], meshes, self.c['model'], self.c['members'], self.c['workflow'])
     self.c['forecast'] = Forecast(conf, self.c['hpc'], meshes['Outer'], self.c['members'], self.c['model'],
                 self.c['observations'], self.c['workflow'], self.c['externalanalyses'],
-                self.c['da'].outputs['state']['members'])
+                self.c['da'].outputs['state']['members'], self.c['emissions'])
     self.c['firstbackground'] = FirstBackground(conf, self.c['hpc'], meshes, self.c['members'], self.c['workflow'],
                 self.c['externalanalyses'],
                 self.c['externalanalyses'].outputs['state']['Outer'], self.c['forecast'])
@@ -107,6 +109,7 @@ class Cycle(SuiteBase):
 
     self.taskComponents += [
       'benchmark',
+      'emissions',
       'da',
       'forecast',
       'firstbackground',
