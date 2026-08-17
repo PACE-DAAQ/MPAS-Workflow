@@ -1,0 +1,128 @@
+experiment:
+  name: '3dhybrid_OIE60km'
+externalanalyses:
+  resource: "GFS.PANDAC"
+firstbackground:
+  resource: "PANDAC.GFS"
+forecast:
+  IAU: False
+  updateATMVarsFromCold: True
+  updateSea: True
+  post: []
+
+build:
+  #mpas bundle: /glade/campaign/ncar/nmmm0081/Src/mpas-bundle/build
+  bundle compiler used: gnu-openmpi
+  gocart emission directory: /glade/campaign/ncar/nmmm0081/input/mpas/emissions/all/
+  gocart background lut directory: /glade/campaign/ncar/nmmm0081/input/initialization/gocart2g_bkg
+  gocart optics directory: /glade/campaign/ncar/nmmm0081/input/mpas/optics/latest/
+  prm area directory: /glade/campaign/ncar/nmmm0081/input/mpas/emissions/PRM
+
+hpc:
+  CriticalAccount: NMMM0063
+  CriticalQueue: main
+  CriticalPriority: premium
+  NonCriticalAccount: NMMM0063
+  NonCriticalQueue: main
+  NonCriticalPriority: premium
+  SingleProcAccount: NMMM0063
+  SingleProcQueue: develop
+#  SingleProcQueue: casper@casper-pbs
+
+members:
+  n: 1                      # deterministic DA - unchanged, keeps EDA off
+
+# Cycled emission-perturbed ensemble, recentered on the deterministic analysis.
+# nEnsFCMembers (n below) is INDEPENDENT of members.n.
+ensembleforecast:
+  execute: True
+  n: 27
+
+model:
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+  streams variant: cntl     # fallback for members beyond the list
+  # 27 entries = 3 x (cntl + pert01..pert08)
+  member variants: [
+    cntl, pert01, pert02, pert03, pert04, pert05, pert06, pert07, pert08,
+    cntl, pert01, pert02, pert03, pert04, pert05, pert06, pert07, pert08,
+    cntl, pert01, pert02, pert03, pert04, pert05, pert06, pert07, pert08,
+  ]
+  GraphInfoDir: /glade/campaign/ncar/nmmm0081/input/mpas/mesh/global_60km/
+  MPThompsonTablesDir: /glade/campaign/ncar/nmmm0081/input/mpas/tables/
+
+observations:
+  resource: PANDACArchive
+  CRTMTABLES: /glade/campaign/ncar/nmmm0081/input/jedi/crtm_coeffs/
+
+variational:
+  DAType: 3dhybrid
+  ensembleCovarianceWeight: 0.8
+  staticCovarianceWeight: 0.2
+  nInnerIterations: [50,]
+  aodChannel: 4
+  aodAerosolOption: aerosols_gocart2g_mpas
+  observers: [
+  sfc,
+  sondes,
+  aircraft,
+  oci_uaa_pace_aod,
+  modis_aqua_aod,
+  viirs_aod_db_npp,
+  openaq_pm25,
+  spexone_remotap_pace_aod,
+  spexone_fmapol_pace_aod,
+  harp2_fmapol_pace_aod,
+  aeronet_l15_aod,
+]
+  monitors: [
+  sfc,
+  sondes,
+  aircraft,
+  #oci_uaa_pace_aod,
+  modis_aqua_aod,
+  viirs_aod_db_npp,
+  openaq_pm25,
+  spexone_remotap_pace_aod,
+  spexone_fmapol_pace_aod,
+  harp2_fmapol_pace_aod,
+  aeronet_l15_aod,
+]
+  radianceThinningDistance: 60.0
+  ensemble:
+    # ensemble B sourced from our own cycled ensemble forecasts (SELF), replacing
+    # PANDAC.GEFS.  With members.n == 1, PrepJEDI substitutes {{ExperimentDirectory}}
+    # and {{prevDateTime}} into directory0, and SelfExclusion is not applied
+    # (len(yamls) == 1), so all 27 members are used.  See plan §1, §9.
+    forecasts:
+      resource: "SELF.EnsFC"
+      SELF:
+        EnsFC:
+          60km:
+            maxMembers: 27
+            directory0: '{{ExperimentDirectory}}/CyclingEnsFC/{{prevDateTime}}'
+            filePrefix: mpasout
+            memberPrefix: mem
+            memberNDigits: 3
+            forecastDateOffsetHR: 0
+  post: [verifyobs]
+verifyobs:
+  script directory: /glade/work/swei/projects/mmm.pace_aod/repos/mpas-bundle/mpas-jedi/graphics/
+verifymodel:
+  script directory: /glade/work/swei/projects/mmm.pace_aod/repos/mpas-bundle/mpas-jedi/graphics/
+
+extendedforecast:
+  execute: True
+  updateATMVarsFromCold: True
+  updateSea: True
+  meanTimes: T00
+  ensTimes: None
+  lengthHR: 120
+  outIntervalHR: 6
+  DACycling: true
+  post: []
+
+workflow:
+  first cycle point: 20241031T18
+  final cycle point: 20241130T18

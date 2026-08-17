@@ -1,0 +1,51 @@
+ensembleforecast:
+  ## n: ensemble size (INDEPENDENT of members.n, which stays 1).
+  # active only when n > 1 AND execute: True
+  n: 0
+  execute: False
+
+  ## whether to update surface fields before a member forecast (sst, xice)
+  updateSea: True
+
+  ## whether to update the IC atmospheric variables from the cold-start IC
+  updateATMVarsFromCold: True
+
+  ## list of tasks for Post (not yet wired for the ensemble stream)
+  post: []
+
+  # resource requirements
+  # NOTE: the job: tree is nested UNDER ensembleforecast: (the SubConfig root for
+  # this component), unlike the illustrative top-level layout in plan §3b.  This
+  # matches how forecast.yaml / rtpp.yaml nest their job: blocks.
+  job:
+    #{{ensembleMesh}} / recenterensemble:
+    #  baseSeconds: int
+    #  secondsPerForecastHR / secondsPerMember: int
+    #  nodes: int
+    #  PEPerNode: int
+    #  memory: str
+    defaults:
+      retry: '2*PT30S'
+      nodes: 1
+      PEPerNode: 128
+      baseSeconds: 60
+      secondsPerForecastHR: 60
+      secondsPerMember: 30
+      memory: 235GB
+
+    ## per-member forecast resources (copied from forecast.yaml 60km)
+    60km:
+      nodes: 2
+      PEPerNode: 128
+      baseSeconds: 60
+      secondsPerForecastHR: 60
+      retry: '0*PT30S'
+
+    ## RecenterEnsemble resources (copied from rtpp.yaml 60km)
+    recenterensemble:
+      baseSeconds: 30
+      secondsPerMember: 30
+      nodes: 1
+      PEPerNode: 128
+      memory: 235GB
+      retry: '2*PT30S'

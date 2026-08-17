@@ -1,0 +1,35 @@
+_state read: &stateReadConfig
+  date: {{thisISO8601Date}}
+  state variables: [{{StateVariables}}]
+  stream name: background
+
+geometry:
+  nml_file: {{EnsembleNamelistFile}}
+  streams_file: {{EnsembleStreamsFile}}
+  deallocate non-da fields: true
+
+# central state that the ensemble is recentered onto (the deterministic analysis)
+center:
+  <<: *stateReadConfig
+  filename: {{centerStateFile}}
+
+# ensemble whose perturbations are transplanted onto the center
+# (previous-cycle ensemble forecasts valid at this cycle time)
+ensemble:
+  members:
+{{EnsembleMembers}}
+
+# variables whose perturbations are preserved: met + GOCART aerosols
+# ($StandardAnalysisVariables).  Every StateVariable NOT listed here is taken
+# exactly from the center (deterministic analysis).
+recenter variables: [{{RecenterVariables}}]
+
+# recentered members; %{member}% is substituted with the 1-based member index
+recentered output:
+  filename: {{icStateDir}}/mem%{member}%/{{icStatePrefix}}.$Y-$M-$D_$h.$m.$s.nc
+  stream name: analysis
+
+# raw (pre-recentering) ensemble mean, written for diagnostics
+ensemble meanoutput:
+  filename: {{icStateDir}}/mean/{{icStatePrefix}}.$Y-$M-$D_$h.$m.$s.nc
+  stream name: analysis

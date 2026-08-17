@@ -139,6 +139,10 @@ class Build(Component):
     self._set('RTPPEXE', 'mpasjedi_rtpp.x')
     self._set('RTPPBuildDir', self['mpas bundle']+'/bin')
 
+    ## EnsRecenter (ensemble recentering; see EnsembleForecast / RecenterEnsemble.csh)
+    self._set('EnsRecenterEXE', 'mpasjedi_ens_recenter.x')
+    self._set('EnsRecenterBuildDir', self['mpas bundle']+'/bin')
+
     ## RTPS
     self._set('RTPSEXE', 'mpasjedi_rtps.x')
     self._set('RTPSBuildDir', self['mpas bundle']+'/bin')
