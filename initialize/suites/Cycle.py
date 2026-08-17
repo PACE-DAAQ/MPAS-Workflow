@@ -8,6 +8,7 @@
 '''
 
 from initialize.applications.DA import DA
+from initialize.applications.EnsembleForecast import EnsembleForecast
 from initialize.applications.ExtendedForecast import ExtendedForecast
 from initialize.applications.Forecast import Forecast
 from initialize.applications.InitIC import InitIC
@@ -54,6 +55,11 @@ class Cycle(SuiteBase):
     self.c['extendedforecast'] = ExtendedForecast(conf, self.c['hpc'], self.c['members'], self.c['forecast'],
                 self.c['externalanalyses'], self.c['observations'],
                 self.c['da'].outputs['state']['members'], 'internal')
+    # Cycled emission-perturbed ensemble, recentered on the deterministic analysis.
+    # Inert (self.active == False) unless ensembleforecast.n > 1 and execute: True.
+    # Its member count (nEnsFCMembers) is INDEPENDENT of members.n (which stays 1).
+    self.c['ensembleforecast'] = EnsembleForecast(conf, self.c['hpc'], meshes['Outer'], self.c['members'],
+                self.c['model'], self.c['workflow'], self.c['externalanalyses'])
 
     #if conf.has('benchmark'): # TODO: make benchmark optional,
     # and depend on whether verifyobs/verifymodel are selected
@@ -90,6 +96,9 @@ class Cycle(SuiteBase):
         c_.export(self.c['forecast'].previousForecast, self.c['extendedforecast'])
       elif k in ['extendedforecast']:
         c_.export(self.c['da'].tf.finished)
+      elif k in ['ensembleforecast']:
+        # center = this cycle's deterministic analysis (ready at DA finished)
+        c_.export(self.c['da'].tf.finished)
       else:
         c_.export()
 
@@ -108,6 +117,7 @@ class Cycle(SuiteBase):
       # those tasks are emitted under [runtime] but never referenced by the graph, so cylc
       # never instantiates them.
       'initic',
+      'ensembleforecast',
     ]
 
     self.taskComponents += [
@@ -116,6 +126,7 @@ class Cycle(SuiteBase):
       'forecast',
       'firstbackground',
       'extendedforecast',
+      'ensembleforecast',
       'externalanalyses',
       'initic',
       'observations',
