@@ -89,6 +89,23 @@ class EnsembleForecast(Component):
     self._set('nEnsFCMembers', self.NN)
     self._cshVars = ['nEnsFCMembers']
 
+    # First-cycle (R1) staging resource (plan §8): a pre-staged ensemble (e.g. GEFS
+    # EnsFcst_Noah_wMERRA2) is linked into CyclingEnsFC/<FirstCycleDate>/memNNN so the
+    # first RecenterEnsemble and the SELF.EnsFC hybrid B have input.  Mirrors
+    # firstbackground for the deterministic stream.  These csh vars drive
+    # bin/LinkEnsembleForecasts.csh; only used when first cycle == restart cycle.
+    self.R1present = (workflow['first cycle point'] == workflow['restart cycle point'])
+    firstDir = self._conf.getOrDefault('first ensemble.directory', None, str)
+    if firstDir is not None:
+      firstDir = firstDir.replace('{{FirstCycleDate}}', workflow['FirstCycleDate'])
+    self._set('firstensemble__directory', firstDir)
+    self._set('firstensemble__filePrefix',
+              self._conf.getOrDefault('first ensemble.filePrefix', 'mpasout', str))
+    self._set('firstensemble__memberFormat',
+              self._conf.getOrDefault('first ensemble.memberFormat', '/{:02d}', str))
+    self._cshVars += ['firstensemble__directory', 'firstensemble__filePrefix',
+                      'firstensemble__memberFormat']
+
     # WorkDir is where RecenterEnsemble is executed (arg to RecenterEnsemble.csh)
     self.WorkDir = self.workDir+'/{{thisCycleDate}}'
 
@@ -197,14 +214,19 @@ class EnsembleForecast(Component):
       prevEnsFC = self.tf.finished+'[-PT'+str(self.workflow['CyclingWindowHR'])+'H]'
       self.tf.addDependencies([prevEnsFC])
 
+      # First-cycle seeding (plan §8): at the first AnalysisTimes cycle the
+      # previous-cycle ensemble does NOT come from an EnsembleForecast (there is
+      # none before R1) but from the R1 LinkEnsembleForecasts staging task.  Adding
+      # LinkEnsembleForecasts[-PT{window}H] as a RecenterEnsemble prerequisite
+      # enforces that ordering at the first cycle; at every later cycle the offset
+      # points to a cycle where LinkEnsembleForecasts is absent, so cylc prunes it
+      # (and the prevEnsFC dependency above takes over).  Only add when R1 exists.
+      if self.R1present:
+        linkPrev = 'LinkEnsembleForecasts[-PT'+str(self.workflow['CyclingWindowHR'])+'H]'
+        self.tf.addDependencies([linkPrev])
+
       # RecenterEnsemble => EnsembleForecast{mm} is produced automatically by the
       # tf phase graph (Init<base>:succeed-all => <base>Exec).
-
-      # TODO (plan §8, first-cycle seeding): at R1 there are no previous-cycle
-      # ensemble forecasts, so RecenterEnsemble has no ensemble input.  Add an
-      # R1-only branch (mirror FirstBackground) that cold-starts each member from
-      # the pre-staged per-member GEFS+MERRA ICs (GEFSMERRA.PANDAC, /{:02d}
-      # convention) instead of from RecenterEnsemble.  NOT IMPLEMENTED here.
 
       # NOTE (see REVIEW.md): member forecasts run bin/Forecast.csh with
       # updateSea=True; Forecast.py additionally makes them depend on
@@ -216,6 +238,24 @@ class EnsembleForecast(Component):
 
       # close graph
       self._dependencies += ['''
+      """''']
+
+      # ----------------------------------------------------------------------
+      # R1: stage the pre-staged ensemble into CyclingEnsFC/<FirstCycleDate>
+      # (mirrors FirstBackground's LinkWarmStartBackgrounds).  Standalone quick
+      # task with no upstream (the pre-staged files already exist on disk).
+      # ----------------------------------------------------------------------
+      if self.R1present:
+        self._tasks += ['''
+  [[LinkEnsembleForecasts]]
+    inherit = SingleBatch
+    script = $origin/bin/LinkEnsembleForecasts.csh
+    execution time limit = PT120S
+    execution retry delays = 1*PT10S''']
+
+        self._dependencies += ['''
+    R1 = """
+        LinkEnsembleForecasts
       """''']
 
     super().export()
