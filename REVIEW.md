@@ -105,6 +105,42 @@ NOT implemented (TODO markers / left untouched).
    here (bundle repo not modified); `Build.py` now points at
    `{mpas bundle}/bin/mpasjedi_ens_recenter.x`.
 
+## Update: first-cycle (R1) seeding implemented (plan §8)
+
+The §8 TODO is now implemented, following the deterministic FirstBackground pattern
+(a workflow R1 task) rather than a manual pre-submit symlink.
+
+- **`bin/LinkEnsembleForecasts.csh`** (new) — R1-only; links the pre-staged ensemble
+  `<directory>/<NN>/<filePrefix>.<nextFirstFileDate>.nc` into
+  `CyclingEnsFC/<FirstCycleDate>/memNNN/mpasout.<nextFirstFileDate>.nc`, bridging the
+  2-digit source convention to the workflow's 3-digit memNNN.  Clone of
+  `LinkWarmStartBackgrounds.csh`.
+- **`EnsembleForecast.py`** — reads a `first ensemble` resource (`directory` /
+  `filePrefix` / `memberFormat`, `{{FirstCycleDate}}`-substituted); exports
+  `firstensemble__*` csh vars; in `export()`, when `first cycle point == restart
+  cycle point`, emits `R1 = """ LinkEnsembleForecasts """` and adds
+  `LinkEnsembleForecasts[-PT{window}H]` as a RecenterEnsemble prerequisite so the
+  first (00Z) recenter waits on the R1 staging.
+- **`scenarios/defaults/ensembleforecast.yaml`** — `first ensemble` block defaulting
+  to `.../EnsFcst_Noah_wMERRA2/{{FirstCycleDate}}`, `memberFormat "/{:02d}"`.
+
+Cycle timing (why `first cycle point` stays `20241031T18`): for a fresh start
+(`restart == first`), `AnalysisTimes = +PT6H/PT6H`, so DA + RecenterEnsemble +
+EnsembleForecast all begin at the SECOND cycle (00Z); R1 (18Z) is staging-only.
+Verified: `py_compile`/`compileall` PASS, `csh -n` PASS, yaml parses.
+
+### STILL NEEDS HUMAN REVIEW (added)
+8. **SELF.EnsFC hybrid B has no graph dependency on the ensemble forecast.** The
+   deterministic Variational at cycle T reads `CyclingEnsFC/(T-6)` as its ensemble B,
+   but nothing in the graph makes it wait for the producing task (EnsembleForecast at
+   T-6, or LinkEnsembleForecasts at R1 for the 00Z cycle) — it relies on timing.  For
+   R1 this is usually safe (the link finishes well before 00Z DA); steady-state
+   cycling should add an explicit edge.  Doing so cleanly needs the DA pre/init task
+   handle (touches DA.py or Cycle.py wiring), which was out of scope — design decision.
+9. **cylc pruning of the R1 offset.** Confirm at run time that RecenterEnsemble@00Z
+   waits on LinkEnsembleForecasts@R1 and that RecenterEnsemble@06Z+ does NOT error on
+   the (absent) `LinkEnsembleForecasts[-PT6H]` reference (expected: pruned).
+
 ## Out of scope (untouched, per instructions)
 
 - `Variational.py`, `DA.py`, `EnKF.py`, and all deterministic-DA-path files.

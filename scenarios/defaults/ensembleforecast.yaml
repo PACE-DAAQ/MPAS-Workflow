@@ -13,6 +13,21 @@ ensembleforecast:
   ## list of tasks for Post (not yet wired for the ensemble stream)
   post: []
 
+  ## first ensemble (R1 first-cycle seeding; plan §8)
+  # At R1 (first cycle == restart cycle), bin/LinkEnsembleForecasts.csh links a
+  # pre-staged ensemble into CyclingEnsFC/<FirstCycleDate>/memNNN so the first
+  # RecenterEnsemble and the SELF.EnsFC hybrid B (both at the next cycle) have
+  # input.  Mirrors firstbackground for the deterministic stream.
+  #   per-member source layout:
+  #     <directory>/<member>/<filePrefix>.<nextFirstFileDate>.nc
+  #   (memberFormat "/{:02d}" gives 2-digit member dirs 01..NN; the link bridges
+  #    them to the workflow's 3-digit memNNN under CyclingEnsFC.)
+  # 60km GEFS ensemble available only at 20241031T18 (valid 20241101T00).
+  first ensemble:
+    directory: "/glade/campaign/ncar/nmmm0081/input/jedi/bump/60km/EnsFcst_Noah_wMERRA2/{{FirstCycleDate}}"
+    filePrefix: mpasout
+    memberFormat: "/{:02d}"
+
   # resource requirements
   # NOTE: the job: tree is nested UNDER ensembleforecast: (the SubConfig root for
   # this component), unlike the illustrative top-level layout in plan §3b.  This
