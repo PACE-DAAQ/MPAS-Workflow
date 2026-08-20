@@ -36,7 +36,7 @@ members:
 # nEnsFCMembers (n below) is INDEPENDENT of members.n.
 ensembleforecast:
   execute: True
-  n: 27
+  n: 3  # 27
 
 model:
   outerMesh: 60km
@@ -125,4 +125,4 @@ extendedforecast:
 
 workflow:
   first cycle point: 20241031T18
-  final cycle point: 20241130T18
+  final cycle point: 20241101T18
