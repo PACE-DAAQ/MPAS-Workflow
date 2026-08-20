@@ -17,7 +17,14 @@ source config/auto/workflow.csh
 # EnsembleForecast (optional): nEnsFCMembers drives the CyclingEnsFC arrays below.
 # The auto-config only exists once EnsembleForecast.export() has run, so give a
 # safe default first so non-ensemble suites still work.
-set nEnsFCMembers = 0
+# Default to 0 ONLY when not already set upstream, and use setenv (NOT set): the
+# auto-config exports nEnsFCMembers via `setenv`, and a `set nEnsFCMembers = 0` here
+# would create a *shell* variable that permanently shadows that env var (in csh a
+# later `setenv` cannot update $nEnsFCMembers once a shell var of the same name
+# exists), leaving it stuck at 0.  A plain unconditional default also breaks the
+# LinkEnsembleForecasts case, where ensembleforecast.csh is already sourced upstream
+# so its config_ensembleforecast guard makes the re-source below a no-op.
+if ( ! $?nEnsFCMembers ) setenv nEnsFCMembers 0
 if ( -e config/auto/ensembleforecast.csh ) source config/auto/ensembleforecast.csh
 
 # Universal time info for namelist, yaml etc

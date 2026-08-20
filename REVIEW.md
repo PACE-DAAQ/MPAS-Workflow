@@ -129,17 +129,40 @@ Cycle timing (why `first cycle point` stays `20241031T18`): for a fresh start
 EnsembleForecast all begin at the SECOND cycle (00Z); R1 (18Z) is staging-only.
 Verified: `py_compile`/`compileall` PASS, `csh -n` PASS, yaml parses.
 
-### STILL NEEDS HUMAN REVIEW (added)
-8. **SELF.EnsFC hybrid B has no graph dependency on the ensemble forecast.** The
-   deterministic Variational at cycle T reads `CyclingEnsFC/(T-6)` as its ensemble B,
-   but nothing in the graph makes it wait for the producing task (EnsembleForecast at
-   T-6, or LinkEnsembleForecasts at R1 for the 00Z cycle) — it relies on timing.  For
-   R1 this is usually safe (the link finishes well before 00Z DA); steady-state
-   cycling should add an explicit edge.  Doing so cleanly needs the DA pre/init task
-   handle (touches DA.py or Cycle.py wiring), which was out of scope — design decision.
-9. **cylc pruning of the R1 offset.** Confirm at run time that RecenterEnsemble@00Z
-   waits on LinkEnsembleForecasts@R1 and that RecenterEnsemble@06Z+ does NOT error on
-   the (absent) `LinkEnsembleForecasts[-PT6H]` reference (expected: pruned).
+## Update 2: R1 link bug fixed + flag #1 (hybrid-B dependency) + flag #2 verified
+
+**R1 link bug (blocked the first submitted run).** `LinkEnsembleForecasts` succeeded
+but logged "nEnsFCMembers < 2, nothing to seed", so nothing was linked.  Root cause: a
+csh `set`/`setenv` namespace clash.  `getCycleVars.csh` did `set nEnsFCMembers = 0`
+(shell var) which permanently shadows the auto-config's `setenv nEnsFCMembers` (env
+var) — in csh a later `setenv` cannot update `$nEnsFCMembers` once a shell var of that
+name exists.  Combined with the `config_ensembleforecast` guard (both
+LinkEnsembleForecasts.csh AND RecenterEnsemble.csh top-source ensembleforecast.csh,
+making getCycleVars' re-source a no-op), nEnsFCMembers was stuck at 0.  This would have
+silently no-op'd BOTH the R1 link and the recentering itself.
+FIX: `if ( ! $?nEnsFCMembers ) setenv nEnsFCMembers 0` (setenv, only when unset).
+Proven in isolation for both the top-source and no-top-source caller patterns.
+
+**Flag #1 IMPLEMENTED.** `EnsembleForecast.export()` now takes `daPre`
+(= `da.tf.pre` = `PreDA__`, passed from Cycle.py) and emits, in a separate
+`AnalysisTimes` section, `EnsembleForecastFinished__[-PT6H] => PreDA__` plus (R1 only)
+`LinkEnsembleForecasts[-PT6H] => PreDA__`.  This makes the deterministic DA wait for
+the ensemble-forecast producer (or the R1 seed at 00Z) before it stages the SELF.EnsFC
+hybrid B.  No cycle: PreDA__(T) → EnsembleForecast(T-6) → RecenterEnsemble(T-6) →
+DAFinished(T-6); within cycle T, DA precedes RecenterEnsemble.  Offsets prune the same
+way as the recenter gating (Link at 00Z, EnsembleForecast at 06Z+).
+
+**Flag #2 VERIFIED (no change).** The generated flow.cylc places
+`LinkEnsembleForecasts[-PT6H] => PreEnsembleForecast__` under `+PT6H/PT6H` (starts 00Z)
+and `LinkEnsembleForecasts` standalone under `R1`; the offset prunes correctly at
+06Z+.
+
+### STILL NEEDS HUMAN REVIEW
+- Re-run `./Run.py` for the exp4/ensrec scenario so the regenerated bin/ + config/auto
+  pick up these fixes, then confirm at run time: LinkEnsembleForecasts actually links
+  27 (or n) members; RecenterEnsemble@00Z runs; PreDA__@06Z+ waits on
+  EnsembleForecast@(T-6); no `[-PT6H]` pruning errors.
+- Job-resource numbers in `ensembleforecast.yaml` still guessed (plan §3b).
 
 ## Out of scope (untouched, per instructions)
 

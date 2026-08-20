@@ -196,10 +196,13 @@ class EnsembleForecast(Component):
     inherit = EnsembleForecasts, BATCH
     script = $origin/bin/Forecast.csh '''+fcArgs]
 
-  def export(self, daFinished:str):
+  def export(self, daFinished:str, daPre:str):
     '''
     daFinished: the deterministic DA finished task; this cycle's analysis (the
                 recentering center) is ready once it completes.
+    daPre:      the deterministic DA family pre-task (e.g. PreDA__).  Gated on the
+                ensemble forecast producer so the SELF.EnsFC hybrid B files exist
+                before the deterministic Variational stages them (see below).
     '''
     if self.active:
       # open graph
@@ -256,6 +259,27 @@ class EnsembleForecast(Component):
         self._dependencies += ['''
     R1 = """
         LinkEnsembleForecasts
+      """''']
+
+      # ----------------------------------------------------------------------
+      # Flag #1: the deterministic hybrid B (SELF.EnsFC) at cycle T reads
+      # CyclingEnsFC/(T-6), produced by EnsembleForecast at T-6 (or, for the first
+      # AnalysisTimes cycle, by the R1 LinkEnsembleForecasts seed).  Make the DA
+      # family wait for that producer so the B members exist before the Variational
+      # (InitVariationals/PrepJEDI) stages them.  Emitted as raw edges into the DA
+      # pre-task in a separate AnalysisTimes section (cylc unions edges per
+      # recurrence).  The offset mirrors the recenter gating: at T-6 == R1 the
+      # EnsembleForecast edge prunes and LinkEnsembleForecasts takes over; at later
+      # cycles LinkEnsembleForecasts prunes and EnsembleForecast takes over.
+      window = str(self.workflow['CyclingWindowHR'])
+      bEdges = self.tf.finished+'[-PT'+window+'H] => '+daPre
+      if self.R1present:
+        bEdges += '''
+        LinkEnsembleForecasts[-PT'''+window+'''H] => '''+daPre
+      self._dependencies += ['''
+    '''+self.workflow['AnalysisTimes']+''' = """
+        # SELF.EnsFC hybrid B must be produced before the deterministic DA reads it
+        '''+bEdges+'''
       """''']
 
     super().export()

@@ -96,8 +96,10 @@ class Cycle(SuiteBase):
       elif k in ['extendedforecast']:
         c_.export(self.c['da'].tf.finished)
       elif k in ['ensembleforecast']:
-        # center = this cycle's deterministic analysis (ready at DA finished)
-        c_.export(self.c['da'].tf.finished)
+        # daFinished (tf.finished) = this cycle's deterministic analysis (recenter center);
+        # daPre (tf.pre) = the DA family's pre-task, gated on the ensemble forecast so the
+        # SELF.EnsFC hybrid B files exist before the deterministic Variational reads them.
+        c_.export(self.c['da'].tf.finished, self.c['da'].tf.pre)
       else:
         c_.export()
 
