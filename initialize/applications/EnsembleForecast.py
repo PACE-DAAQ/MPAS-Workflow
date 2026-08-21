@@ -212,21 +212,17 @@ class EnsembleForecast(Component):
       # center ready this cycle (deterministic analysis) => RecenterEnsemble
       self.tf.addDependencies([daFinished])
 
-      # previous-cycle ensemble forecasts (valid at T) ready => RecenterEnsemble
-      # (offset idiom as in Forecast.py:167/226)
+      # previous-cycle ensemble forecasts (valid at T) ready => RecenterEnsemble.
+      # A single unconditional edge covers every cycle: at the first analysis cycle
+      # the [-PT{window}H] offset points at R1, where LinkEnsembleForecasts emits this
+      # SAME EnsembleForecastFinished__ signal (see the R1 section below) -- exactly
+      # how the deterministic stream's `LinkWarmStartBackgrounds => ForecastFinished__`
+      # covers the first background.  (An earlier attempt to gate this only from cycle
+      # 2 and add a separate LinkEnsembleForecasts[-PT]H edge at cycle 1 STALLED,
+      # because EnsembleForecastFinished__[-PT]H at R1 is at -- not before -- the
+      # initial point, so cylc waits on it forever instead of pruning it.)
       prevEnsFC = self.tf.finished+'[-PT'+str(self.workflow['CyclingWindowHR'])+'H]'
       self.tf.addDependencies([prevEnsFC])
-
-      # First-cycle seeding (plan §8): at the first AnalysisTimes cycle the
-      # previous-cycle ensemble does NOT come from an EnsembleForecast (there is
-      # none before R1) but from the R1 LinkEnsembleForecasts staging task.  Adding
-      # LinkEnsembleForecasts[-PT{window}H] as a RecenterEnsemble prerequisite
-      # enforces that ordering at the first cycle; at every later cycle the offset
-      # points to a cycle where LinkEnsembleForecasts is absent, so cylc prunes it
-      # (and the prevEnsFC dependency above takes over).  Only add when R1 exists.
-      if self.R1present:
-        linkPrev = 'LinkEnsembleForecasts[-PT'+str(self.workflow['CyclingWindowHR'])+'H]'
-        self.tf.addDependencies([linkPrev])
 
       # RecenterEnsemble => EnsembleForecast{mm} is produced automatically by the
       # tf phase graph (Init<base>:succeed-all => <base>Exec).
@@ -244,9 +240,11 @@ class EnsembleForecast(Component):
       """''']
 
       # ----------------------------------------------------------------------
-      # R1: stage the pre-staged ensemble into CyclingEnsFC/<FirstCycleDate>
-      # (mirrors FirstBackground's LinkWarmStartBackgrounds).  Standalone quick
-      # task with no upstream (the pre-staged files already exist on disk).
+      # R1: stage the pre-staged ensemble into CyclingEnsFC/<FirstCycleDate> and emit
+      # the family EnsembleForecastFinished__ signal, so the first analysis cycle's
+      # RecenterEnsemble and DA see a satisfied "previous ensemble" prerequisite --
+      # mirrors FirstBackground's `LinkWarmStartBackgrounds => ForecastFinished__`.
+      # The pre-staged files already exist on disk, so the link task has no upstream.
       # ----------------------------------------------------------------------
       if self.R1present:
         self._tasks += ['''
@@ -258,28 +256,23 @@ class EnsembleForecast(Component):
 
         self._dependencies += ['''
     R1 = """
-        LinkEnsembleForecasts
+        LinkEnsembleForecasts => '''+self.tf.finished+'''
       """''']
 
       # ----------------------------------------------------------------------
       # Flag #1: the deterministic hybrid B (SELF.EnsFC) at cycle T reads
-      # CyclingEnsFC/(T-6), produced by EnsembleForecast at T-6 (or, for the first
-      # AnalysisTimes cycle, by the R1 LinkEnsembleForecasts seed).  Make the DA
-      # family wait for that producer so the B members exist before the Variational
-      # (InitVariationals/PrepJEDI) stages them.  Emitted as raw edges into the DA
-      # pre-task in a separate AnalysisTimes section (cylc unions edges per
-      # recurrence).  The offset mirrors the recenter gating: at T-6 == R1 the
-      # EnsembleForecast edge prunes and LinkEnsembleForecasts takes over; at later
-      # cycles LinkEnsembleForecasts prunes and EnsembleForecast takes over.
+      # CyclingEnsFC/(T-6), produced by EnsembleForecast at T-6 (and, at the first
+      # analysis cycle, signalled by the R1 LinkEnsembleForecasts above).  Make the DA
+      # family pre-task wait for that same EnsembleForecastFinished__ signal so the B
+      # members exist before the Variational (InitVariationals/PrepJEDI) stages them.
+      # Single unconditional edge, in a separate AnalysisTimes section (cylc unions
+      # edges per recurrence); R1 covers cycle 1 just like the recenter dependency.
+      # ----------------------------------------------------------------------
       window = str(self.workflow['CyclingWindowHR'])
-      bEdges = self.tf.finished+'[-PT'+window+'H] => '+daPre
-      if self.R1present:
-        bEdges += '''
-        LinkEnsembleForecasts[-PT'''+window+'''H] => '''+daPre
       self._dependencies += ['''
     '''+self.workflow['AnalysisTimes']+''' = """
         # SELF.EnsFC hybrid B must be produced before the deterministic DA reads it
-        '''+bEdges+'''
+        '''+self.tf.finished+'''[-PT'''+window+'''H] => '''+daPre+'''
       """''']
 
     super().export()

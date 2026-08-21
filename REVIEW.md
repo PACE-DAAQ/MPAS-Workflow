@@ -157,6 +157,26 @@ way as the recenter gating (Link at 00Z, EnsembleForecast at 06Z+).
 and `LinkEnsembleForecasts` standalone under `R1`; the offset prunes correctly at
 06Z+.
 
+## Update 3: STALL fixed — R1 must EMIT the finished signal (first-run diagnosis)
+
+The first ensrec run showed two symptoms with one root cause (DA↔ensemble-B ordering):
+1. a stale DA FAIL at 00Z reading a not-yet-staged `CyclingEnsFC/...` file (the DA ran
+   ~17 min BEFORE LinkEnsembleForecasts created the symlink — the flag #1 race), and
+2. after adding flag #1, a STALL: `PreDA__@00Z`/`PreEnsembleForecast__@00Z` waited
+   forever on `EnsembleForecastFinished__[-PT6H]` (= R1), which does not exist because
+   EnsembleForecast runs on `+PT6H/PT6H` (starts 00Z).  R1 is AT, not before, the
+   initial point, so cylc does not prune it.
+
+The earlier "cylc prunes the R1 offset" assumption (old flag #2 note) was WRONG for a
+task defined only from cycle 2 on.  FIX (mirrors the deterministic
+`LinkWarmStartBackgrounds => ForecastFinished__`): the R1 graph now emits
+`LinkEnsembleForecasts => EnsembleForecastFinished__`, so the family "finished" signal
+IS present at R1.  A single unconditional `EnsembleForecastFinished__[-PT6H] => {PreDA__,
+PreEnsembleForecast__}` edge then works for every cycle (R1 signal at cycle 1, real
+forecasts at cycle 2+), and — because PreDA__ now waits on it — the DA cannot run until
+the seed is staged, fixing the race too.  Removed the split/`LinkEnsembleForecasts[-PT6H]`
+edges.  Also fixed a csh `set`→`setenv` shadow in getCycleVars (nEnsFCMembers stuck at 0).
+
 ### STILL NEEDS HUMAN REVIEW
 - Re-run `./Run.py` for the exp4/ensrec scenario so the regenerated bin/ + config/auto
   pick up these fixes, then confirm at run time: LinkEnsembleForecasts actually links
