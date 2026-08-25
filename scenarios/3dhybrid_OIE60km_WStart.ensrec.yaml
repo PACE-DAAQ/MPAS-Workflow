@@ -36,14 +36,13 @@ members:
 # nEnsFCMembers (n below) is INDEPENDENT of members.n.
 ensembleforecast:
   execute: True
-  n: 3  # 27
+  n: &Nmem 3  # 27
 
 model:
   outerMesh: 60km
   innerMesh: 60km
   ensembleMesh: 60km
   streams variant: cntl     # fallback for members beyond the list
-  # 27 entries = 3 x (cntl + pert01..pert08)
   member variants: [
     cntl, pert01, pert02, pert03, pert04, pert05, pert06, pert07, pert08,
     cntl, pert01, pert02, pert03, pert04, pert05, pert06, pert07, pert08,
@@ -100,7 +99,7 @@ variational:
       SELF:
         EnsFC:
           60km:
-            maxMembers: 27
+            maxMembers: *Nmem
             directory0: '{{ExperimentDirectory}}/CyclingEnsFC/{{prevDateTime}}'
             filePrefix: mpasout
             memberPrefix: mem
