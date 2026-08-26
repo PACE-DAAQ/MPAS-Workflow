@@ -14,6 +14,19 @@ source config/auto/members.csh
 source config/auto/naming.csh
 source config/auto/workflow.csh
 
+# EnsembleForecast (optional): nEnsFCMembers drives the CyclingEnsFC arrays below.
+# The auto-config only exists once EnsembleForecast.export() has run, so give a
+# safe default first so non-ensemble suites still work.
+# Default to 0 ONLY when not already set upstream, and use setenv (NOT set): the
+# auto-config exports nEnsFCMembers via `setenv`, and a `set nEnsFCMembers = 0` here
+# would create a *shell* variable that permanently shadows that env var (in csh a
+# later `setenv` cannot update $nEnsFCMembers once a shell var of the same name
+# exists), leaving it stuck at 0.  A plain unconditional default also breaks the
+# LinkEnsembleForecasts case, where ensembleforecast.csh is already sourced upstream
+# so its config_ensembleforecast guard makes the re-source below a no-op.
+if ( ! $?nEnsFCMembers ) setenv nEnsFCMembers 0
+if ( -e config/auto/ensembleforecast.csh ) source config/auto/ensembleforecast.csh
+
 # Universal time info for namelist, yaml etc
 # ==========================================
 setenv prevCycleDate "`$advanceCYMDH ${thisCycleDate} -${CyclingWindowHR}`"
@@ -141,6 +154,28 @@ while ( $member <= ${nMembers} )
   set memDir = `${memberDir} $nMembers $member`
   set CyclingFCDirs = ($CyclingFCDirs ${CyclingFCDir}${memDir})
   set prevCyclingFCDirs = ($prevCyclingFCDirs ${prevCyclingFCDir}${memDir})
+  @ member++
+end
+
+## EnsembleForecast
+# Cycled emission-perturbed ensemble directories, keyed on $nEnsFCMembers (NOT
+# $nMembers, which is 1 for the deterministic DA path).  See ensemble_recentering_plan.md §5.
+#   CyclingEnsFCDirs     : this cycle's member forecast dirs  (CyclingEnsFC/T/memNNN)
+#   prevCyclingEnsFCDirs : previous cycle's member forecast dirs (recenter input, valid at T)
+#   CyclingEnsFCICDirs   : this cycle's recentered IC dirs      (CyclingEnsFC/T/ic/memNNN)
+set CyclingEnsFCDir     = ${EnsembleForecastWorkDir}/${thisCycleDate}
+set prevCyclingEnsFCDir = ${EnsembleForecastWorkDir}/${prevCycleDate}
+set CyclingEnsFCICDir   = ${CyclingEnsFCDir}/ic
+
+set CyclingEnsFCDirs     = ()
+set prevCyclingEnsFCDirs = ()
+set CyclingEnsFCICDirs   = ()
+set member = 1
+while ( $member <= ${nEnsFCMembers} )
+  set memDir = `${memberDir} $nEnsFCMembers $member`
+  set CyclingEnsFCDirs     = ($CyclingEnsFCDirs     ${CyclingEnsFCDir}${memDir})
+  set prevCyclingEnsFCDirs = ($prevCyclingEnsFCDirs ${prevCyclingEnsFCDir}${memDir})
+  set CyclingEnsFCICDirs   = ($CyclingEnsFCICDirs   ${CyclingEnsFCICDir}${memDir})
   @ member++
 end
 

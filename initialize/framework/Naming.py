@@ -8,6 +8,7 @@
 '''
 
 from initialize.applications.DA import DA
+from initialize.applications.EnsembleForecast import EnsembleForecast
 from initialize.applications.ExtendedForecast import ExtendedForecast
 from initialize.applications.Forecast import Forecast
 from initialize.applications.ForecastSACA import ForecastSACA
@@ -41,6 +42,7 @@ class Naming(Component):
       ABEI,
       Forecast,
       ExtendedForecast,
+      EnsembleForecast,
       VerifyObs,
       #VerifyModel, #only need VerifyObs, because they are the same
       Observations,
