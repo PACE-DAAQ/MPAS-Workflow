@@ -1,8 +1,11 @@
 # MPAS-GOCART2G chemistry cold-start source policy for nmmm0081.
 #
 # Aerosols/nitrate: same-year archived MERRA2-GMI 6-hour files.
-# Gas-phase OVP (HNO3, NH3, CO, ISOPRENE): 2019 monthly OVP archive, because
-# the OVP product is unavailable after 2019.  This follows the resolution in
+# Gas-phase fields consumed by the current MPAS-GOCART2G initialization
+# (HNO3 and NH3): 2019 monthly OVP archive, because the OVP product is
+# unavailable after 2019. CO, ISOPRENE, and HNO3COND are intentionally not
+# required because the current model IC path does not consume them.
+# This follows the resolution in
 # MPAS-Workflow issue #2 and the supplied create_gocartMPAS_ic.bash workflow.
 # No network fallback is enabled by default: missing controlled chemistry input
 # is fatal so provenance cannot silently change.

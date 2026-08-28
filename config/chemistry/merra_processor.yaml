@@ -157,23 +157,8 @@ species_map:
   target: HNO3
   desc: Nitric Acid
   units: mole mole-1
-- source: OVP14_HNO3COND
-  file: prefix_in_2
-  target: HNO3COND
-  desc: Condensed Nitric Acid
-  units: mole mole-1
 - source: OVP14_GOCART_NH3_VAR
   file: prefix_in_2
   target: NH3
   desc: Ammonia
-  units: mole mole-1
-- source: OVP14_CO
-  file: prefix_in_2
-  target: CO
-  desc: Carboin Monoxide
-  units: mole mole-1
-- source: OVP14_ISOP
-  file: prefix_in_2
-  target: ISOPRENE
-  desc: Isoprene
   units: mole mole-1
