@@ -1,0 +1,93 @@
+# CEDS v2025 -> MPAS example for the generic regular-grid processor.
+# CEDS NH3 mapping below is based on the supplied 2024 v2025 header.
+inventory: CEDS
+year: 2024
+source:
+  # Product-level source files below override this placeholder.
+  files: '/glade/campaign/ncar/nmmm0081/Data/EMIS/CEDS/orig/CEDS_Glb_0.1x0.1_{year}_anthro_BC_v2025_monthly.nc'
+  time: time
+  latitude: lat
+  longitude: lon
+
+time:
+  start: "{year}-01-01T00:00:00"
+  end: "{year}-12-01T00:00:00"
+  target frequency: monthly
+  missing: linear
+  max interpolation gap hours: 1500
+  allow extrapolation: false
+
+outputs:
+  # BC/OC/SO2/CO source-variable mappings remain inventory-release specific.
+  - file: CEDS_Glb_{year}_MPAS.{grid}.grid.BC.nc
+    source files:
+      - '${CEDS_ANT_DIR}/CEDS_Glb_0.1x0.1_{year}_anthro_BC_v2025_monthly.nc'
+      - '/glade/campaign/ncar/nmmm0081/Data/EMIS/CEDS/orig/CEDS_Glb_0.1x0.1_{year}_anthro_BC_v2025_monthly.nc'
+    fields:
+      bc_anth_sum: {source variable: CHANGE_ME_BC_TOTAL, source units: kg m-2 s-1, target units: kg m-2 s-1}
+      bc_anth_res: {source variable: CHANGE_ME_BC_RESIDENTIAL, source units: kg m-2 s-1, target units: kg m-2 s-1}
+
+  - file: CEDS_Glb_{year}_MPAS.{grid}.grid.OC.nc
+    source files:
+      - '${CEDS_ANT_DIR}/CEDS_Glb_0.1x0.1_{year}_anthro_OC_v2025_monthly.nc'
+      - '/glade/campaign/ncar/nmmm0081/Data/EMIS/CEDS/orig/CEDS_Glb_0.1x0.1_{year}_anthro_OC_v2025_monthly.nc'
+    fields:
+      oc_anth_sum: {source variable: CHANGE_ME_OC_TOTAL, source units: kg m-2 s-1, target units: kg m-2 s-1}
+      oc_anth_res: {source variable: CHANGE_ME_OC_RESIDENTIAL, source units: kg m-2 s-1, target units: kg m-2 s-1}
+
+  - file: CEDS_Glb_{year}_MPAS.{grid}.grid.SO2.nc
+    source files:
+      - '${CEDS_ANT_DIR}/CEDS_Glb_0.1x0.1_{year}_anthro_SO2_v2025_monthly.nc'
+      - '/glade/campaign/ncar/nmmm0081/Data/EMIS/CEDS/orig/CEDS_Glb_0.1x0.1_{year}_anthro_SO2_v2025_monthly.nc'
+    fields:
+      so2_anth_sum: {source variable: CHANGE_ME_SO2_TOTAL, source units: kg m-2 s-1, target units: kg m-2 s-1}
+
+  - file: CEDS_Glb_{year}_MPAS.{grid}.grid.CO.nc
+    source files:
+      - '${CEDS_ANT_DIR}/CEDS_Glb_0.1x0.1_{year}_anthro_CO_v2025_monthly.nc'
+      - '/glade/campaign/ncar/nmmm0081/Data/EMIS/CEDS/orig/CEDS_Glb_0.1x0.1_{year}_anthro_CO_v2025_monthly.nc'
+    fields:
+      co_anth_sum: {source variable: CHANGE_ME_CO_TOTAL, source units: kg m-2 s-1, target units: kg m-2 s-1}
+
+  - file: CEDS_Glb_{year}_MPAS.{grid}.grid.NH3.nc
+    source files:
+      - '${CEDS_ANT_DIR}/CEDS_Glb_0.1x0.1_{year}_anthro_NH3_v2025_monthly.nc'
+      - '/glade/campaign/ncar/nmmm0081/Data/EMIS/CEDS/orig/CEDS_Glb_0.1x0.1_{year}_anthro_NH3_v2025_monthly.nc'
+
+    # CEDS v2025 has 8 sectors: agriculture, energy, industrial,
+    # transportation, residential, ships, solvents and waste, plus sum.
+    # Current MPAS-GOCART2G collapses NH3 to five active categories before
+    # passing it to NI2G: agriculture, energy, industry, residential, transport.
+    # It currently ignores nh3_anth_fef/shp/slv/swd individually.  The mapping
+    # below is therefore deliberately MASS-PRESERVING for the current model:
+    #   AG = agriculture
+    #   EN = energy
+    #   IN = industrial + solvents + waste
+    #   RE = residential
+    #   TR = transportation + ships
+    # Unused CAMS-style slots are present as zeros so the existing stream
+    # contract remains unchanged.  nh3_anth_sum retains the original CEDS sum
+    # for independent validation.
+    fields:
+      nh3_anth_agl: {source variable: agriculture, source units: kg m-2 s-1, target units: kg m-2 s-1, species: NH3}
+      nh3_anth_ags: {sources: [{variable: sum, factor: 0.0}], source units: kg m-2 s-1, target units: kg m-2 s-1, species: NH3}
+      nh3_anth_awb: {sources: [{variable: sum, factor: 0.0}], source units: kg m-2 s-1, target units: kg m-2 s-1, species: NH3}
+      nh3_anth_ene: {source variable: energy, source units: kg m-2 s-1, target units: kg m-2 s-1, species: NH3}
+      nh3_anth_fef: {sources: [{variable: sum, factor: 0.0}], source units: kg m-2 s-1, target units: kg m-2 s-1, species: NH3}
+      nh3_anth_ind:
+        species: NH3
+        source units: kg m-2 s-1
+        target units: kg m-2 s-1
+        sources: [{variable: industrial}, {variable: solvents}, {variable: waste}]
+      nh3_anth_res: {source variable: residential, source units: kg m-2 s-1, target units: kg m-2 s-1, species: NH3}
+      nh3_anth_shp: {sources: [{variable: sum, factor: 0.0}], source units: kg m-2 s-1, target units: kg m-2 s-1, species: NH3}
+      nh3_anth_slv: {sources: [{variable: sum, factor: 0.0}], source units: kg m-2 s-1, target units: kg m-2 s-1, species: NH3}
+      nh3_anth_swd: {sources: [{variable: sum, factor: 0.0}], source units: kg m-2 s-1, target units: kg m-2 s-1, species: NH3}
+      nh3_anth_tnr: {source variable: ships, source units: kg m-2 s-1, target units: kg m-2 s-1, species: NH3}
+      nh3_anth_tro: {source variable: transportation, source units: kg m-2 s-1, target units: kg m-2 s-1, species: NH3}
+      nh3_anth_sum: {source variable: sum, source units: kg m-2 s-1, target units: kg m-2 s-1, species: NH3}
+
+scaling:
+  default: 1.0
+  species:
+    nh3: 1.0

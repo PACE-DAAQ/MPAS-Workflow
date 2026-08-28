@@ -1,0 +1,256 @@
+<streams>
+<immutable_stream name="input"
+                  type="input"
+                  precision="{{PRECISION}}"
+                  filename_template="x{{meshRatio}}.{{nCells}}.invariant.nc"
+                  io_type="pnetcdf,cdf5"
+                  input_interval="initial_only" />
+
+<immutable_stream name="output"
+                  type="output"
+                  precision="{{PRECISION}}"
+                  clobber_mode="truncate"
+                  filename_template="x{{meshRatio}}.{{nCells}}.init.nc"
+                  io_type="pnetcdf,cdf5"
+                  packages="initial_conds"
+                  output_interval="none" />
+
+<stream name="jedi_ics"
+                  type="output"
+                  precision="single"
+                  clobber_mode="truncate"
+                  filename_template="x{{meshRatio}}.{{nCells}}.init.$Y-$M-$D_$h.$m.$s.nc"
+                  io_type="pnetcdf,cdf5"
+                  output_interval="initial_only" >
+
+        <stream name="output" />
+        <var name="pressure" />
+        <var name="uReconstructZonal" />
+        <var name="uReconstructMeridional" />
+</stream>
+
+<immutable_stream name="surface"
+                  type="output"
+                  filename_template="x{{meshRatio}}.{{nCells}}.sfc_update.nc"
+                  io_type="pnetcdf,cdf5"
+                  filename_interval="none"
+                  packages="sfc_update"
+                  output_interval="86400" />
+<stream name="anth_bc_emissions"
+        type="input"
+        filename_template="{{anthBC}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="bc_anth_res"/>
+        <var name="bc_anth_sum"/>
+</stream>
+
+<stream name="anth_oc_emissions"
+        type="input"
+        filename_template="{{anthOC}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="oc_anth_res"/>
+        <var name="oc_anth_sum"/>
+</stream>
+
+<stream name="anth_nh3_emissions"
+        type="input"
+        filename_template="{{anthNH3}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="nh3_anth_agl"/>
+        <var name="nh3_anth_ags"/>
+        <var name="nh3_anth_awb"/>
+        <var name="nh3_anth_ene"/>
+        <var name="nh3_anth_fef"/>
+        <var name="nh3_anth_ind"/>
+        <var name="nh3_anth_res"/>
+        <var name="nh3_anth_shp"/>
+        <var name="nh3_anth_slv"/>
+        <var name="nh3_anth_sum"/>
+        <var name="nh3_anth_swd"/>
+        <var name="nh3_anth_tnr"/>
+        <var name="nh3_anth_tro"/>
+</stream>
+
+<stream name="anth_so2_emissions"
+        type="input"
+        filename_template="{{anthSO2}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="so2_anth_sum"/>
+</stream>
+
+<stream name="anth_iso_emissions"
+        type="input"
+        filename_template="{{anthISO}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="iso_anth_sum"/>
+</stream>
+
+<stream name="anth_mnt_emissions"
+        type="input"
+        filename_template="{{anthMNT}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="mnt_anth_sum"/>
+</stream>
+
+<stream name="anth_co_emissions"
+        type="input"
+        filename_template="{{anthCO}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="co_anth_sum"/>
+</stream>
+
+<stream name="biob_bc_emissions"
+        type="input"
+        filename_template="{{biobBC}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="bc_biob_modis"/>
+</stream>
+
+<stream name="biob_oc_emissions"
+        type="input"
+        filename_template="{{biobOC}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="oc_biob_modis"/>
+</stream>
+
+<stream name="biob_ni_emissions"
+        type="input"
+        filename_template="{{biobNH3}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="nh3_biob_modis"/>
+</stream>
+
+<stream name="biob_su_emissions"
+        type="input"
+        filename_template="{{biobSO2}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="so2_biob_modis"/>
+</stream>
+
+<stream name="biob_co_emissions"
+        type="input"
+        filename_template="{{biobCO}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="co_biob_modis"/>
+</stream>
+<stream name="biob_iso_emissions"
+        type="input"
+        filename_template="{{biobISO}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="iso_biob_modis"/>
+</stream>
+
+<stream name="biob_mnt_emissions"
+        type="input"
+        filename_template="{{biobMNT}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="mnt_biob_modis"/>
+</stream>
+
+<stream name="biog_co_emissions"
+        type="input"
+        filename_template="{{biogCO}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="co_biog_megan"/>
+</stream>
+
+<stream name="biog_iso_emissions"
+        type="input"
+        filename_template="{{biogISO}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="iso_biog_megan"/>
+</stream>
+
+<stream name="biog_mnt_emissions"
+        type="input"
+        filename_template="{{biogMNT}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="mnt_biog_megan"/>
+</stream>
+
+<stream name="biog_apinene_emissions"
+        type="input"
+        filename_template="{{biogAPIN}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="mnta_biog_megan"/>
+</stream>
+
+<stream name="biog_bpinene_emissions"
+        type="input"
+        filename_template="{{biogBPIN}}"
+        input_interval="none">
+        immutable="false"
+
+        <var name="mntb_biog_megan"/>
+</stream>
+
+
+<stream name="prm_lowbc_area_avg"
+        type="input"
+        filename_template="{{prmArea}}"
+        input_interval="none">
+        immutable="false"
+        <var name="firesize_biob_modis_avg"/>
+</stream>
+
+<stream name="prm_lowbc_area_std"
+        type="input"
+        filename_template="{{prmArea}}"
+        input_interval="none">
+        immutable="false"
+        <var name="firesize_biob_modis_std"/>
+</stream>
+
+<stream name="prm_lowbc_frp_avg"
+        type="input"
+        filename_template="{{prmArea}}"
+        input_interval="none">
+        immutable="false"
+        <var name="frp_biob_modis_avg"/>
+</stream>
+
+<stream name="prm_lowbc_frp_std"
+        type="input"
+        filename_template="{{prmArea}}"
+        input_interval="none">
+        immutable="false"
+        <var name="frp_biob_modis_std"/>
+</stream>
+
+</streams>

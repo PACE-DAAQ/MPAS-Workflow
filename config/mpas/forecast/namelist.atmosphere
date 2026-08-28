@@ -127,25 +127,25 @@
     config_gocart2G_toNTIEDTKE = true
     config_gocart2G_biobemis_interval = '00_01:00:00'
     config_gocart2G_hno3_tau = 86400.0
-    config_gocart2G_opticsBC = 'optics_BC.v1_5.nc'
-    config_gocart2G_opticsBC_RRTMG = 'opticsBands_BC.v1_5.RRTMG.nc'
-    config_gocart2G_opticsOC = 'optics_OC.v1_5.nc'
-    config_gocart2G_opticsOC_RRTMG = 'opticsBands_OC.v1_5.RRTMG.nc'
-    config_gocart2G_opticsBR = 'optics_BRC.v2_5.nc'
-    config_gocart2G_opticsBR_RRTMG = 'opticsBands_BRC.v2_5.RRTMG.nc'
-    config_gocart2G_opticsDU = 'optics_DU.v15_5.nc'
-    config_gocart2G_opticsDU_RRTMG = 'opticsBands_DU.v15_5.RRTMG.nc'
-    config_gocart2G_opticsSS = 'optics_SS.v3_5.nc'
-    config_gocart2G_opticsSS_RRTMG = 'opticsBands_SS.v3_5.RRTMG.nc'
-    config_gocart2G_opticsSU = 'optics_SU.v2_5.nc'
-    config_gocart2G_opticsSU_RRTMG = 'opticsBands_SU.v2_5.RRTMG.nc'
-    config_gocart2G_opticsNI = 'optics_NI.v2_5.nc'
-    config_gocart2G_opticsNI_RRTMG = 'opticsBands_NI.v2_5.RRTMG.nc'
+    config_gocart2G_opticsBC = '{{opticsBc}}'
+    config_gocart2G_opticsBC_RRTMG = '{{opticsBcRrtmg}}'
+    config_gocart2G_opticsOC = '{{opticsOc}}'
+    config_gocart2G_opticsOC_RRTMG = '{{opticsOcRrtmg}}'
+    config_gocart2G_opticsBR = '{{opticsBrc}}'
+    config_gocart2G_opticsBR_RRTMG = '{{opticsBrcRrtmg}}'
+    config_gocart2G_opticsDU = '{{opticsDu}}'
+    config_gocart2G_opticsDU_RRTMG = '{{opticsDuRrtmg}}'
+    config_gocart2G_opticsSS = '{{opticsSs}}'
+    config_gocart2G_opticsSS_RRTMG = '{{opticsSsRrtmg}}'
+    config_gocart2G_opticsSU = '{{opticsSu}}'
+    config_gocart2G_opticsSU_RRTMG = '{{opticsSuRrtmg}}'
+    config_gocart2G_opticsNI = '{{opticsNi}}'
+    config_gocart2G_opticsNI_RRTMG = '{{opticsNiRrtmg}}'
 /
 
 &plumerisemodel
     config_do_bburnPRM      = PRMbburnFlag
     config_do_FRP           = PRMfrpFlag
-    config_prm_lbc_interval = 01_00:00:00
+    config_prm_lowbc_interval = 01_00:00:00
     config_prm_interval     = 00_01:00:00
 /

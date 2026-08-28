@@ -14,17 +14,36 @@ from initialize.config.Task import TaskLookup
 
 from initialize.data.StateEnsemble import StateEnsemble
 from initialize.data.ExternalAnalyses import ExternalAnalyses
+from initialize.data.Emissions import Emissions
 
 from initialize.framework.HPC import HPC
 
 class InitIC(Component):
   defaults = 'scenarios/defaults/initic.yaml'
+  variablesWithDefaults = {
+    'chemistry mode': ['off', str, ['off', 'prebuilt', 'workflow']],
+    'chemistry source config': ['', str],
+    'chemistry processor directory': ['', str],
+    'chemistry work directory': ['ChemIC/{{thisValidDate}}', str],
+    'chemistry prebuilt directory': ['', str],
+    'chemistry background directory': ['', str],
+  }
 
-  def __init__(self, config:Config, hpc:HPC, meshes:dict, ea:ExternalAnalyses):
+  def __init__(self, config:Config, hpc:HPC, meshes:dict, ea:ExternalAnalyses, emissions:Emissions=None):
     super().__init__(config)
 
     self.ea = ea
+    self.emissions = emissions
     self.meshes = meshes
+    self._set('initicChemistryMode', self['chemistry mode'])
+    self._set('initicChemistrySourceConfig', self['chemistry source config'])
+    self._set('initicChemistryProcessorDirectory', self['chemistry processor directory'])
+    self._set('initicChemistryWorkDir', self['chemistry work directory'])
+    self._set('initicChemistryPrebuiltDir', self['chemistry prebuilt directory'])
+    self._set('initicChemistryBackgroundDir', self['chemistry background directory'])
+    self._set('initicEmissionMode', emissions['mode'] if emissions is not None else 'prebuilt')
+    self._set('initicEmissionWorkDir', emissions['EmissionsWorkDir'] if emissions is not None else '')
+    self._cshVars = list(self._vtable.keys())
     self.baseTask = 'ExternalAnalysisToMPAS'
     self.__used = self.baseTask in ea['PrepareExternalAnalysisOuter']
 
@@ -76,6 +95,20 @@ class InitIC(Component):
       zeroHR = '-0hr'
       queue = 'ConvertExternalAnalyses'
       subqueues.append(queue)
+      chemistryTasks = {}
+      if self['chemistry mode'] == 'workflow':
+        for dt in dtOffsets:
+          dtStr = str(dt)
+          chemTask = 'PrepareChemIC-'+dtStr+'hr'
+          chemistryTasks[dt] = chemTask
+          self._tasks += ['''
+  [['''+chemTask+''']]
+    inherit = '''+queue+''', '''+self.tf.execute+''', BATCH
+    script = $origin/bin/PrepareChemIC.csh "'''+dtStr+'''"
+'''+self.__task.job()+self.__task.directives()+'''
+    [[[events]]]
+      submission timeout = PT10M''']
+
       for (typ, meshName, nCells, meshRatio) in zip(meshTypes, meshNames, meshNCells, meshRatios):
         prevTaskName = None
         for dt in dtOffsets:
@@ -99,6 +132,14 @@ class InitIC(Component):
 '''+self.__task.job()+self.__task.directives()+'''
     [[[events]]]
       submission timeout = PT10M''']
+
+          # Source-first chemistry input must exist before init_atmosphere reads it.
+          if self['chemistry mode'] == 'workflow':
+            self._dependencies += ['''
+    '''+chemistryTasks[dt]+''' => '''+taskName]
+          if self['chemistry mode'] != 'off' and self.emissions is not None and self.emissions['mode'] == 'workflow':
+            self._dependencies += ['''
+    PrepareEmissions => '''+taskName]
 
           # make task[t+dt] depend on task[t]
           if prevTaskName is not None:

@@ -11,6 +11,24 @@ model:
   # PRM (plume rise model) namelist flags for &plumerisemodel (defaults shown; both off by default):
   #   do bburn prm: false   # config_do_bburnPRM  (set true to enable biomass-burning plume rise)
   #   do frp: false         # config_do_FRP
+  #
+  # GOCART2G aerosol optics filenames can be overridden per scenario. The
+  # defaults are defined in initialize/data/Model.py and files are read from
+  # the configured gocart optics directory (OpticsDir). Example:
+  #   optics bc: optics_BC.v1_5.nc
+  #   optics bc rrtmg: opticsBands_BC.v1_5.RRTMG.nc
+  #   optics oc: optics_OC.v1_5.nc
+  #   optics oc rrtmg: opticsBands_OC.v1_5.RRTMG.nc
+  #   optics brc: optics_BRC.v2_5.nc
+  #   optics brc rrtmg: opticsBands_BRC.v2_5.RRTMG.nc
+  #   optics du: optics_DU.v15_5.nc
+  #   optics du rrtmg: opticsBands_DU.v15_5.RRTMG.nc
+  #   optics ss: optics_SS.v3_5.nc
+  #   optics ss rrtmg: opticsBands_SS.v3_5.RRTMG.nc
+  #   optics su: optics_SU.v2_5.nc
+  #   optics su rrtmg: opticsBands_SU.v2_5.RRTMG.nc
+  #   optics ni: optics_NI.v2_5.nc
+  #   optics ni rrtmg: opticsBands_NI.v2_5.RRTMG.nc
   resources:
     #{{mesh}}:
     #  meshRatio: 1 for uniform meshes

@@ -1,0 +1,49 @@
+# MPAS-GOCART2G chemistry cold-start source policy for nmmm0081.
+#
+# Aerosols/nitrate: same-year archived MERRA2-GMI 6-hour files.
+# Gas-phase fields consumed by the current MPAS-GOCART2G initialization
+# (HNO3 and NH3): 2019 monthly OVP archive, because the OVP product is
+# unavailable after 2019. CO, ISOPRENE, and HNO3COND are intentionally not
+# required because the current model IC path does not consume them.
+# This follows the resolution in
+# MPAS-Workflow issue #2 and the supplied create_gocartMPAS_ic.bash workflow.
+# No network fallback is enabled by default: missing controlled chemistry input
+# is fatal so provenance cannot silently change.
+processor config: merra_processor.yaml
+raw cache directory: ${MPAS_GOCART_RAW_CACHE}/merra2
+interval hours: 6
+missing field policy: error
+processing mode: time-sliced
+
+aerosol:
+  source year: same
+  temporal representation: instantaneous_6hour
+  source filename: MERRA2_GMI.inst3_3d_aer_Nv.{source_ymd}_{source_hh}00z.nc4
+  local files:
+    - /glade/campaign/ncar/nmmm0081/Data/MERRA2_GMI/MERRA2_GMI.inst3_3d_aer_Nv.{source_ymd}_{source_hh}00z.nc4
+    - ${MERRA2_AER_RAW_DIR}/MERRA2_GMI.inst3_3d_aer_Nv.{source_ymd}_{source_hh}00z.nc4
+  urls: []
+  processor suffix: .nc4
+
+ovp:
+  source year: 2019
+  temporal representation: monthly_mean
+  # One monthly file is reused for every 6-hour target time in the target month.
+  source filename: MERRA2_GMI.inst0_3d_ovp_Nv.monthly.{source_year}{source_month}.nc4
+  local files:
+    - /glade/campaign/ncar/nmmm0081/Data/MERRA2_GMI/MERRA2_GMI.inst0_3d_ovp_Nv.monthly.{source_year}{source_month}.nc4
+    - ${MERRA2_OVP_RAW_DIR}/MERRA2_GMI.inst0_3d_ovp_Nv.monthly.{source_year}{source_month}.nc4
+  urls: []
+  # The wrapper aliases the monthly source to the filename form expected by the
+  # legacy WPS-intermediate converter; its single time record is read at index 0.
+  processor suffix: _1200z.nc4
+
+# Explicit chemistry-IC sensitivities.  These are independent of emissions
+# scaling.  HNO3=1 is the controlled baseline; alternative factors are recorded
+# in provenance and can be used for nitrate/HNO3 sensitivity experiments.
+scaling:
+  HNO3: 1.0
+  NH3: 1.0
+  NI001: 1.0
+  NI002: 1.0
+  NI003: 1.0

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-Copy selected chemistry variables from an MPAS history file into
-an MPAS init/emissions file. Works with CDF5 files.
+Copy the warm-start GOCART2G chemistry state into a cold MPAS IC.
+
+The cold IC supplies refreshed meteorology and prescribed chemistry
+backgrounds.  The variables below are the prognostic/persistent chemistry
+state that must survive the DA cycle.
 """
 
 from netCDF4 import Dataset
@@ -14,7 +17,9 @@ if len(sys.argv) != 3:
 src_file = sys.argv[1]
 dst_file = sys.argv[2]
 
-# List of variables to copy
+# Prognostic scalar chemistry plus persistent HNO3.
+# Do NOT copy background_hno3 here: it is the prescribed relaxation target
+# supplied by the target-time cold chemistry IC.
 vars_to_copy = [
     "qbcphobic", "qbcphilic",
     "qbrphobic", "qbrphilic",
@@ -24,8 +29,10 @@ vars_to_copy = [
     "qso2", "qso2v",
     "qso4", "qso4v",
     "qseas1", "qseas2", "qseas3", "qseas4", "qseas5",
-    "qdms", "qnh3", "qnh4a",
-    "qsoapa", "qsoapbb", "qsoapbg"
+    "qdms", "qmsa",
+    "qnh3", "qnh4a",
+    "qsoapa", "qsoapbb", "qsoapbg",
+    "persistent_hno3",
 ]
 
 print(f"Opening source: {src_file}")
@@ -33,6 +40,16 @@ src = Dataset(src_file, "r")
 
 print(f"Opening destination: {dst_file}")
 dst = Dataset(dst_file, "r+")
+
+missing_src = [v for v in vars_to_copy if v not in src.variables]
+missing_dst = [v for v in vars_to_copy if v not in dst.variables]
+if missing_src or missing_dst:
+    src.close()
+    dst.close()
+    raise KeyError(
+        "Cannot transfer complete GOCART2G cycling state: "
+        f"missing in source={missing_src}; missing in destination={missing_dst}"
+    )
 
 print("Copying variables...")
 

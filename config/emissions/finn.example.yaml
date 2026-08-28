@@ -1,0 +1,181 @@
+# FINNv2.x each-fire emissions -> native MPAS mesh.
+#
+# FINN MOZART each-fire data are sufficient for the current hard PRM input:
+# fire-size average, because they contain AREA as well as the emissions species.
+# A dedicated base_FRP source is optional and is preferred when available so
+# AREA std and FRP avg/std can also be populated from the intended fire-property
+# product.  Current PRM-author guidance makes only prm_lowbc_area_avg mandatory;
+# the other three lowbc fields are warning-only.
+start_date: '2024-10-01'
+end_date: '2024-11-30'
+
+# Biomass-burning emissions. Historical FINNv2.5/2.5.1 uses GDEX directly on
+# Derecho. 2024+ first checks a local NRT cache, then lazily fetches the ACOM
+# NRT each-fire MOZART file for only the day actually needed.
+sources:
+  - name: gdex-finn25-modisviirs-annual
+    valid years: [2012, 2021]
+    file_type: annual
+    emis_dir: '/gdex/data/d312009/{year}_eachfire_modisviirs/'
+    emis_file_pattern: 'FINNv2.5*_modvrs_MOZART_{year}_*.txt.gz'
+    annual_date_column: ['DAY', 'DATE', 'YYYYMMDD']
+    annual_day_mode: auto
+    annual_chunksize: 250000
+
+  - name: gdex-finn251-modisviirs-monthly
+    valid years: [2022, 2023]
+    file_type: monthly
+    emis_dir: '/gdex/data/d312009/{year}_eachfire_modisviirs/'
+    emis_file_pattern: 'FINNv2.5.1_modvrs_MOZART_{year}{month}_*.txt.gz'
+    annual_date_column: ['DAY', 'DATE', 'YYYYMMDD']
+    annual_day_mode: auto
+    annual_chunksize: 250000
+
+  - name: finn-nrt-local
+    start year: 2024
+    file_type: daily
+    emis_dir: '${FINN_NRT_DIR}/{year}/'
+    emis_file_pattern: 'FINNv2.5.1_modvrs_nrt_MOZART_{year}{month}*.txt*'
+
+  - name: acom-finn-nrt
+    start year: 2024
+    file_type: daily
+    url_template: 'https://www.acom.ucar.edu/acresp/MODELING/finn_emis_txt/FINN2nrt_{year}/FINNv2.5.1_modvrs_nrt_MOZART_{year}{month:02d}{day:02d}.txt.gz'
+
+# MPAS forecast output and PRM fire-statistics output.  PRMAreaFile remains a
+# legacy workflow variable name. Workflow-generated files contain all four PRM
+# fields when possible, but only firesize_biob_modis_avg is mandatory.
+output_file: 'FINNv2.5.1_modvrs_nrt_MOZART_{year}_{grid}.static_hourly_netcdf3.nc'
+prm_stats_output_file: 'FINNv2.5.1_modvrs_nrt_MOZART_{year}_{grid}.static_daily_{start_mon}{start_day}-{end_mon}{end_day}.nc'
+
+# Current PRM input severity (per PRM author, Aug 2026):
+#   firesize_biob_modis_avg  [m2]  REQUIRED active-fire-size mean
+#   firesize_biob_modis_std  [m2]  optional active-fire-size std
+#   frp_biob_modis_avg       [MW]  optional FRP mean
+#   frp_biob_modis_std       [MW]  optional FRP std
+# FINN documents AREA in m2 and FRP in MW in its each-fire text products.
+# Statistics are computed over individual accepted FINN 1-km fire records that
+# map to each MPAS cell (population standard deviation, ddof=0).
+prm:
+  enabled: true
+  # Normally overridden by PrepareEmissions.csh from model.do frp.  This flag
+  # describes the model heat-flux choice; it does NOT make FRP preprocessing
+  # fatal. Missing optional FRP fields warn and are zero-filled in generated files.
+  use frp: false
+  max linear missing days: 1
+  area columns: ['AREA', 'FIRE_AREA', 'area']
+  frp columns: ['FRP', 'frp']
+  sources:
+    # FINN each-fire mechanism files also contain AREA/FRP for older years.
+    - name: gdex-finn25-prm-annual
+      valid years: [2012, 2021]
+      file_type: annual
+      emis_dir: '/gdex/data/d312009/{year}_eachfire_modisviirs/'
+      emis_file_pattern: 'FINNv2.5*_modvrs_MOZART_{year}_*.txt.gz'
+      annual_date_column: ['DAY', 'DATE', 'YYYYMMDD']
+      annual_day_mode: auto
+      annual_chunksize: 250000
+
+    # GDEX provides a smaller dedicated base_FRP product for 2022-2023.
+    - name: gdex-finn251-prm-base-frp-monthly
+      valid years: [2022, 2023]
+      file_type: monthly
+      emis_dir: '/gdex/data/d312009/{year}_eachfire_modisviirs/'
+      emis_file_pattern: 'FINNv2.5.1_modvrs_base_FRP_{year}{month}_*.txt.gz'
+      annual_date_column: ['DAY', 'DATE', 'YYYYMMDD']
+      annual_day_mode: auto
+      annual_chunksize: 250000
+
+    - name: finn-prm-nrt-local
+      start year: 2024
+      file_type: daily
+      emis_dir: '${FINN_NRT_DIR}/{year}/'
+      emis_file_pattern: 'FINNv2.5.1_modvrs_nrt_base_FRP_{year}{month}*.txt*'
+
+    # Some NRT base_FRP distributions have had delimiter problems.  finn_cli
+    # inspects the actual header/data rows and accepts either valid CSV or
+    # whitespace-delimited variants; it does not infer the delimiter from the
+    # filename alone.
+    - name: acom-finn-prm-nrt
+      start year: 2024
+      file_type: daily
+      url_template: 'https://www.acom.ucar.edu/acresp/MODELING/finn_emis_txt/FINN2nrt_{year}/FINNv2.5.1_modvrs_nrt_base_FRP_{year}{month:02d}{day:02d}.txt.gz'
+
+HOURLY: true
+lt_fac: [.43, .43, .43, .43, .43, .43, .43, .43, .43, 3., 6., 10., 14., 17., 14., 12., 9., 6., 3., .43, .43, .43, .43, .43]
+species_map:
+  BC: bc_biob_modis
+  OC: oc_biob_modis
+  CO: co_biob_modis
+  NH3: nh3_biob_modis
+  SO2: so2_biob_modis
+  ISOP: iso_biob_modis
+  BIGENE: mnt_biob_modis
+species_type:
+  BC: aerosol
+  OC: aerosol
+  CO: gas
+  NH3: gas
+  SO2: gas
+  ISOP: gas
+  BIGENE: gas
+
+# FINNv2 can have consecutive missing days.  Fire emissions are episodic, so a
+# multi-day gap is NOT linearly interpolated by default.  At most one missing
+# day may be interpolated; longer gaps use the explicitly configured fallback
+# (e.g. FINNv1) directly.  Set max linear missing days: 0 to disable even the
+# single-day interpolation.
+missing_days:
+  max linear missing days: 1
+  fallback:
+    # Prefer an explicitly supplied local/project copy when available.
+    # Otherwise use ACOM's public legacy FINNv1 NRT archive lazily.  The
+    # HTTPS source uses daily GLOB_MOZ4_YYYYDOY files; only dates actually
+    # selected by the gap policy are downloaded into the workflow cache.
+    sources:
+      - name: finn1-local
+        file_type: daily
+        emis_dir: '${FINN1_DIR}/{year}/'
+        emis_file_pattern: 'GLOB_MOZ4_{year}*.txt.gz'
+      - name: acom-finn1-legacy-nrt
+        file_type: daily
+        valid years: [2018, 2025]
+        url_template: 'https://www.acom.ucar.edu/acresp/MODELING/finn_emis_txt/FINNv1_{year}/GLOB_MOZ4_{year}{doy:03d}.txt.gz'
+    # Optional: force fallback even when the primary file exists at the edges of
+    # a known bad/missing period. This reproduces the proposed Feb-2026 test of
+    # replacing the full Nov 4-10 interval rather than only absent dates.
+    force date ranges:
+      - ['2024-11-04', '2024-11-10']
+
+    # If FINNv1 uses different source columns, provide species_map/species_type
+    # here. Otherwise the primary mappings above are reused.
+    # species_map: {...}
+    # species_type: {...}
+
+    # IMPORTANT: default is no amplitude scaling. Project diagnostics showed
+    # simple overlap-derived scaling could be dominated by large fire events.
+    scale method: none
+
+    # Optional safer alternative. Ratios use daily domain-integrated emissions,
+    # median rather than mean, and clipping to avoid event-driven extremes.
+    # scale method: robust_median_ratio
+    # minimum overlap days: 3
+    # max overlap days: 60
+    # ratio clip: [0.25, 4.0]
+
+    # Or explicit scientifically chosen factors:
+    # scale method: fixed
+    # fixed factors:
+    #   default: 1.0
+    #   bc_biob_modis: 0.8
+
+# Optional emissions sensitivity factors. These apply to emitted species only;
+# PRM AREA/FRP statistics are never emission-scaled. Default=1.0 reproduces the source inventory.
+# HNO3 is NOT a forecast emissions stream; for nitrate sensitivity the emitted
+# precursor here is NH3. HNO3 background/IC scaling belongs in chemistry init.
+scaling:
+  default: 1.0
+  species:
+    NH3: 1.0
+    # BC: 1.0
+    # OC: 1.0
