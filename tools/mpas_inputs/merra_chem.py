@@ -176,29 +176,29 @@ def prepare(config_file: str, valid: datetime, output_dir: str,
     interval = int(cfg.get("interval hours", 6))
     mode = str(cfg.get("processing mode", "daily-container")).lower()
     provenance = {
-        "valid_date": valid.strftime("%Y-%m-%d"),
+        "valid_time": valid.strftime("%Y-%m-%d_%H"),
         "processing_mode": mode,
         "inputs": {},
         "scaling": {},
     }
 
     if mode in ("time-sliced", "timesliced", "single-time-files"):
-        outputs = []
-        for hour in range(0, 24, interval):
-            target = valid.replace(hour=hour, minute=0, second=0, microsecond=0)
-            resolved = {}
-            hour_meta = {}
-            for key, file_key in (("aerosol", "prefix_in_1"), ("ovp", "prefix_in_2")):
-                src, scfg, sd, meta = _resolve_input(
-                    cfg, key, file_key, species, target, cache)
-                resolved[file_key] = (src, scfg, sd)
-                hour_meta[key] = meta
-            expected, scaling = _run_processor_once(
-                base_proc_cfg, cfg, processor_dir, resolved, target, out,
-                out / f"work_{target:%Y%m%d_%H}")
-            outputs.append(expected)
-            provenance["inputs"][f"{hour:02d}"] = hour_meta
-            provenance["scaling"] = scaling
+        # One PrepareChemIC task corresponds to one requested MPAS valid time.
+        # Do not regenerate the other 6-hour times for the same day.
+        target = valid.replace(minute=0, second=0, microsecond=0)
+        resolved = {}
+        target_meta = {}
+        for key, file_key in (("aerosol", "prefix_in_1"), ("ovp", "prefix_in_2")):
+            src, scfg, sd, meta = _resolve_input(
+                cfg, key, file_key, species, target, cache)
+            resolved[file_key] = (src, scfg, sd)
+            target_meta[key] = meta
+        expected, scaling = _run_processor_once(
+            base_proc_cfg, cfg, processor_dir, resolved, target, out,
+            out / f"work_{target:%Y%m%d_%H}")
+        outputs = [expected]
+        provenance["inputs"][f"{target:%H}"] = target_meta
+        provenance["scaling"] = scaling
 
     else:
         # Legacy/daily-container mode: one raw file may hold all 6-hour records.
