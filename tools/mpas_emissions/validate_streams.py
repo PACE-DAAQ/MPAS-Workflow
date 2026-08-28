@@ -4,12 +4,11 @@ Only streams actually consumed by the forecast are checked: ``*_emissions``
 and ``prm_lowbc_*``.  Classic NetCDF/CDF-1/2/5 are accepted; NetCDF4/HDF5 is
 rejected for MPAS-v8+/SMIOL-facing inputs.
 
-PRM validation follows the current plume-rise author's documented contract:
-``prm_lowbc_area_avg`` / ``firesize_biob_modis_avg`` is mandatory.  The
-remaining lowbc inputs (area std, FRP avg, FRP std) are optional and therefore
-produce warnings rather than validation failures when their file/variable is
-missing.  The workflow-generated FINN PRM product still writes all four fields
-when the source information is available.
+The upstream PRM source may lack FRP or spread information, but the current
+gocartMPAS implementation unconditionally reads all four lowbc streams.
+Therefore every MPAS-facing staged PRM file must contain AREA mean/std and
+FRP mean/std.  Workflow preprocessing may zero-fill unavailable optional
+source information before staging the file.
 """
 from __future__ import annotations
 import argparse
@@ -21,14 +20,6 @@ from .io import netcdf_container_format
 STREAM_RE = re.compile(r'<stream\s+name="([^"]+)"(.*?)</stream>', re.S)
 FILE_RE = re.compile(r'filename_template="([^"]+)"')
 VAR_RE = re.compile(r'<var\s+name="([^"]+)"\s*/>')
-
-# Current PRM author guidance (Aug 2026): only area_avg is required.
-OPTIONAL_PRM_STREAMS = {
-    'prm_lowbc_area_std',
-    'prm_lowbc_frp_avg',
-    'prm_lowbc_frp_std',
-}
-
 
 def parse_emission_streams(text: str):
     out=[]
@@ -59,35 +50,28 @@ def validate(streams_file, directory='.'):
     items=parse_emission_streams(streams.read_text())
     if not items: raise ValueError(f'no emissions streams found in {streams}')
     failures=[]
-    warnings=[]
     seen={}
-
-    def report(name: str, message: str):
-        target = warnings if name in OPTIONAL_PRM_STREAMS else failures
-        target.append(f'{name}: {message}')
 
     for name, filename, required in items:
         if '{{' in filename or '$' in filename:
-            report(name, f'unresolved filename placeholder: {filename}')
+            failures.append(f'{name}: unresolved filename placeholder: {filename}')
             continue
         path=base/filename
         if not path.exists():
-            report(name, f'missing file {path}')
+            failures.append(f'{name}: missing file {path}')
             continue
         fmt=netcdf_container_format(path)
         if fmt == 'hdf5' or fmt == 'unknown':
-            report(name, f'MPAS-facing file has unsupported container {fmt}: {path}')
+            failures.append(f'{name}: MPAS-facing file has unsupported container {fmt}: {path}')
         if path not in seen:
             try: seen[path]=_variables(path)
             except Exception as exc:
-                report(name, f'cannot inspect {path}: {exc}')
+                failures.append(f'{name}: cannot inspect {path}: {exc}')
                 continue
         missing=[v for v in required if v not in seen[path]]
         if missing:
-            report(name, f'{path.name} lacks variables {missing}')
+            failures.append(f'{name}: {path.name} lacks variables {missing}')
 
-    for msg in warnings:
-        print(f'WARNING validate_streams: {msg}', file=sys.stderr)
     if failures:
         raise RuntimeError('\n'.join(failures))
     return items
@@ -104,6 +88,6 @@ def main():
         for name,fn,vars_ in items: print(f'{name}: {fn}: {",".join(vars_)}')
         return
     validate(a.streams,a.directory)
-    print(f'validated {len(items)} forecast emissions/PRM streams (optional PRM fields warn only)')
+    print(f'validated {len(items)} forecast emissions/PRM streams')
 
 if __name__=='__main__': main()
