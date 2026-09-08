@@ -442,9 +442,14 @@ if ( "${doBburnPrm}" == "True" ) then
   else
     setenv PYTHONPATH "${mainScriptDir}/tools"
   endif
-  python3 -m mpas_emissions.validate_streams ${StreamsFile} --directory . --only-prm
+  # Names alone are not enough: an all-zero PRM file makes the plume-rise model a
+  # no-op indistinguishable from a working run, so require real fire input.
+  # frp_* is only read by the model when config_do_FRP is true.
+  set prmNonZero = "firesize_biob_modis_avg"
+  if ( "${doFrp}" == "True" ) set prmNonZero = "${prmNonZero},frp_biob_modis_avg"
+  python3 -m mpas_emissions.validate_streams ${StreamsFile} --directory . --only-prm --require-nonzero "${prmNonZero}"
   if ( $status != 0 ) then
-    echo "ERROR ${0}: plume rise is enabled but the staged PRM file does not provide the required prm_lowbc_* fields" > ./FAIL
+    echo "ERROR ${0}: plume rise is enabled but the staged PRM file does not provide usable prm_lowbc_* fire input" > ./FAIL
     exit 1
   endif
 endif

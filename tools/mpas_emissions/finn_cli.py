@@ -698,23 +698,25 @@ def _run_locked(a, cfg):
         """Read one FINN text source and return PRM stats plus FRP availability."""
         df = _read_finn_csv(local_path)
         has_frp = _find_column(df.columns, frp_columns) is not None
+        # When the model is configured with config_do_FRP=true it reads
+        # frp_biob_modis_avg/_std as observations. Zero-filling them and warning
+        # would produce a run whose plume rise is driven by identically-zero FRP
+        # while the log looks normal, so a missing FRP column is fatal in that
+        # mode. In prescribed-heat mode (config_do_FRP=false) the model does not
+        # read them and zero-fill remains correct.
         stats, na, nt = _aggregate_prm_stats(
             df, mesh,
             interior_only=a.interior_only, reject_outside=a.reject_outside,
             max_distance_factor=a.max_distance_factor,
             area_columns=tuple(area_columns),
             frp_columns=tuple(frp_columns),
-            require_frp=False,
+            require_frp=prm_use_frp,
         )
         if not has_frp:
-            mode_note = (
-                "config_do_FRP=true; model execution can continue, but the optional "
-                "FRP avg/std fields are zero-filled and should not be interpreted as "
-                "observed FRP."
-                if prm_use_frp else
-                "optional FRP avg/std are absent and are zero-filled (prescribed-heat mode)."
+            _warn_prm(
+                f"{source_label}: optional FRP avg/std are absent and are "
+                "zero-filled (prescribed-heat mode)."
             )
-            _warn_prm(f"{source_label}: {mode_note}")
         return stats, na, nt, has_frp
 
     def load_prm_day(dt):

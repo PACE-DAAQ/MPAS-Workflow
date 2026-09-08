@@ -22,6 +22,22 @@ scientifically essential.  The current Fortran init/update routines, however,
 unconditionally issue all four stream reads, so a staged file missing any of
 them aborts the model rather than the workflow.
 
+The workflow enforces this at forecast time. When `model.do bburn prm` is true,
+`bin/Forecast.csh` runs `validate_streams --only-prm --require-nonzero` against
+the staged PRM file and fails the task if either the fields are absent or the
+fire input is identically zero. `MPAS_streamAddField` ignores variables it cannot
+find, so without that check a PRM file carrying the older `area_biob_modis`
+names, or one with the right names but no fire data, produces a run whose
+plume-rise model injects nothing while the log looks normal.
+
+The archived prebuilt PRM files
+(`.../gocart2g/prm/FINNv2.5.1_*_static_daily*.nc`) contain only
+`area_biob_modis` and `area_biob_modis_std`, and no FRP at all, so they do not
+satisfy the current model interface. Generate the PRM file through the
+workflow-native FINN path (`emissions mode: workflow` with `prm source: finn`),
+which writes all four names; `bin/PrepareEmissions.csh` can be run offline ahead
+of the cycle to produce it.
+
 `validate_streams` therefore treats all four MPAS-facing fields as required.
 Workflow-generated FINN PRM files populate each field whenever the source
 information is available, and write zeros with a provenance warning for the

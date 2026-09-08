@@ -32,6 +32,21 @@ def parse_emission_streams(text: str):
     return out
 
 
+def _all_zero(path: Path, var: str) -> bool:
+    """True when *var* is present but identically zero everywhere.
+
+    MPAS accepts a PRM file whose fields are all zero and then silently produces
+    no plume rise, so 'the variable exists' is not enough to trust a run.
+    """
+    from netCDF4 import Dataset
+    import numpy as np
+    with Dataset(path) as ds:
+        if var not in ds.variables:
+            return True
+        arr = np.asarray(ds.variables[var][:])
+    return not bool(np.any(np.isfinite(arr) & (arr != 0.0)))
+
+
 def _variables(path: Path) -> set[str]:
     try:
         from netCDF4 import Dataset
@@ -44,7 +59,7 @@ def _variables(path: Path) -> set[str]:
         return set(ds.variables)
 
 
-def validate(streams_file, directory='.', only_prm=False):
+def validate(streams_file, directory='.', only_prm=False, require_nonzero=()):
     streams=Path(streams_file)
     base=Path(directory)
     items=parse_emission_streams(streams.read_text())
@@ -75,6 +90,27 @@ def validate(streams_file, directory='.', only_prm=False):
         if missing:
             failures.append(f'{name}: {path.name} lacks variables {missing}')
 
+    # Presence is not sufficient: a PRM file whose fields are all zero makes the
+    # plume-rise model a no-op that is indistinguishable from a working run.
+    for var in require_nonzero:
+        providers = [(name, base/filename) for name, filename, required in items
+                     if var in required and '{{' not in filename and '$' not in filename]
+        if not providers:
+            failures.append(f'{var}: no stream in {streams.name} provides this variable')
+            continue
+        for name, path in providers:
+            if not path.exists():
+                continue
+            try:
+                empty = _all_zero(path, var)
+            except Exception as exc:
+                failures.append(f'{name}: cannot check {path.name} for non-zero {var}: {exc}')
+                continue
+            if empty:
+                failures.append(
+                    f'{name}: {path.name} has {var} identically zero; the plume-rise '
+                    'model would run with no fire input while logging a normal run')
+
     if failures:
         raise RuntimeError('\n'.join(failures))
     return items
@@ -87,6 +123,8 @@ def main():
     ap.add_argument('--list-only',action='store_true')
     ap.add_argument('--only-prm',action='store_true',
                     help='check only the prm_lowbc_* streams')
+    ap.add_argument('--require-nonzero',default='',
+                    help='comma-separated variables that must not be identically zero')
     a=ap.parse_args()
     items=parse_emission_streams(Path(a.streams).read_text())
     if a.only_prm:
@@ -94,7 +132,8 @@ def main():
     if a.list_only:
         for name,fn,vars_ in items: print(f'{name}: {fn}: {",".join(vars_)}')
         return
-    validate(a.streams,a.directory,only_prm=a.only_prm)
+    validate(a.streams,a.directory,only_prm=a.only_prm,
+             require_nonzero=[v for v in a.require_nonzero.split(',') if v])
     print(f'validated {len(items)} forecast emissions/PRM streams')
 
 if __name__=='__main__': main()

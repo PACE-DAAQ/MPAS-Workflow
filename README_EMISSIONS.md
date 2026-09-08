@@ -171,6 +171,15 @@ the `PrepareEmissions` job wall clock.  Point a later experiment at the same
 products by setting `emissions work directory` (or copying the directory) and
 leaving `reuse existing: true`.
 
+When plume rise is enabled the forecast additionally refuses to start unless the
+staged PRM file provides real fire input: `firesize_biob_modis_avg` must be
+present and not identically zero, and `frp_biob_modis_avg` likewise when
+`do frp: true`. The archived prebuilt PRM files do not satisfy this (they carry
+the older `area_biob_modis` names and no FRP), so a PRM run needs the
+workflow-native FINN product, which is exactly what the offline step above
+produces. A FINN source with no FRP column is now a hard error under
+`do frp: true` rather than a zero-filled warning.
+
 ## Runtime requirements
 
 Normal weight reuse/application needs `numpy`, `scipy`, `pandas`, `yaml`, and a

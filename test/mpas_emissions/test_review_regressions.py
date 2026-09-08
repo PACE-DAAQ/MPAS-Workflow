@@ -175,6 +175,73 @@ def test_finn_fallback_days_inherit_product_scaling():
     assert scaling_factor(resolve(False), species_aliases=['NH3']) == 0.25
 
 
+def test_missing_frp_column_is_fatal_when_do_frp_is_true():
+    # With config_do_FRP=true the model reads frp_biob_modis_avg/_std as
+    # observations. Zero-filling them and warning would drive plume rise with
+    # identically-zero FRP while the log looks normal.
+    import pandas as pd
+    from mpas_emissions.finn_cli import _aggregate_prm_stats
+
+    class _Mesh:
+        n_cells = 4
+        def nearest_cells(self, lat, lon, **kw):
+            ids = np.zeros(len(lat), dtype=int)
+            return ids, None, np.ones(len(lat), dtype=bool)
+
+    df = pd.DataFrame({'LATI': [35.0], 'LONGI': [-100.0], 'AREA': [1.0e6]})
+    kw = dict(interior_only=False, reject_outside=False, max_distance_factor=2.5,
+              area_columns=('AREA',), frp_columns=('FRP',))
+
+    # prescribed-heat mode: zero-fill is correct and stays non-fatal
+    stats, _, _ = _aggregate_prm_stats(df, _Mesh(), require_frp=False, **kw)
+    assert set(stats) >= {'firesize_biob_modis_avg', 'frp_biob_modis_avg'}
+    assert not np.any(stats['frp_biob_modis_avg'])
+
+    # config_do_FRP=true with no FRP column must fail rather than zero-fill
+    try:
+        _aggregate_prm_stats(df, _Mesh(), require_frp=True, **kw)
+    except KeyError as exc:
+        assert 'FRP' in str(exc)
+    else:
+        raise AssertionError('missing FRP column must be fatal when do frp is true')
+
+
+def test_all_zero_prm_file_is_rejected():
+    # A PRM file with the right names but no fire data makes plume rise a no-op.
+    import mpas_emissions.validate_streams as vs
+    from netCDF4 import Dataset
+    streams = """<streams>
+<stream name="prm_lowbc_area_avg" type="input" filename_template="prm.nc" input_interval="none">
+  <var name="firesize_biob_modis_avg"/>
+</stream>
+</streams>"""
+    with tempfile.TemporaryDirectory() as td:
+        d = Path(td)
+        (d/'streams.atmosphere').write_text(streams)
+
+        def build(path, nonzero):
+            with Dataset(path, 'w', format='NETCDF3_64BIT_DATA') as ds:
+                ds.createDimension('Time', None); ds.createDimension('nCells', 8)
+                v = ds.createVariable('firesize_biob_modis_avg', 'f4', ('Time', 'nCells'))
+                a = np.zeros((1, 8), dtype='f4')
+                if nonzero:
+                    a[0, 3] = 1.0e6
+                v[:, :] = a
+
+        build(d/'prm.nc', nonzero=True)
+        vs.validate(d/'streams.atmosphere', d, only_prm=True,
+                    require_nonzero=['firesize_biob_modis_avg'])
+
+        build(d/'prm.nc', nonzero=False)
+        try:
+            vs.validate(d/'streams.atmosphere', d, only_prm=True,
+                        require_nonzero=['firesize_biob_modis_avg'])
+        except RuntimeError as exc:
+            assert 'identically zero' in str(exc)
+        else:
+            raise AssertionError('all-zero PRM input must be rejected')
+
+
 def main():
     for name, fn in sorted(globals().items()):
         if name.startswith('test_') and callable(fn):
