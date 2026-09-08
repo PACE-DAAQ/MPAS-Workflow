@@ -151,12 +151,13 @@ same NetCDF-C/CDF-5-capable environment used for production preprocessing.
 - All 11 emissions/chemistry/default YAML files parsed successfully.
 - `test_daily_time_semantics.py`: **PASS**.
 - `test_regional_weights.py`: **PASS**.
-- `test_prm_optional_contract.py`: **PASS**.  An AREA-average-only PRM file is
-  accepted while the three optional lowbc fields emit warnings; missing AREA
-  average is fatal.
-- `test_end_to_end.py`: **environment-blocked**, not a scientific/code assertion
-  failure.  It reaches the MPAS writer and stops because this container lacks the
-  Python `netCDF4` package required for CDF-5 `NETCDF3_64BIT_DATA` output.
+- `test_prm_required_contract.py`: **PASS**.  A complete staged PRM file is
+  accepted, and each of the four lowbc fields is individually fatal when absent,
+  matching the `validate_streams` policy that gocartMPAS reads all four streams
+  unconditionally.
+- `test_end_to_end.py`: **PASS** on Derecho under the NPL conda environment.
+  The CAMS pipeline writes a genuine CDF-5 container (`CDF\x05`,
+  `NETCDF3_64BIT_DATA`) and the regridded/sector-excluded values match.
 - Real uploaded FINNv2.5.1 samples: both MOZART and base_FRP contain **40,905**
   data rows; content-based delimiter detection selects comma correctly; all
   checked shared fields are row-for-row identical.

@@ -16,7 +16,7 @@ if ( "${initicChemistryMode}" != "workflow" ) then
   exit 0
 endif
 if ( "${initicChemistrySourceConfig}" == "" ) then
-  echo "ERROR $0: initic chemistry source config is empty" > ./FAIL
+  echo "ERROR ${0}: initic chemistry source config is empty" > ./FAIL
   exit 1
 endif
 
@@ -37,7 +37,7 @@ endif
 echo "$0 (INFO): ${chem_cmd}"
 eval ${chem_cmd}
 if ( $status != 0 ) then
-  echo "ERROR $0: chemistry source preparation failed" > ./FAIL
+  echo "ERROR ${0}: chemistry source preparation failed" > ./FAIL
   exit 1
 endif
 

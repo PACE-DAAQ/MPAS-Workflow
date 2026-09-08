@@ -3,6 +3,7 @@ import tempfile
 import numpy as np
 import yaml
 from scipy.io import netcdf_file
+from netCDF4 import Dataset
 
 from mpas_emissions.cams_regrid import CamsProcessor
 from mpas_emissions.mesh import MpasMesh
@@ -68,9 +69,11 @@ def main():
         proc=CamsProcessor(mesh,d/'cache',d/'out',provided_weight_file=wf,chunk_links=2)
         outs=proc.process_config(cfg,kind='anth',reuse_existing=False)
         assert len(outs)==1
-        with netcdf_file(outs[0],'r',mmap=False) as ds:
-            got=np.asarray(ds.variables['bc_anth_sum'].data).copy()
-            fire=np.asarray(ds.variables['bc_anth_awb'].data).copy()
+        # Output is MPAS-facing CDF-5, which scipy's netcdf_file cannot read.
+        with Dataset(outs[0]) as ds:
+            assert ds.data_model == 'NETCDF3_64BIT_DATA'
+            got=np.asarray(ds.variables['bc_anth_sum'][:])
+            fire=np.asarray(ds.variables['bc_anth_awb'][:])
         np.testing.assert_allclose(got[0],[13.5,31.5],rtol=0,atol=1e-6)
         np.testing.assert_allclose(fire,0.0,rtol=0,atol=0)
         w=SparseWeights.open(wf,n_dest=2,n_src=4,require_full_source=True)

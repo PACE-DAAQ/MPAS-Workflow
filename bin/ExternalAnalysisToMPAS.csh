@@ -127,7 +127,7 @@ if ( "${initicChemistryMode}" != "off" ) then
     set chemDir = `echo "${initicChemistryPrebuiltDir}" | sed 's@{{thisValidDate}}@'${thisValidDate}'@'`
   endif
   if ( ! -d "${chemDir}" ) then
-    echo "ERROR $0: chemistry intermediate directory not found: ${chemDir}" > ./FAIL
+    echo "ERROR ${0}: chemistry intermediate directory not found: ${chemDir}" > ./FAIL
     exit 1
   endif
   ln -sfv ${chemDir}/MERRA2:* ./
@@ -138,7 +138,7 @@ if ( "${initicChemistryMode}" != "off" ) then
     set chemBgDir = "${BackgroundLUTDir}"
   endif
   if ( ! -d "${chemBgDir}" ) then
-    echo "ERROR $0: chemistry background directory not found: ${chemBgDir}" > ./FAIL
+    echo "ERROR ${0}: chemistry background directory not found: ${chemBgDir}" > ./FAIL
     exit 1
   endif
   ln -sfv ${chemBgDir}/* ./
@@ -149,7 +149,7 @@ if ( "${initicChemistryMode}" != "off" ) then
     set initEmissionDir = "${EmissionDir}"
   endif
   if ( ! -d "${initEmissionDir}" ) then
-    echo "ERROR $0: emissions directory not found: ${initEmissionDir}" > ./FAIL
+    echo "ERROR ${0}: emissions directory not found: ${initEmissionDir}" > ./FAIL
     exit 1
   endif
   ln -sfv ${initEmissionDir}/* ./

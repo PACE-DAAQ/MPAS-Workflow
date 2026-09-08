@@ -11,21 +11,23 @@ The latest Registry exposes four low-boundary-condition fields:
 | stream | MPAS field | units | workflow severity |
 |---|---|---:|---|
 | `prm_lowbc_area_avg` | `firesize_biob_modis_avg` | m2 | **required** |
-| `prm_lowbc_area_std` | `firesize_biob_modis_std` | m2 | optional / warning |
-| `prm_lowbc_frp_avg` | `frp_biob_modis_avg` | MW | optional / warning |
-| `prm_lowbc_frp_std` | `frp_biob_modis_std` | MW | optional / warning |
+| `prm_lowbc_area_std` | `firesize_biob_modis_std` | m2 | **required** |
+| `prm_lowbc_frp_avg` | `frp_biob_modis_avg` | MW | **required** |
+| `prm_lowbc_frp_std` | `frp_biob_modis_std` | MW | **required** |
 
-The PRM author explicitly clarified that only `prm_lowbc_area_avg` is currently
-required.  The other three messages should be warnings rather than errors
-because their absence does not prevent model execution.
+The distinction between *source* availability and *staged-file* completeness is
+what matters here.  The PRM author clarified that only `prm_lowbc_area_avg`
+carries information the upstream inventory must supply; the other three are not
+scientifically essential.  The current Fortran init/update routines, however,
+unconditionally issue all four stream reads, so a staged file missing any of
+them aborts the model rather than the workflow.
 
-The current Fortran init/update routines still call the four stream reads, so
-v1.12 keeps all four stream definitions in the MPAS templates.  The difference
-is validation severity: only a missing fire-size average aborts the workflow.
-Workflow-generated FINN PRM files populate all four fields whenever the source
-information is available; optional fields that cannot be populated are written
-as zero with a provenance warning.  Existing external PRM files containing only
-`firesize_biob_modis_avg` are accepted by `validate_streams` with warnings.
+`validate_streams` therefore treats all four MPAS-facing fields as required.
+Workflow-generated FINN PRM files populate each field whenever the source
+information is available, and write zeros with a provenance warning for the
+non-essential fields that cannot be populated.  Existing external PRM files
+containing only `firesize_biob_modis_avg` must be zero-filled during
+preprocessing before they can be staged for gocartMPAS.
 
 ## FINN scalar definition
 
