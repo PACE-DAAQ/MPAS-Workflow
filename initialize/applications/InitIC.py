@@ -184,7 +184,23 @@ class InitIC(Component):
     ###########################
     # update tasks/dependencies
     ###########################
+    # These edges order the cold-start chemistry/emissions preparation against
+    # ExternalAnalysisToMPAS, which the cold start instantiates at R1. They must
+    # sit inside a recurrence: SuiteBase concatenates every dependencyComponent's
+    # lines straight into [scheduling][[graph]], where a bare 'A => B' is read as
+    # a recurrence key and cylc rejects the workflow with
+    # "Cannot process recurrence PrepareChemIC-0hr".
+    hasGraph = len(self._dependencies) > 0
+    if hasGraph:
+      self._dependencies = ['''
+    R1 = """'''] + self._dependencies
+
     self._dependencies = self.tf.updateDependencies(self._dependencies)
+
+    if hasGraph:
+      self._dependencies += ['''
+      """''']
+
     self._tasks = self.tf.updateTasks(self._tasks, self._dependencies)
 
     # export all
