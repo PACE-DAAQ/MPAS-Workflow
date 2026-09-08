@@ -31,6 +31,15 @@ sources:
     annual_day_mode: auto
     annual_chunksize: 250000
 
+  # Project archive on Derecho. Files are flat in this directory (no {year}
+  # subdirectory) and cover 2024-10-25..2024-11-30 with a gap at 11-04..11-09.
+  # Listed before the HTTPS source so compute nodes never need outbound network.
+  - name: nmmm0081-finn-nrt
+    start year: 2024
+    file_type: daily
+    emis_dir: '/glade/campaign/ncar/nmmm0081/Data/FINNnrt/'
+    emis_file_pattern: 'FINNv2.5.1_modvrs_nrt_MOZART_{year}{month}*.txt*'
+
   - name: finn-nrt-local
     start year: 2024
     file_type: daily
@@ -85,6 +94,14 @@ prm:
       annual_date_column: ['DAY', 'DATE', 'YYYYMMDD']
       annual_day_mode: auto
       annual_chunksize: 250000
+
+    # Matching base_FRP archive; supplies real FRP so all four PRM fields are
+    # populated from observations rather than zero-filled.
+    - name: nmmm0081-finn-prm-nrt
+      start year: 2024
+      file_type: daily
+      emis_dir: '/glade/campaign/ncar/nmmm0081/Data/FINNnrt/'
+      emis_file_pattern: 'FINNv2.5.1_modvrs_nrt_base_FRP_{year}{month}*.txt*'
 
     - name: finn-prm-nrt-local
       start year: 2024

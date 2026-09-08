@@ -30,8 +30,8 @@ endif
 # The cycle point normally comes from cylc. Accept it as an optional argument so
 # a whole year can be prepared offline, before the cycling workflow is started:
 #
-#   cd ${mainScriptDir} && ./bin/PrepareEmissions.csh 20241025T0000Z
-#   cd ${mainScriptDir} && ./bin/PrepareEmissions.csh 2024          # year is enough
+#   cd <MPAS-Workflow checkout> && ./bin/PrepareEmissions.csh 20241025T0000Z
+#   cd <MPAS-Workflow checkout> && ./bin/PrepareEmissions.csh 2024   # year is enough
 #
 # Only the 4-digit year is used below, and the products land in the annual,
 # cycle-independent 'work directory: Emissions/{{mesh}}'. One offline run per
@@ -107,10 +107,21 @@ if ( "$emissionsSeedPrebuilt" == "True" ) then
   endif
 endif
 
+# mainScriptDir is the installed experiment copy, which does not exist yet when
+# emissions are prepared offline ahead of the workflow. Fall back to the tools/
+# directory beside this script so an offline run works from a plain checkout.
+set toolsDir = "${mainScriptDir}/tools"
+if ( ! -d "$toolsDir" ) then
+  set toolsDir = `cd $0:h/.. && pwd`/tools
+endif
+if ( ! -d "$toolsDir" ) then
+  echo "ERROR PrepareEmissions: cannot locate the tools directory (tried ${mainScriptDir}/tools and $toolsDir)" > ./FAIL
+  exit 1
+endif
 if ( $?PYTHONPATH ) then
-  setenv PYTHONPATH "${mainScriptDir}/tools:${PYTHONPATH}"
+  setenv PYTHONPATH "${toolsDir}:${PYTHONPATH}"
 else
-  setenv PYTHONPATH "${mainScriptDir}/tools"
+  setenv PYTHONPATH "${toolsDir}"
 endif
 
 # Any workflow-native source needs the mesh-derived cache.
