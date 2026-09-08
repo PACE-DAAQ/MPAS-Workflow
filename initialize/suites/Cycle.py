@@ -105,6 +105,11 @@ class Cycle(SuiteBase):
       'forecast',
       'firstbackground',
       'extendedforecast',
+      # InitIC contributes the PrepareChemIC => ExternalAnalysisToMPAS and
+      # PrepareEmissions => ExternalAnalysisToMPAS edges. Without it those tasks
+      # are emitted under [runtime] but never referenced by the graph, so cylc
+      # never instantiates them.
+      'initic',
     ]
 
     self.taskComponents += [

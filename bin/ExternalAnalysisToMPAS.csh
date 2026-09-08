@@ -47,7 +47,10 @@ source config/auto/externalanalyses.csh
 source config/auto/model.csh
 source config/auto/invariantstream.csh
 source config/auto/initic.csh
-source config/auto/emissions.csh
+# Only the Cycle suite instantiates the Emissions component, so this file does
+# not exist for GenerateExternalAnalyses/ForecastFromExternalAnalyses/CloudDirectInsertion.
+# Sourcing a missing file is fatal in csh, and exits before ./FAIL can be written.
+if ( -e config/auto/emissions.csh ) source config/auto/emissions.csh
 source config/tools.csh
 set yymmdd = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 1-8`
 set hh = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 10-11`
@@ -169,8 +172,17 @@ if ( "${initicChemistryMode}" != "off" ) then
   set saveStreamsFile = "${StreamsFile}"
   setenv StreamsFile ${StreamsFileInit}
   set nCells = ${ArgNCells}
+  set meshRatio = ${ArgRatio}
+  rm -f ./FAIL
   source ${mainScriptDir}/bin/SetStreamsVariant.csh
   setenv StreamsFile "${saveStreamsFile}"
+  # 'exit' inside a sourced csh file does not terminate the sourcing script, so
+  # SetStreamsVariant.csh's failures must be detected through its ./FAIL sentinel.
+  # Without this the placeholders stay unresolved and the task reports success.
+  if ( -e ./FAIL ) then
+    echo "ERROR ${0}: SetStreamsVariant.csh failed for the cold-start streams file"
+    exit 1
+  endif
 endif
 
 ## copy/modify dynamic namelist

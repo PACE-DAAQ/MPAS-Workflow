@@ -168,11 +168,19 @@ def _read_finn_csv(path: str, **kwargs):
     sep = _finn_separator(path)
     if sep != ",":
         kwargs.setdefault("engine", "python")
-    df = pd.read_csv(path, sep=sep, comment="#", **kwargs)
+    obj = pd.read_csv(path, sep=sep, comment="#", **kwargs)
+
     # FINN headers may contain a space after a comma (e.g. `` PM10``/`` APIN``).
     # Normalize names once so species maps are independent of that formatting.
-    df.columns = [str(c).strip() for c in df.columns]
-    return df
+    def _normalize(frame):
+        frame.columns = [str(c).strip() for c in frame.columns]
+        return frame
+
+    # With chunksize, pandas returns a TextFileReader iterator rather than a
+    # DataFrame; normalize each chunk instead of the (attribute-less) reader.
+    if kwargs.get("chunksize"):
+        return (_normalize(chunk) for chunk in obj)
+    return _normalize(obj)
 
 
 def _find_column(columns, aliases):
@@ -359,8 +367,13 @@ def _parse_container_dates(series, path: str, cfg: dict):
     missing = parsed.isna() & nums.notna()
     if missing.any():
         vals = nums.loc[missing].astype(int)
-        ym = re.search(r"(19\d{2}|20\d{2})(0[1-9]|1[0-2])", os.path.basename(path))
-        yy = re.search(r"(19\d{2}|20\d{2})", os.path.basename(path))
+        # GDEX names carry a creation stamp, e.g.
+        # FINNv2.5_modvrs_MOZART_2021_c20220714.txt.gz. Matching YYYYMM against it
+        # would date 2021 January fires to 2022-07, so strip it before inferring
+        # the data period. Monthly containers (..._202202_...) still match.
+        base = re.sub(r"_c\d{6,8}(?=\D|$)", "", os.path.basename(path))
+        ym = re.search(r"(19\d{2}|20\d{2})(0[1-9]|1[0-2])", base)
+        yy = re.search(r"(19\d{2}|20\d{2})", base)
         ref_year = int(cfg.get("annual_reference_year", yy.group(1) if yy else 0))
         mode = str(cfg.get("annual_day_mode", "auto")).lower()
         if mode == "auto": mode = "doy" if vals.max() > 31 else ("dom" if ym else "doy")

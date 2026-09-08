@@ -35,7 +35,20 @@ class InitIC(Component):
     self.ea = ea
     self.emissions = emissions
     self.meshes = meshes
-    self._set('initicChemistryMode', self['chemistry mode'])
+    # An unquoted 'off'/'no' in a scenario YAML is a YAML 1.1 boolean, and
+    # Config.get coerces it with str(), yielding 'False' rather than 'off'.
+    # That silently enables the chemistry branch in bin/ExternalAnalysisToMPAS.csh.
+    # Normalize the boolean spellings and reject anything still unrecognized.
+    chemistryMode = self['chemistry mode']
+    if chemistryMode in ('False', 'None'):
+      chemistryMode = 'off'
+    elif chemistryMode == 'True':
+      chemistryMode = 'on'
+    assert chemistryMode in ('off', 'prebuilt', 'workflow'), (
+      "initic 'chemistry mode' must be one of off/prebuilt/workflow, not "
+      +repr(self['chemistry mode'])+" (quote the value in the scenario YAML)")
+    self._set('chemistry mode', chemistryMode)
+    self._set('initicChemistryMode', chemistryMode)
     self._set('initicChemistrySourceConfig', self['chemistry source config'])
     self._set('initicChemistryProcessorDirectory', self['chemistry processor directory'])
     self._set('initicChemistryWorkDir', self['chemistry work directory'])

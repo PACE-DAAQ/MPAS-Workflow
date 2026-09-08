@@ -8,6 +8,7 @@ The Python package ``netCDF4`` is used only as a writer API; selecting
 """
 
 from __future__ import annotations
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -100,6 +101,27 @@ def write_mpas_emissions(
 
     out = Path(out_file)
     out.parent.mkdir(parents=True, exist_ok=True)
+    # Write to a temporary file and rename only after validation, matching
+    # MpasEmissionStreamWriter. Writing the final path directly means an
+    # interrupted run leaves a readable but partial file whose unwritten
+    # variables read back as NC_FILL_FLOAT (9.96921e+36); --reuse-existing then
+    # accepts it and MPAS ingests those as emission fluxes.
+    tmp = out.with_name(out.name + f".tmp.{os.getpid()}")
+    if tmp.exists():
+        tmp.unlink()
+    try:
+        _write_mpas_emissions_body(Dataset, tmp, prepared, times, nt, n_cells, strlen, unlimited_time, attrs)
+    except BaseException:
+        if tmp.exists():
+            tmp.unlink()
+        raise
+    # Fail immediately if a library/runtime silently produced some other format.
+    assert_mpas_compatible_file(tmp, require_cdf5=True)
+    os.replace(tmp, out)
+    return out
+
+
+def _write_mpas_emissions_body(Dataset, out, prepared, times, nt, n_cells, strlen, unlimited_time, attrs):
     with Dataset(str(out), "w", format="NETCDF3_64BIT_DATA") as ds:
         ds.createDimension("Time", None if unlimited_time else nt)
         ds.createDimension("nCells", n_cells)
@@ -120,7 +142,4 @@ def write_mpas_emissions(
                 continue
             ds.setncattr(key, value)
         ds.setncattr("mpas_io_container", "CDF-5 / NETCDF3_64BIT_DATA")
-
-    # Fail immediately if a library/runtime silently produced some other format.
-    assert_mpas_compatible_file(out, require_cdf5=True)
     return out

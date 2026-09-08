@@ -273,10 +273,23 @@ class RegularInventoryProcessor:
             if frequency == "source":
                 targets = [r.valid_time for r in records if start <= r.valid_time <= end]
             elif frequency == "monthly":
-                targets=[]; t=datetime(start.year,start.month,1)
+                # Enumerate the calendar months covered by [start, end].
+                months=[]; t=datetime(start.year,start.month,1)
                 while t <= end:
-                    if t >= start: targets.append(t)
+                    months.append((t.year, t.month))
                     t = datetime(t.year + (1 if t.month == 12 else 0), 1 if t.month == 12 else t.month+1, 1)
+                # Anchor on the source records when the source supplies exactly one
+                # record per covered month. CF-convention monthly inventories (CEDS)
+                # timestamp mid-month, and a day-1 target can never be bracketed by
+                # them, so every such product failed to resolve. When the source is
+                # itself first-of-month this yields the same schedule as before.
+                by_month={}
+                for r in records:
+                    by_month.setdefault((r.valid_time.year, r.valid_time.month), []).append(r.valid_time)
+                if months and all(len(by_month.get(m, ())) == 1 for m in months):
+                    targets=[by_month[m][0] for m in months if start <= by_month[m][0] <= end]
+                else:
+                    targets=[datetime(y,mo,1) for (y,mo) in months if datetime(y,mo,1) >= start]
             elif frequency == "daily":
                 targets = make_schedule(start, end, timedelta(days=float(time_cfg.get("target step days", 1.0))))
             elif frequency == "hourly":

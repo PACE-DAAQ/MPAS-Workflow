@@ -36,7 +36,8 @@ initic:
   # prebuilt : read MERRA2:* intermediates from chemistry prebuilt directory.
   # workflow : PrepareChemIC starts from raw MERRA2/GMI resources using
   #            config/chemistry/merra2_source.example.yaml.
-  chemistry mode: off
+  # Quoted: unquoted 'off' is a YAML 1.1 boolean and would be read as False.
+  chemistry mode: 'off'
   chemistry source config: ''
   chemistry processor directory: ''
   chemistry work directory: 'ChemIC/{{thisValidDate}}'

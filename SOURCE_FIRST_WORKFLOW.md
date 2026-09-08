@@ -40,6 +40,58 @@ emissions are also workflow-native, `PrepareEmissions => ExternalAnalysisToMPAS`
 The chemistry-enabled init stream reads the same anthropogenic/biogenic/biomass
 burning products selected for the model experiment.
 
+## Model build requirements
+
+Both executables must come from a gocartMPAS build configured with
+`GOCART2G=true PRM=true`.  The stock `mpas-bundle` binaries do **not** work for
+this path: neither `mpas_atmosphere` nor `mpas_init_atmosphere` from a default
+bundle contains any GOCART2G symbols.
+
+The two flags are independently required, and a build missing either one fails
+in a way that is easy to misread as a workflow bug:
+
+- `core_init_atmosphere/Registry.xml` includes
+  `../core_atmosphere/chemistry/Registry_init_gocart2G.xml` inside
+  `#ifdef DO_GOCART2G`.  Without `GOCART2G=true`, the `&preproc_chemistry`
+  namelist record in `config/mpas/initic/namelist.init_atmosphere.gocart2g`
+  does not exist and `init_atmosphere` rejects the namelist.
+- The `biob_prm_lowbc` var_struct written into the init output is inside
+  `#ifdef DO_PRM`.  Without `PRM=true`, the `prm_lowbc_*` streams in
+  `config/mpas/initic/streams.init_atmosphere.gocart2g` reference variables the
+  binary does not define.
+
+A verified `init_atmosphere` build on Derecho, matching the compiler and library
+versions of the existing GOCART2G `atmosphere_model`:
+
+```shell
+module load ncarenv/25.10 craype/2.7.34 intel/2025.2.1 ncarcompilers/1.1.0 \
+            libfabric/1.22.0 cray-mpich/8.1.32 hdf5/1.14.6 netcdf/4.9.3 \
+            parallel-netcdf/1.14.1
+make intel CORE=init_atmosphere PRECISION=single GOCART2G=true PRM=true GEN_F90=true
+```
+
+Build this serially.  `core_init_atmosphere/Makefile` invokes the chemistry
+sub-build (`core_gocart2G`) without declaring a dependency on the init core's own
+objects, so a parallel `make -j` can compile
+`mpas_chemistry_init_gocart2G_interp.F90` before `init_atm_hinterp.mod` exists and
+fail with `error #7002: Error in opening the compiled module file`.
+
+Point the workflow at the result with `build.init directory` (and
+`build.forecast directory` for the GOCART2G `atmosphere_model`); both default to
+`bundle`, which is correct only for meteorology-only experiments.
+
+To confirm an executable is usable before submitting a cycle:
+
+```shell
+strings <executable> | grep -c gocart2G   # must be non-zero
+strings <executable> | grep -c prm_lowbc  # must be non-zero
+```
+
+The forecast binary must additionally expose the fourteen
+`config_gocart2G_optics*` namelist options that `bin/Forecast.csh` substitutes;
+older gocartMPAS builds hard-code the optics filenames in the Registry and
+ignore the scenario selection.
+
 ## Table-1 aerosol-emission ensemble
 
 `model.member variants` can reproduce the nine combinations in the supplied
