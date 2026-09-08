@@ -26,10 +26,21 @@ set WorkDir = ${ExperimentDirectory}/`echo "${initicChemistryWorkDir}" | sed 's@
 mkdir -p ${WorkDir}
 set py = "python3"
 if ( $?emissionsPython ) set py = "${emissionsPython}"
+# mainScriptDir is the installed experiment copy. Fall back to the tools/
+# directory beside this script so the task can also be run directly from a
+# checkout as a pre-flight check before submitting the suite.
+set toolsDir = "${mainScriptDir}/tools"
+if ( ! -d "$toolsDir" ) then
+  set toolsDir = `cd $0:h/.. && pwd`/tools
+endif
+if ( ! -d "$toolsDir" ) then
+  echo "ERROR ${0}: cannot locate the tools directory (tried ${mainScriptDir}/tools and $toolsDir)" > ./FAIL
+  exit 1
+endif
 if ( $?PYTHONPATH ) then
-  setenv PYTHONPATH "${mainScriptDir}/tools:${PYTHONPATH}"
+  setenv PYTHONPATH "${toolsDir}:${PYTHONPATH}"
 else
-  setenv PYTHONPATH "${mainScriptDir}/tools"
+  setenv PYTHONPATH "${toolsDir}"
 endif
 
 set chem_cmd = "$py -m mpas_inputs.merra_chem ${initicChemistrySourceConfig} --valid ${thisValidDate} --output-dir ${WorkDir}"
