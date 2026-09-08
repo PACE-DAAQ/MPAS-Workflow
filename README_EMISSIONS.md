@@ -136,6 +136,41 @@ mesh; SCRIP and conservative weights are generated/cached by geometry
 fingerprints.  FINN uses the spherical KD-tree plus optional exact polygon
 containment for regional boundaries.
 
+## Preparing emissions offline, ahead of the cycling workflow
+
+The emission products are **annual per mesh** — `work directory` defaults to
+`Emissions/{{mesh}}` with no cycle date in the path, and only the 4-digit year
+of the cycle point is passed to the inventory CLIs.  The in-workflow
+`PrepareEmissions` task runs once per cycle but, with the default
+`reuse existing: true`, every run after the first is a no-op.
+
+So the whole year can be built once, offline, before the workflow starts:
+
+```shell
+# 1. generate config/auto/*.csh for the scenario without submitting to cylc
+cd MPAS-Workflow
+python3 -c "
+from initialize.config.Scenario import Scenario
+from initialize.suites.SuiteBase import SuiteLookup
+s = Scenario('scenarios/<yourScenario>.yaml', None, None); s.initialize()
+SuiteLookup(s.getConfig().getOrDefault('suite','Cycle'), s.getConfig())"
+
+# 2. build the year's emissions (hours/minutes, depending on the inventories)
+./bin/PrepareEmissions.csh 2024            # or a full cycle point, 20241025T0000Z
+```
+
+Run it from the directory holding `config/auto`, since the script sources those
+files by relative path.  It reads the cycle point from its first argument when
+given and from `$CYLC_TASK_CYCLE_POINT` otherwise, so the cylc task invocation is
+unchanged.  A bare year is accepted because nothing below the year is used.
+
+This is worth doing for the source-first inventories: generating conservative
+weights for a 0.1-degree CEDS/GFAS/QFED grid is minutes-to-hours of single-node
+work that would otherwise sit inside the first cycle's critical path, subject to
+the `PrepareEmissions` job wall clock.  Point a later experiment at the same
+products by setting `emissions work directory` (or copying the directory) and
+leaving `reuse existing: true`.
+
 ## Runtime requirements
 
 Normal weight reuse/application needs `numpy`, `scipy`, `pandas`, `yaml`, and a

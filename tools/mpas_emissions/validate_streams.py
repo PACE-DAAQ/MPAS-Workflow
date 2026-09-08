@@ -44,11 +44,14 @@ def _variables(path: Path) -> set[str]:
         return set(ds.variables)
 
 
-def validate(streams_file, directory='.'):
+def validate(streams_file, directory='.', only_prm=False):
     streams=Path(streams_file)
     base=Path(directory)
     items=parse_emission_streams(streams.read_text())
-    if not items: raise ValueError(f'no emissions streams found in {streams}')
+    if only_prm:
+        items=[i for i in items if i[0].startswith('prm_lowbc_')]
+        if not items: raise ValueError(f'no prm_lowbc_* streams found in {streams}')
+    elif not items: raise ValueError(f'no emissions streams found in {streams}')
     failures=[]
     seen={}
 
@@ -82,12 +85,16 @@ def main():
     ap.add_argument('streams')
     ap.add_argument('--directory',default='.')
     ap.add_argument('--list-only',action='store_true')
+    ap.add_argument('--only-prm',action='store_true',
+                    help='check only the prm_lowbc_* streams')
     a=ap.parse_args()
     items=parse_emission_streams(Path(a.streams).read_text())
+    if a.only_prm:
+        items=[i for i in items if i[0].startswith('prm_lowbc_')]
     if a.list_only:
         for name,fn,vars_ in items: print(f'{name}: {fn}: {",".join(vars_)}')
         return
-    validate(a.streams,a.directory)
+    validate(a.streams,a.directory,only_prm=a.only_prm)
     print(f'validated {len(items)} forecast emissions/PRM streams')
 
 if __name__=='__main__': main()

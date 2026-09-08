@@ -431,6 +431,24 @@ set prmFRP   = `echo "${doFrp}" | tr '[A-Z]' '[a-z]'`
 sed -i 's@PRMbburnFlag@'${prmBburn}'@' $NamelistFile
 sed -i 's@PRMfrpFlag@'${prmFRP}'@' $NamelistFile
 
+## When plume rise is enabled, confirm the staged PRM file really provides the four
+## prm_lowbc_* fields. MPAS_streamAddField ignores variables it cannot find, so a
+## PRM file carrying the older area_biob_modis names is accepted silently and the
+## plume-rise model then runs with firesize/frp identically zero -- a no-op that is
+## indistinguishable from a working run in the logs.
+if ( "${doBburnPrm}" == "True" ) then
+  if ( $?PYTHONPATH ) then
+    setenv PYTHONPATH "${mainScriptDir}/tools:${PYTHONPATH}"
+  else
+    setenv PYTHONPATH "${mainScriptDir}/tools"
+  endif
+  python3 -m mpas_emissions.validate_streams ${StreamsFile} --directory . --only-prm
+  if ( $status != 0 ) then
+    echo "ERROR ${0}: plume rise is enabled but the staged PRM file does not provide the required prm_lowbc_* fields" > ./FAIL
+    exit 1
+  endif
+endif
+
 if ( ${ArgFCLengthHR} == 0 ) then
   ## zero-length forecast case (NOT CURRENTLY USED)
   rm ./${icFile}_tmp
@@ -469,6 +487,14 @@ if ("${updateATMVarsFromCold}" == True) then
   #ncks -A -v qbcphobic,qbcphilic,qbrphobic,qbrphilic,qocphobic,qocphilic,qdust1,qdust2,qdust3,qdust4,qdust5,qni1,qni2,qni3,qso2,qso2v,qso4,qso4v,qseas1,qseas2,qseas3,qseas4,qseas5,qdms,qnh3,qnh4a,qsoapa,qsoapbb,qsoapbg,background_dms,background_h2o2,background_oh,background_no3,background_hno3,background_ptrop,qmsa ${icFile}_tmp ${icFile}
   # Use the workflow-local copy helper from the latest mpas-gocart2g branch.
   python3 ${mainScriptDir}/tools/copy_mpas_vars.py ${icFile}_tmp ${icFile}
+  # copy_mpas_vars.py fails fast when a cycling-state variable is missing. tcsh
+  # does not abort on a non-zero child, so without this check the guard becomes a
+  # silent no-op and the forecast runs from the untouched cold IC, discarding the
+  # entire cycled aerosol state while reporting success.
+  if ( $status != 0 ) then
+    echo "ERROR ${0}: copy_mpas_vars.py failed to transfer GOCART2G cycling state into ${icFile}" > ./FAIL
+    exit 1
+  endif
 endif
 
   set log = log.${MPASCore}.0000.out

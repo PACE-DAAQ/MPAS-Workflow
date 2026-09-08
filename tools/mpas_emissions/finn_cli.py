@@ -668,7 +668,17 @@ def _run_locked(a, cfg):
             return value
         if dt not in paths:
             raise KeyError(dt)
-        scfg = cfg if is_primary else fallback_cfg
+        # The top-level `scaling:` block describes the output product, not the
+        # source that happened to supply a given day. missing_days.fallback holds
+        # {sources, force date ranges, scale method} and no `scaling` key, so
+        # using it verbatim gave fallback days a factor of 1.0 while primary days
+        # were scaled -- a step discontinuity inside one output file.
+        if is_primary:
+            scfg = cfg
+        elif isinstance(fallback_cfg, dict) and fallback_cfg.get("scaling"):
+            scfg = fallback_cfg
+        else:
+            scfg = cfg
         smap = species_map if is_primary else fallback_species_map
         stype = species_type if is_primary else fallback_species_type
         local_path = _localize_source(paths[dt], source_cache / ("primary_downloads" if is_primary else "fallback_downloads"), dt)

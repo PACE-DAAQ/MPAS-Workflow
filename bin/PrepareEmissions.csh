@@ -27,8 +27,28 @@ if ( "$emissionsMode" != "workflow" ) then
   exit 0
 endif
 
-set yymmdd = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 1-8`
-set hh = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 10-11`
+# The cycle point normally comes from cylc. Accept it as an optional argument so
+# a whole year can be prepared offline, before the cycling workflow is started:
+#
+#   cd ${mainScriptDir} && ./bin/PrepareEmissions.csh 20241025T0000Z
+#   cd ${mainScriptDir} && ./bin/PrepareEmissions.csh 2024          # year is enough
+#
+# Only the 4-digit year is used below, and the products land in the annual,
+# cycle-independent 'work directory: Emissions/{{mesh}}'. One offline run per
+# year and mesh therefore covers every cycle in that year; the in-workflow task
+# then finds its outputs already present and is a no-op under 'reuse existing'.
+set cyclePoint = ""
+if ( $#argv > 0 ) then
+  set cyclePoint = "$1"
+else if ( $?CYLC_TASK_CYCLE_POINT ) then
+  set cyclePoint = "${CYLC_TASK_CYCLE_POINT}"
+endif
+if ( "$cyclePoint" == "" ) then
+  echo "ERROR PrepareEmissions: no cycle point available; pass one as an argument (e.g. 20241025T0000Z or 2024) or set CYLC_TASK_CYCLE_POINT" > ./FAIL
+  exit 1
+endif
+set yymmdd = `echo ${cyclePoint} | cut -c 1-8`
+set hh = `echo ${cyclePoint} | cut -c 10-11`
 set thisCycleDate = ${yymmdd}${hh}
 set emissionYear = `echo ${thisCycleDate} | cut -c 1-4`
 

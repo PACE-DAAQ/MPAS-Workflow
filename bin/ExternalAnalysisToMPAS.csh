@@ -156,6 +156,12 @@ if ( "${initicChemistryMode}" != "off" ) then
     exit 1
   endif
   ln -sfv ${initEmissionDir}/* ./
+  # streams.init_atmosphere.gocart2g references {{prmArea}} in four prm_lowbc_*
+  # input streams. bin/Forecast.csh links PRMAreaDir for the same reason; in
+  # prebuilt emission mode the PRM file is not inside EmissionDir.
+  if ( -d "${PRMAreaDir}" ) then
+    ln -sfv ${PRMAreaDir}/* ./
+  endif
   set initTemplate = ${StreamsFileInit}.gocart2g
   set nmlTemplate = ${NamelistFileInit}.gocart2g
 endif
