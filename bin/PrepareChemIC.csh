@@ -4,7 +4,9 @@ set ArgDT = "$1"
 source config/environmentEmissions.csh
 source config/auto/experiment.csh
 source config/auto/initic.csh
-source config/auto/emissions.csh
+# Generated only by the Cycle suite; sourcing a missing file is fatal in csh
+# and exits before ./FAIL can be written.
+if ( -e config/auto/emissions.csh ) source config/auto/emissions.csh
 source config/tools.csh
 set yymmdd = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 1-8`
 set hh = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 10-11`

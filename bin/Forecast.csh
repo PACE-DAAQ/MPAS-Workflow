@@ -263,7 +263,16 @@ set prmAreaFile = `echo "${PRMAreaFile}" | sed 's@{{nCells}}@'${nCells}'@' | sed
 sed -i 's@{{prmArea}}@'${prmAreaFile}'@' ${StreamsFile}
 
 ## select GOCART emission inventories (anth/biog/biob) and substitute the {{...}} emission placeholders
+## 'exit' inside a sourced csh file does not terminate the sourcing script, so
+## SetStreamsVariant.csh's failures must be detected through its ./FAIL sentinel.
+## Without this an unknown variant leaves {{anthBC}}/{{biobBC}}/... literal in the
+## streams file and the task reports success until MPAS fails opening the name.
+rm -f ./FAIL
 source ${mainScriptDir}/bin/SetStreamsVariant.csh
+if ( -e ./FAIL ) then
+  echo "ERROR ${0}: SetStreamsVariant.csh failed for the forecast streams file"
+  exit 1
+endif
 
 ## Update sea-surface variables from GFS/GEFS analyses
 set localSeaUpdateFile = x${meshRatio}.${nCells}.sfc_update.nc

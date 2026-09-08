@@ -42,8 +42,6 @@ class InitIC(Component):
     chemistryMode = self['chemistry mode']
     if chemistryMode in ('False', 'None'):
       chemistryMode = 'off'
-    elif chemistryMode == 'True':
-      chemistryMode = 'on'
     assert chemistryMode in ('off', 'prebuilt', 'workflow'), (
       "initic 'chemistry mode' must be one of off/prebuilt/workflow, not "
       +repr(self['chemistry mode'])+" (quote the value in the scenario YAML)")
