@@ -41,7 +41,8 @@ class Cycle(SuiteBase):
     self.c['members'] = Members(conf)
 
     self.c['externalanalyses'] = ExternalAnalyses(conf, self.c['hpc'], meshes)
-    self.c['initic'] = InitIC(conf, self.c['hpc'], meshes, self.c['externalanalyses'])
+    self.c['initic'] = InitIC(conf, self.c['hpc'], meshes, self.c['externalanalyses'], None,
+                self.c['workflow'])
 
     self.c['da'] = DA(conf, self.c['hpc'], self.c['observations'], meshes, self.c['model'], self.c['members'], self.c['workflow'])
     self.c['forecast'] = Forecast(conf, self.c['hpc'], meshes['Outer'], self.c['members'], self.c['model'],
@@ -103,6 +104,10 @@ class Cycle(SuiteBase):
       'forecast',
       'firstbackground',
       'extendedforecast',
+      # InitIC contributes the PrepareChemIC => ExternalAnalysisToMPAS edges. Without it
+      # those tasks are emitted under [runtime] but never referenced by the graph, so cylc
+      # never instantiates them.
+      'initic',
     ]
 
     self.taskComponents += [
