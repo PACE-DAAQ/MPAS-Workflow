@@ -43,17 +43,36 @@ dst = Dataset(dst_file, "r+")
 
 missing_src = [v for v in vars_to_copy if v not in src.variables]
 missing_dst = [v for v in vars_to_copy if v not in dst.variables]
-if missing_src or missing_dst:
+
+# Missing in the destination is fatal: the destination is the freshly built
+# init for this cycle, so an absent field means the init is not chemistry
+# enabled and there is nowhere to put the cycled state.
+if missing_dst:
     src.close()
     dst.close()
     raise KeyError(
-        "Cannot transfer complete GOCART2G cycling state: "
-        f"missing in source={missing_src}; missing in destination={missing_dst}"
+        "Cannot transfer GOCART2G cycling state: "
+        f"missing in destination={missing_dst}"
+    )
+
+# Missing in the source is not fatal. Warm starts from a background produced
+# before a field was added to stream_list.atmosphere.dastate legitimately lack
+# it. The destination already holds that cycle's own value, interpolated from
+# MERRA2 by init_atmosphere, so keeping it is both safe and more appropriate
+# for the date than anything the older source could supply.
+if missing_src:
+    print(
+        "WARNING copy_mpas_vars: not present in source, keeping the value "
+        f"init_atmosphere produced for this cycle: {missing_src}",
+        file=sys.stderr,
     )
 
 print("Copying variables...")
 
 for v in vars_to_copy:
+    if v in missing_src:
+        print(f"  skipping {v} (absent from source; destination value retained)")
+        continue
     print(f"  copying {v} ...")
     dst[v][:] = src[v][:]     # fastest CDF5-safe method
 
