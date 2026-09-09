@@ -169,8 +169,24 @@ def prepare(config_file: str, valid: datetime, output_dir: str,
 
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
-    cache = Path(os.path.expandvars(str(
-        cfg.get("raw cache directory", out / "raw")))).expanduser()
+    # os.path.expandvars leaves '${VAR}' intact when VAR is unset, so an
+    # unconfigured optional cache variable would mkdir a directory named
+    # literally '${VAR}/merra2' -- and, being relative, inside the task's cwd
+    # (the installed workflow tree) rather than anywhere useful.
+    rawCache = cfg.get("raw cache directory", None)
+    if rawCache is None:
+        cache = out / "raw"
+    else:
+        expanded = os.path.expandvars(str(rawCache))
+        if "$" in expanded:
+            print("WARNING merra_chem: 'raw cache directory' contains an unset "
+                  f"variable ({rawCache}); falling back to {out / 'raw'}",
+                  file=sys.stderr)
+            cache = out / "raw"
+        else:
+            cache = Path(expanded).expanduser()
+            if not cache.is_absolute():
+                cache = out / cache
     cache.mkdir(parents=True, exist_ok=True)
 
     interval = int(cfg.get("interval hours", 6))
