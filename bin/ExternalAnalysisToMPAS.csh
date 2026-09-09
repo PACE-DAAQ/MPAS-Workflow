@@ -47,8 +47,9 @@ source config/auto/externalanalyses.csh
 source config/auto/model.csh
 source config/auto/invariantstream.csh
 source config/auto/initic.csh
-# Only the Cycle suite instantiates the Emissions component, so this file may not
-# exist. Sourcing a missing file is fatal in csh and exits before ./FAIL is written.
+# Only the Cycle suite instantiates the Emissions component, so this file does
+# not exist for GenerateExternalAnalyses/ForecastFromExternalAnalyses/CloudDirectInsertion.
+# Sourcing a missing file is fatal in csh, and exits before ./FAIL can be written.
 if ( -e config/auto/emissions.csh ) source config/auto/emissions.csh
 source config/tools.csh
 set yymmdd = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 1-8`
@@ -106,27 +107,8 @@ ln -sfv $GraphInfoDir/x${ArgRatio}.${ArgNCells}.graph.info* .
 ## Link MPAS invariant field
 if ( $ArgType == "Outer" ) then
    ln -sfv $InvariantFieldsDirOuter/$InvariantFieldsFileOuter .
-   set thisInvariantFile = $InvariantFieldsDirOuter/$InvariantFieldsFileOuter
 else
    ln -sfv $InvariantFieldsDirInner/$InvariantFieldsFileInner .
-   set thisInvariantFile = $InvariantFieldsDirInner/$InvariantFieldsFileInner
-endif
-
-## A GOCART2G-enabled init_atmosphere reads erod from the 'input' stream, because
-## erod lives in the mesh var_struct of Registry_init_gocart2G.xml. An invariant file
-## without it aborts deep inside MPAS with
-##   nDustErosionDim *** not found in stream ***
-## Only meshes whose invariant carries the GOCART2G static dust fields can be used for
-## a chemistry cold start; fail here with an actionable message instead.
-if ( $?initicChemistryMode ) then
-  if ( "${initicChemistryMode}" != "off" ) then
-    ncdump -h "${thisInvariantFile}" | grep -q 'nDustErosionDim'
-    if ( $status != 0 ) then
-      echo "ERROR ${0}: initic chemistry mode is '${initicChemistryMode}' but the invariant file has no GOCART2G static dust fields (nDustErosionDim/erod): ${thisInvariantFile}" > ./FAIL
-      echo "  regenerate the invariant with a GOCART2G init_atmosphere, or set 'initic: chemistry mode: off'" >> ./FAIL
-      exit 1
-    endif
-  endif
 endif
 
 ## link lookup tables
@@ -135,6 +117,7 @@ foreach fileGlob ($MPASLookupFileGlobs)
   ln -sfv ${MPASLookupDir}/*${fileGlob} .
 end
 
+# Optional GOCART2G chemistry initialization. The source-first mode stages raw
 # MERRA chemistry intermediates separately and reuses the configured emission
 # file families.  This cold-start conversion is shared across ensemble members;
 # member-specific emission variants are selected later by Forecast.csh.
@@ -179,6 +162,17 @@ if ( "${initicChemistryMode}" != "off" ) then
   if ( -d "${PRMAreaDir}" ) then
     ln -sfv ${PRMAreaDir}/* ./
   endif
+  set initTemplate = ${StreamsFileInit}.gocart2g
+  set nmlTemplate = ${NamelistFileInit}.gocart2g
+endif
+
+## copy/modify dynamic streams file
+rm -f ${StreamsFileInit}
+cp -v $ModelConfigDir/initic/${initTemplate} ${StreamsFileInit}
+sed -i 's@{{nCells}}@'${ArgNCells}'@' ${StreamsFileInit}
+sed -i 's@{{PRECISION}}@'${model__precision}'@' ${StreamsFileInit}
+sed -i 's@{{meshRatio}}@'${ArgRatio}'@' ${StreamsFileInit}
+if ( "${initicChemistryMode}" != "off" ) then
   # Use the scenario-wide streams variant for the shared cold-start file.
   # Forecast.csh applies per-member memberVariants for the 9-member emissions ensemble.
   set saveStreamsFile = "${StreamsFile}"
@@ -195,24 +189,19 @@ if ( "${initicChemistryMode}" != "off" ) then
     echo "ERROR ${0}: SetStreamsVariant.csh failed for the cold-start streams file"
     exit 1
   endif
-  set initTemplate = ${StreamsFileInit}.gocart2g
-  set nmlTemplate = ${NamelistFileInit}.gocart2g
 endif
 
-## copy/modify dynamic streams file
-rm ${StreamsFileInit}
-cp -v $ModelConfigDir/initic/${StreamsFileInit} .
-sed -i 's@{{nCells}}@'${ArgNCells}'@' ${StreamsFileInit}
-sed -i 's@{{PRECISION}}@'${model__precision}'@' ${StreamsFileInit}
-sed -i 's@{{meshRatio}}@'${ArgRatio}'@' ${StreamsFileInit}
-
 ## copy/modify dynamic namelist
-rm ${NamelistFileInit}
-cp -v $ModelConfigDir/initic/${NamelistFileInit} .
+rm -f ${NamelistFileInit}
+cp -v $ModelConfigDir/initic/${nmlTemplate} ${NamelistFileInit}
 sed -i 's@startTime@'${thisMPASNamelistDate}'@' $NamelistFileInit
 sed -i 's@nCells@'${ArgNCells}'@' $NamelistFileInit
 sed -i 's@{{meshRatio}}@'${ArgRatio}'@' $NamelistFileInit
 sed -i 's@{{UngribPrefix}}@'${externalanalyses__UngribPrefix}'@' $NamelistFileInit
+if ( "${initicChemistryMode}" != "off" ) then
+  set prmInit = `echo "${doBburnPrm}" | tr '[A-Z]' '[a-z]'`
+  sed -i 's@PRMinitFlag@'${prmInit}'@' $NamelistFileInit
+endif
 
 # Run the executable
 # ==================

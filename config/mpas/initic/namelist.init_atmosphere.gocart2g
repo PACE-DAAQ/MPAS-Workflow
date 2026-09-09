@@ -66,6 +66,5 @@
 /
 
 &preproc_plumerisemodel
-    ! Templated when the plume-rise model lands; false until then.
-    config_init_bburnPRM = .false.
+    config_init_bburnPRM = PRMinitFlag
 /
