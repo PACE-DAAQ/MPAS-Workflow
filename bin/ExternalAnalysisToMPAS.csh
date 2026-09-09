@@ -205,6 +205,13 @@ sed -i 's@{{meshRatio}}@'${ArgRatio}'@' ${StreamsFileInit}
 if ( "${initicChemistryMode}" != "off" ) then
   set saveStreamsFile = "${StreamsFile}"
   setenv StreamsFile ${StreamsFileInit}
+  # SetStreamsVariant.csh builds emissionGrid as "x${meshRatio}.${nCells}" and resolves
+  # {{nCells}} in the PRM filename, so both must be set before sourcing it. bin/Forecast.csh
+  # does the same from $nCellsOuter/$meshRatioOuter before its own call. Omitting them was
+  # harmless while this script's filenames were hard-coded; it stops being harmless now that
+  # SetStreamsVariant.csh templates every emission filename.
+  set nCells = ${ArgNCells}
+  set meshRatio = ${ArgRatio}
   source ${mainScriptDir}/bin/SetStreamsVariant.csh
   set variantStatus = $status
   setenv StreamsFile "${saveStreamsFile}"

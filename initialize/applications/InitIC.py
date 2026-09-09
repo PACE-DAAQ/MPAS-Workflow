@@ -14,6 +14,7 @@ from initialize.config.Task import TaskLookup
 
 from initialize.data.StateEnsemble import StateEnsemble
 from initialize.data.ExternalAnalyses import ExternalAnalyses
+from initialize.data.Emissions import Emissions
 
 from initialize.framework.HPC import HPC
 
@@ -28,7 +29,7 @@ class InitIC(Component):
     'chemistry background directory': ['', str],
   }
 
-  def __init__(self, config:Config, hpc:HPC, meshes:dict, ea:ExternalAnalyses, emissions=None,
+  def __init__(self, config:Config, hpc:HPC, meshes:dict, ea:ExternalAnalyses, emissions:Emissions=None,
                workflow=None):
     super().__init__(config)
 
