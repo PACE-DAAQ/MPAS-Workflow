@@ -1,0 +1,35 @@
+workflow:
+  first cycle point: 20241025T00
+  final cycle point: 20241026T00
+observations:
+  resource: GladeRDAOnline
+members:
+  n: 1
+model:
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+  do bburn prm: true
+  do frp: false
+externalanalyses:
+  resource: GFS.RDA
+variational:
+  DAType: 3dvar
+  biasCorrection: true
+build:
+  init directory: /glade/derecho/scratch/syha/gocartMPAS-init-build
+  forecast directory: /glade/derecho/scratch/syha/gocartMPAS
+  gocart emission directory: /glade/derecho/scratch/syha/pandac/syha_3dvar-60-iter_O60km/Emissions/60km
+  prm area directory: /glade/derecho/scratch/syha/pandac/syha_3dvar-60-iter_O60km/Emissions/60km
+emissions:
+  mode: prebuilt
+initic:
+  chemistry mode: workflow
+  chemistry source config: config/chemistry/merra2_source.example.yaml
+extendedforecast:
+  lengthHR: 0
+suite: ForecastFromExternalAnalyses
+forecast:
+  updateATMVarsFromCold: true
+experiment:
+  name: gocart2g_freecycle_test
