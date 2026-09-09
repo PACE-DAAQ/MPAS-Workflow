@@ -36,3 +36,5 @@ extendedforecast:
   lengthHR: 0
 experiment:
   name: gocart2g_warmstart_smoke
+forecast:
+  updateATMVarsFromCold: true
