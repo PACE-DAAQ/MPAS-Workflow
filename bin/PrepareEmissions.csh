@@ -1,0 +1,218 @@
+#!/bin/csh -f
+
+# (C) Copyright 2023 UCAR
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0.
+#
+# Mesh-native GOCART2G emission preparation. Existing prebuilt inventory files
+# are mirrored first, then selected inventories are replaced by workflow-native
+# products. This makes migration inventory-by-inventory and preserves old runs.
+
+set echo
+source config/tools.csh
+source config/auto/build.csh
+source config/auto/emissions.csh
+source config/auto/experiment.csh
+source config/auto/invariantstream.csh
+source config/auto/model.csh
+source config/auto/workflow.csh
+
+if ( "$emissionsEnvironmentScript" != "" && -e "$emissionsEnvironmentScript" ) then
+  source "$emissionsEnvironmentScript"
+endif
+set py = "$emissionsPython"
+
+if ( "$emissionsMode" != "workflow" ) then
+  echo "PrepareEmissions: emissionsMode=$emissionsMode; nothing to do"
+  exit 0
+endif
+
+# The cycle point normally comes from cylc. Accept it as an optional argument so
+# a whole year can be prepared offline, before the cycling workflow is started:
+#
+#   cd <MPAS-Workflow checkout> && ./bin/PrepareEmissions.csh 20241025T0000Z
+#   cd <MPAS-Workflow checkout> && ./bin/PrepareEmissions.csh 2024   # year is enough
+#
+# Only the 4-digit year is used below, and the products land in the annual,
+# cycle-independent 'work directory: Emissions/{{mesh}}'. One offline run per
+# year and mesh therefore covers every cycle in that year; the in-workflow task
+# then finds its outputs already present and is a no-op under 'reuse existing'.
+set cyclePoint = ""
+if ( $#argv > 0 ) then
+  set cyclePoint = "$1"
+else if ( $?CYLC_TASK_CYCLE_POINT ) then
+  set cyclePoint = "${CYLC_TASK_CYCLE_POINT}"
+endif
+if ( "$cyclePoint" == "" ) then
+  echo "ERROR PrepareEmissions: no cycle point available; pass one as an argument (e.g. 20241025T0000Z or 2024) or set CYLC_TASK_CYCLE_POINT" > ./FAIL
+  exit 1
+endif
+set yymmdd = `echo ${cyclePoint} | cut -c 1-8`
+set hh = `echo ${cyclePoint} | cut -c 10-11`
+set thisCycleDate = ${yymmdd}${hh}
+set emissionYear = `echo ${thisCycleDate} | cut -c 1-4`
+
+if ( ! $?emissionsGridName || "$emissionsGridName" == "" ) then
+  set emissionsGridName = "x${meshRatioOuter}.${nCellsOuter}"
+endif
+
+# Resolve authoritative MPAS geometry. This works for uniform and variable-
+# resolution meshes because no nominal grid spacing is used downstream.
+if ( "$emissionsMeshFile" != "" ) then
+  set meshFile = "$emissionsMeshFile"
+else
+  set meshFile = "${InvariantFieldsDirOuter}/${InvariantFieldsFileOuter}"
+  if ( ! -e "$meshFile" ) then
+    set meshFile = "${InitFieldsDirOuter}/${InitFieldsFileOuter}"
+  endif
+endif
+if ( ! -e "$meshFile" ) then
+  echo "ERROR PrepareEmissions: MPAS mesh/static file not found: $meshFile" > ./FAIL
+  exit 1
+endif
+
+set outDir = "${ExperimentDirectory}/${EmissionsWorkDir}"
+set cacheDir = "${ExperimentDirectory}/${EmissionsCacheDir}"
+mkdir -p "$outDir" "$cacheDir"
+
+# Preserve current production behavior while inventories migrate, but do not
+# require a prebuilt directory for a fully source-first experiment.
+if ( "$emissionsSeedPrebuilt" == "True" ) then
+  if ( -d "${EmissionDir}" ) then
+    set nonomatch
+    foreach f (${EmissionDir}/*)
+      if ( -e "$f" ) then
+        set b = $f:t
+        if ( ! -e "$outDir/$b" ) ln -sf "$f" "$outDir/$b"
+      endif
+    end
+    unset nonomatch
+  else
+    echo "PrepareEmissions (WARNING): seed prebuilt requested but EmissionDir does not exist: ${EmissionDir}"
+  endif
+
+  # The forecast streams also require a separate daily FINN AREA file for the
+  # plume-rise-model (PRM) stream. A workflow-native FINN run below replaces it.
+  if ( -d "${PRMAreaDir}" ) then
+    set nonomatch
+    foreach f (${PRMAreaDir}/*)
+      if ( -e "$f" ) then
+        set b = $f:t
+        if ( ! -e "$outDir/$b" ) ln -sf "$f" "$outDir/$b"
+      endif
+    end
+    unset nonomatch
+  else
+    echo "PrepareEmissions (WARNING): seed prebuilt requested but PRMAreaDir does not exist: ${PRMAreaDir}"
+  endif
+endif
+
+# mainScriptDir is the installed experiment copy, which does not exist yet when
+# emissions are prepared offline ahead of the workflow. Fall back to the tools/
+# directory beside this script so an offline run works from a plain checkout.
+set toolsDir = "${mainScriptDir}/tools"
+if ( ! -d "$toolsDir" ) then
+  set toolsDir = `cd $0:h/.. && pwd`/tools
+endif
+if ( ! -d "$toolsDir" ) then
+  echo "ERROR PrepareEmissions: cannot locate the tools directory (tried ${mainScriptDir}/tools and $toolsDir)" > ./FAIL
+  exit 1
+endif
+if ( $?PYTHONPATH ) then
+  setenv PYTHONPATH "${toolsDir}:${PYTHONPATH}"
+else
+  setenv PYTHONPATH "${toolsDir}"
+endif
+
+# Any workflow-native source needs the mesh-derived cache.
+
+if ( "$emissionsPrepareMesh" == "True" || \
+     "$emissionsPrepareCamsAnth" == "True" || \
+     "$emissionsPrepareCamsBiog" == "True" || \
+     "$emissionsPrepareCeds" == "True" || \
+     "$emissionsPrepareGfas" == "True" || \
+     "$emissionsPrepareQfed" == "True" ) then
+  $py -m mpas_emissions.prepare_mesh --mesh "$meshFile" --cache-dir "$cacheDir"
+  if ( $status != 0 ) then
+    echo "ERROR PrepareEmissions: mesh preparation failed" > ./FAIL
+    exit 1
+  endif
+endif
+
+set reuseArg = ""
+if ( "$emissionsReuseExisting" == "True" ) set reuseArg = "--reuse-existing"
+set anthWeightArg = ""
+if ( "$emissionsCamsAnthWeightsFile" != "" ) set anthWeightArg = "--weights $emissionsCamsAnthWeightsFile"
+set biogWeightArg = ""
+if ( "$emissionsCamsBiogWeightsFile" != "" ) set biogWeightArg = "--weights $emissionsCamsBiogWeightsFile"
+
+# CAMS anthropogenic. The source NetCDF coordinates define the source grid;
+# MPAS geometry defines the destination; weights are reused/generated by cache.
+if ( "$emissionsPrepareCamsAnth" == "True" ) then
+  if ( "$emissionsCamsAnthConfig" == "" ) then
+    echo "ERROR PrepareEmissions: cams anth config is required" > ./FAIL
+    exit 1
+  endif
+  $py -m mpas_emissions.cams_cli "$emissionsCamsAnthConfig" \
+    --kind anth --year "$emissionYear" --grid-name "$emissionsGridName" --mesh "$meshFile" --cache-dir "$cacheDir" --output-dir "$outDir" \
+    --chunk-links "$emissionsCamsChunkLinks" --conservation-tolerance "$emissionsCamsConservationTolerance" $anthWeightArg $reuseArg
+  if ( $status != 0 ) then
+    echo "ERROR PrepareEmissions: CAMS anthropogenic preparation failed" > ./FAIL
+    exit 1
+  endif
+endif
+
+# CAMS biogenic.
+if ( "$emissionsPrepareCamsBiog" == "True" ) then
+  if ( "$emissionsCamsBiogConfig" == "" ) then
+    echo "ERROR PrepareEmissions: cams biog config is required" > ./FAIL
+    exit 1
+  endif
+  $py -m mpas_emissions.cams_cli "$emissionsCamsBiogConfig" \
+    --kind biog --year "$emissionYear" --grid-name "$emissionsGridName" --mesh "$meshFile" --cache-dir "$cacheDir" --output-dir "$outDir" \
+    --chunk-links "$emissionsCamsChunkLinks" --conservation-tolerance "$emissionsCamsConservationTolerance" $biogWeightArg $reuseArg
+  if ( $status != 0 ) then
+    echo "ERROR PrepareEmissions: CAMS biogenic preparation failed" > ./FAIL
+    exit 1
+  endif
+endif
+
+
+# Config-driven regular-grid inventories.  CEDS/GFAS/QFED share the same engine;
+# their YAML files define source filenames/variables/units/cadence and the exact
+# MPAS output names expected by SetStreamsVariant.csh.
+foreach inv ( ceds gfas qfed )
+  set doIt = "False"
+  set cfg = ""
+  set weights = ""
+  if ( "$inv" == "ceds" ) then
+    set doIt = "$emissionsPrepareCeds"
+    set cfg = "$emissionsCedsConfig"
+    set weights = "$emissionsCedsWeightsFile"
+  else if ( "$inv" == "gfas" ) then
+    set doIt = "$emissionsPrepareGfas"
+    set cfg = "$emissionsGfasConfig"
+    set weights = "$emissionsGfasWeightsFile"
+  else if ( "$inv" == "qfed" ) then
+    set doIt = "$emissionsPrepareQfed"
+    set cfg = "$emissionsQfedConfig"
+    set weights = "$emissionsQfedWeightsFile"
+  endif
+  if ( "$doIt" == "True" ) then
+    if ( "$cfg" == "" ) then
+      echo "ERROR PrepareEmissions: $inv config is required" > ./FAIL
+      exit 1
+    endif
+    set weightArg = ""
+    if ( "$weights" != "" ) set weightArg = "--weights $weights"
+    $py -m mpas_emissions.regular_cli "$cfg" \
+      --year "$emissionYear" --grid-name "$emissionsGridName" --mesh "$meshFile" --cache-dir "$cacheDir" --output-dir "$outDir" \
+      --chunk-links "$emissionsRegularChunkLinks" --conservation-tolerance "$emissionsRegularConservationTolerance" $weightArg $reuseArg
+    if ( $status != 0 ) then
+      echo "ERROR PrepareEmissions: $inv preparation failed" > ./FAIL
+      exit 1
+    endif
+  endif
+end
+
+echo "PrepareEmissions complete: $outDir"
