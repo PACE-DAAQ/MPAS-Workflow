@@ -19,12 +19,43 @@ from initialize.framework.HPC import HPC
 
 class InitIC(Component):
   defaults = 'scenarios/defaults/initic.yaml'
+  variablesWithDefaults = {
+    'chemistry mode': ['off', str, ['off', 'prebuilt', 'workflow']],
+    'chemistry source config': ['', str],
+    'chemistry processor directory': ['', str],
+    'chemistry work directory': ['ChemIC/{{thisValidDate}}', str],
+    'chemistry prebuilt directory': ['', str],
+    'chemistry background directory': ['', str],
+  }
 
-  def __init__(self, config:Config, hpc:HPC, meshes:dict, ea:ExternalAnalyses):
+  def __init__(self, config:Config, hpc:HPC, meshes:dict, ea:ExternalAnalyses, emissions=None,
+               workflow=None):
     super().__init__(config)
 
     self.ea = ea
+    self.emissions = emissions
+    self.workflow = workflow
     self.meshes = meshes
+    # An unquoted 'off'/'no' in a scenario YAML is a YAML 1.1 boolean, and
+    # Config.get coerces it with str(), yielding 'False' rather than 'off'.
+    # That silently enables the chemistry branch in bin/ExternalAnalysisToMPAS.csh.
+    # Normalize the boolean spellings and reject anything still unrecognized.
+    chemistryMode = self['chemistry mode']
+    if chemistryMode in ('False', 'None'):
+      chemistryMode = 'off'
+    assert chemistryMode in ('off', 'prebuilt', 'workflow'), (
+      "initic 'chemistry mode' must be one of off/prebuilt/workflow, not "
+      +repr(self['chemistry mode'])+" (quote the value in the scenario YAML)")
+    self._set('chemistry mode', chemistryMode)
+    self._set('initicChemistryMode', chemistryMode)
+    self._set('initicChemistrySourceConfig', self['chemistry source config'])
+    self._set('initicChemistryProcessorDirectory', self['chemistry processor directory'])
+    self._set('initicChemistryWorkDir', self['chemistry work directory'])
+    self._set('initicChemistryPrebuiltDir', self['chemistry prebuilt directory'])
+    self._set('initicChemistryBackgroundDir', self['chemistry background directory'])
+    self._set('initicEmissionMode', emissions['mode'] if emissions is not None else 'prebuilt')
+    self._set('initicEmissionWorkDir', emissions['EmissionsWorkDir'] if emissions is not None else '')
+    self._cshVars = list(self._vtable.keys())
     self.baseTask = 'ExternalAnalysisToMPAS'
     self.__used = self.baseTask in ea['PrepareExternalAnalysisOuter']
 
@@ -76,6 +107,20 @@ class InitIC(Component):
       zeroHR = '-0hr'
       queue = 'ConvertExternalAnalyses'
       subqueues.append(queue)
+      chemistryTasks = {}
+      if self['chemistry mode'] == 'workflow':
+        for dt in dtOffsets:
+          dtStr = str(dt)
+          chemTask = 'PrepareChemIC-'+dtStr+'hr'
+          chemistryTasks[dt] = chemTask
+          self._tasks += ['''
+  [['''+chemTask+''']]
+    inherit = '''+queue+''', '''+self.tf.execute+''', BATCH
+    script = $origin/bin/PrepareChemIC.csh "'''+dtStr+'''"
+'''+self.__task.job()+self.__task.directives()+'''
+    [[[events]]]
+      submission timeout = PT10M''']
+
       for (typ, meshName, nCells, meshRatio) in zip(meshTypes, meshNames, meshNCells, meshRatios):
         prevTaskName = None
         for dt in dtOffsets:
@@ -99,6 +144,14 @@ class InitIC(Component):
 '''+self.__task.job()+self.__task.directives()+'''
     [[[events]]]
       submission timeout = PT10M''']
+
+          # Source-first chemistry input must exist before init_atmosphere reads it.
+          if self['chemistry mode'] == 'workflow':
+            self._dependencies += ['''
+    '''+chemistryTasks[dt]+''' => '''+taskName]
+          if self['chemistry mode'] != 'off' and self.emissions is not None and self.emissions['mode'] == 'workflow':
+            self._dependencies += ['''
+    PrepareEmissions => '''+taskName]
 
           # make task[t+dt] depend on task[t]
           if prevTaskName is not None:
@@ -132,7 +185,33 @@ class InitIC(Component):
     ###########################
     # update tasks/dependencies
     ###########################
-    self._dependencies = self.tf.updateDependencies(self._dependencies)
+    # These edges order the cold-start chemistry/emissions preparation against
+    # ExternalAnalysisToMPAS, which the cold start instantiates at R1. They must
+    # sit inside a recurrence: SuiteBase concatenates every dependencyComponent's
+    # lines straight into [scheduling][[graph]], where a bare 'A => B' is read as
+    # a recurrence key and cylc rejects the workflow with
+    # "Cannot process recurrence PrepareChemIC-0hr".
+    # ExternalAnalysisToMPAS runs at R1 for the cold start and again at every
+    # analysis time, and in chemistry mode each instance needs the ChemIC for its
+    # own valid time. Emitting these edges under R1 alone left the second cycle
+    # failing on a missing ChemIC/<date>; under AnalysisTimes alone the cold
+    # start would be uncovered, since that recurrence begins one window later.
+    # Emit both; cylc unions the edges.
+    recurrences = ['R1']
+    if self.workflow is not None and self.workflow['AnalysisTimes'] not in recurrences:
+      recurrences.append(self.workflow['AnalysisTimes'])
+
+    edges = self._dependencies
+    self._dependencies = []
+    for recurrence in recurrences:
+      block = ['''
+    '''+recurrence+''' = """'''] + list(edges) if edges else []
+      block = self.tf.updateDependencies(block)
+      if edges:
+        block += ['''
+      """''']
+      self._dependencies += block
+
     self._tasks = self.tf.updateTasks(self._tasks, self._dependencies)
 
     # export all
