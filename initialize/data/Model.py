@@ -68,7 +68,7 @@ class Model(Component):
     ## MPThompsonTablesDir
     # directory containing MP Thompson tables
     #'MPThompsonTablesDir': ['/glade/campaign/mmm/parc/ivette/pandac/saca/thompson_tables',str],
-    'MPThompsonTablesDir': ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/thompson_tables',str],
+    'MPThompsonTablesDir': ['/glade/campaign/ncar/nmmm0081/input/mpas/MPThompsonTables',str],
 
     ## streams variant
     # Selects a default GOCART emission-inventory combination (anthropogenic / biogenic /

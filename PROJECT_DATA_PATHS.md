@@ -17,8 +17,8 @@ Verified from the supplied `list.Data(1).txt`, `list.EMIS_orig.txt`, MERRA
 | CAMS processed | `/glade/campaign/ncar/nmmm0081/Data/EMIS/CAMS` | some entries still symlink to old tutorial holdings |
 | CAMS+regional MIXv2 raw | `/glade/campaign/ncar/nmmm0081/Data/EMIS/MIXv2/orig` | real regional monthly archive |
 | AEIM-INDIA raw | `/glade/campaign/ncar/nmmm0081/Data/EMIS/AEIM-INDIA/orig` | real local files |
-| Background LUTs | `/glade/campaign/ncar/nmmm0081/Data/BKG_DATA` | issue #2 preferred project location |
-| Optics | `/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/optics` | verified local copy |
+| Background LUTs | `/glade/campaign/ncar/nmmm0081/input/initialization/gocart2g_bkg` | issue #2 preferred project location |
+| Optics | `/glade/campaign/ncar/nmmm0081/input/mpas/optics/latest` | verified local copy |
 | Legacy/prebuilt PRM | `/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/prm` | comparison/fallback only |
 | MERRA2-GMI aerosol chemistry | `/glade/campaign/ncar/nmmm0081/Data/MERRA2_GMI` | same-year 6-hour single-time files |
 | MERRA2-GMI OVP chemistry | same directory, `monthly.2019MM.nc4` | controlled 2019 monthly OVP policy |
@@ -36,5 +36,5 @@ but does not replace controlled chemistry provenance silently:
 - Chemistry IC: use the archived MERRA2-GMI collection because OVP is not
   available after 2019; same-year aerosol files are combined with archived
   2019 monthly OVP.
-- Background LUTs: use `Data/BKG_DATA` per issue #2.
+- Background LUTs: use `input/initialization/gocart2g_bkg` (was `Data/BKG_DATA`) per issue #2.
 - Optics: use the project-local optics archive.

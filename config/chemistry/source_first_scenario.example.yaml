@@ -25,9 +25,9 @@ initic:
   chemistry mode: workflow
   chemistry source config: config/chemistry/merra2_source.example.yaml
   chemistry processor directory: ${INIT_MPAS_GOCART2G_DIR}
-  chemistry background directory: /glade/campaign/ncar/nmmm0081/Data/BKG_DATA
+  chemistry background directory: /glade/campaign/ncar/nmmm0081/input/initialization/gocart2g_bkg
 
 build:
   # Direct authoritative project holdings rather than another workflow copy.
-  gocart background lut directory: /glade/campaign/ncar/nmmm0081/Data/BKG_DATA
-  gocart optics directory: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/optics
+  gocart background lut directory: /glade/campaign/ncar/nmmm0081/input/initialization/gocart2g_bkg
+  gocart optics directory: /glade/campaign/ncar/nmmm0081/input/mpas/optics/latest

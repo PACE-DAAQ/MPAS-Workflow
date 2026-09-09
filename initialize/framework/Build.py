@@ -63,11 +63,11 @@ class Build(Component):
 
     # Background LUT
     'gocart background lut directory':
-      ['/glade/campaign/ncar/nmmm0081/Data/BKG_DATA', str],
+      ['/glade/campaign/ncar/nmmm0081/input/initialization/gocart2g_bkg', str],
 
     # Optics
     'gocart optics directory':
-      ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/optics', str],
+      ['/glade/campaign/ncar/nmmm0081/input/mpas/optics/latest', str],
 
     ## PRM (plume rise model) static input
     # directory holding the biomass-burning AREA file linked into every gocart forecast

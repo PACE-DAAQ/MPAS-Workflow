@@ -19,7 +19,7 @@ modified.
 
 The supplied MERRA-IC implementation and issue discussion converge on:
 
-- project background data under `/glade/campaign/ncar/nmmm0081/Data/BKG_DATA`;
+- project background data under `/glade/campaign/ncar/nmmm0081/input/initialization/gocart2g_bkg`;
 - archived MERRA2-GMI aerosol files for the target year;
 - archived **2019 monthly OVP** for later-year cases because post-2019 OVP is
   unavailable and daily 2019 coverage is incomplete;
