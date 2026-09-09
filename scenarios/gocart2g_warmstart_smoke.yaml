@@ -27,6 +27,7 @@ build:
   forecast directory: /glade/derecho/scratch/syha/gocartMPAS
   gocart emission directory: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/emission/all
   prm area directory: /glade/derecho/scratch/syha/pandac/syha_3dvar-60-iter_O60km/Emissions/60km
+  mpas bundle: /glade/campaign/ncar/nmmm0081/Src/mpas-bundle/build
 emissions:
   mode: prebuilt
 initic:
