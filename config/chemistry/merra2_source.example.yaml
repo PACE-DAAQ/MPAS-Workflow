@@ -20,7 +20,7 @@ aerosol:
   temporal representation: instantaneous_6hour
   source filename: MERRA2_GMI.inst3_3d_aer_Nv.{source_ymd}_{source_hh}00z.nc4
   local files:
-    - /glade/campaign/ncar/nmmm0081/Data/MERRA2_GMI/MERRA2_GMI.inst3_3d_aer_Nv.{source_ymd}_{source_hh}00z.nc4
+    - /glade/campaign/ncar/nmmm0081/input/initialization/upstream/MERRA2_GMI/MERRA2_GMI.inst3_3d_aer_Nv.{source_ymd}_{source_hh}00z.nc4
     - ${MERRA2_AER_RAW_DIR}/MERRA2_GMI.inst3_3d_aer_Nv.{source_ymd}_{source_hh}00z.nc4
   urls: []
   processor suffix: .nc4
@@ -31,7 +31,7 @@ ovp:
   # One monthly file is reused for every 6-hour target time in the target month.
   source filename: MERRA2_GMI.inst0_3d_ovp_Nv.monthly.{source_year}{source_month}.nc4
   local files:
-    - /glade/campaign/ncar/nmmm0081/Data/MERRA2_GMI/MERRA2_GMI.inst0_3d_ovp_Nv.monthly.{source_year}{source_month}.nc4
+    - /glade/campaign/ncar/nmmm0081/input/initialization/upstream/MERRA2_GMI/MERRA2_GMI.inst0_3d_ovp_Nv.monthly.{source_year}{source_month}.nc4
     - ${MERRA2_OVP_RAW_DIR}/MERRA2_GMI.inst0_3d_ovp_Nv.monthly.{source_year}{source_month}.nc4
   urls: []
   # The wrapper aliases the monthly source to the filename form expected by the
