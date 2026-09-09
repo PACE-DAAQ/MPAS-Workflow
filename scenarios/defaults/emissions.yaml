@@ -9,6 +9,7 @@ emissions:
   #   cams-anth  - conservative CAMS anthropogenic -> MPAS
   #   cams-biog  - conservative CAMS biogenic -> MPAS
   #   cams       - shorthand for cams-anth + cams-biog
+  #   finn       - FINN point emissions -> MPAS using a spherical KD-tree
   #   ceds       - config-driven regular-grid CEDS -> MPAS
   #   gfas       - config-driven regular-grid GFAS -> MPAS
   #   qfed       - config-driven regular-grid QFED -> MPAS
@@ -45,6 +46,20 @@ emissions:
   cams biog weights file: ''
   cams chunk links: 2000000
   cams conservation tolerance: 5.0e-5
+
+  # FINN YAML supplies source/species settings; MPAS mesh/output paths are
+  # overridden by workflow state.
+  finn config: ''
+
+  # PRM fire-size statistics are independent of the biomass-emission inventory.
+  # Recommended: keep FINN-derived fire size common across FINN/GFAS/QFED so
+  # ensemble perturbations isolate emission-inventory differences.
+  # Options: finn | prebuilt
+  prm source: finn
+
+  finn reject outside: false
+  finn interior only: false
+  finn max distance factor: 2.5
 
   # Generic regular-grid inventories.  These use one shared conservative
   # regrid/time-normalization engine; inventory-specific variable names, units,
