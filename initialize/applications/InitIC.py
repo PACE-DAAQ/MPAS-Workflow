@@ -29,11 +29,13 @@ class InitIC(Component):
     'chemistry background directory': ['', str],
   }
 
-  def __init__(self, config:Config, hpc:HPC, meshes:dict, ea:ExternalAnalyses, emissions:Emissions=None):
+  def __init__(self, config:Config, hpc:HPC, meshes:dict, ea:ExternalAnalyses, emissions:Emissions=None,
+               workflow=None):
     super().__init__(config)
 
     self.ea = ea
     self.emissions = emissions
+    self.workflow = workflow
     self.meshes = meshes
     # An unquoted 'off'/'no' in a scenario YAML is a YAML 1.1 boolean, and
     # Config.get coerces it with str(), yielding 'False' rather than 'off'.
@@ -190,16 +192,26 @@ class InitIC(Component):
     # lines straight into [scheduling][[graph]], where a bare 'A => B' is read as
     # a recurrence key and cylc rejects the workflow with
     # "Cannot process recurrence PrepareChemIC-0hr".
-    hasGraph = len(self._dependencies) > 0
-    if hasGraph:
-      self._dependencies = ['''
-    R1 = """'''] + self._dependencies
+    # ExternalAnalysisToMPAS runs at R1 for the cold start and again at every
+    # analysis time, and in chemistry mode each instance needs the ChemIC for its
+    # own valid time. Emitting these edges under R1 alone left the second cycle
+    # failing on a missing ChemIC/<date>; under AnalysisTimes alone the cold
+    # start would be uncovered, since that recurrence begins one window later.
+    # Emit both; cylc unions the edges.
+    recurrences = ['R1']
+    if self.workflow is not None and self.workflow['AnalysisTimes'] not in recurrences:
+      recurrences.append(self.workflow['AnalysisTimes'])
 
-    self._dependencies = self.tf.updateDependencies(self._dependencies)
-
-    if hasGraph:
-      self._dependencies += ['''
+    edges = self._dependencies
+    self._dependencies = []
+    for recurrence in recurrences:
+      block = ['''
+    '''+recurrence+''' = """'''] + list(edges) if edges else []
+      block = self.tf.updateDependencies(block)
+      if edges:
+        block += ['''
       """''']
+      self._dependencies += block
 
     self._tasks = self.tf.updateTasks(self._tasks, self._dependencies)
 

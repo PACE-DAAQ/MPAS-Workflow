@@ -217,8 +217,15 @@ class Build(Component):
               self.log('could not find forecast executable in ' + self['forecast directory'], level=self.MSG_QUIET)
 
       if system == 'derecho':
-        self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_atmosphere')
-      #  self._set('MPASLookupDir', self['forecast directory']) # need to obtain files from the directory of MPAS executable
+        # Lookup tables must come from the build that produced the executable.
+        # A GOCART2G build needs CCN_ACTIVATE_DATA for mp_thompson_gocart2G, which
+        # the stock bundle's core_atmosphere does not ship; linking the bundle's
+        # tables against a separate forecast build aborts with
+        # "table_ccnAct:: error opening CCN_ACTIVATE_DATA".
+        if self['forecast directory'] == 'bundle':
+          self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_atmosphere')
+        else:
+          self._set('MPASLookupDir', self['forecast directory'])
         self._set('MPASLookupFileGlobs', ['.TBL', '.DBL', 'DATA', 'VERSION'])
       elif system == 'cheyenne':
         self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_'+model['MPASCore'])

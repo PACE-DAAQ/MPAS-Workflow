@@ -56,7 +56,13 @@
     config_gocart2G_BIOGemis = .true.
     config_gocart2G_interp = .true.
     config_gocart2G_clim = .true.
-    config_gocart2G_static = .true.
+    ! Regenerating the GOCART2G static fields (erod/clayfrac/sandfrac) requires an
+    ! 'erod' geotile dataset under config_geog_data_path, which the project
+    ! mpas_static holding does not provide. The x1.163842 invariant file already
+    ! carries those fields in the 'mesh' var_struct, and init_atmosphere reads
+    ! them from the input stream, so regeneration is both unnecessary and fatal
+    ! here. Set .true. only with a geog path that contains erod/index.
+    config_gocart2G_static = .false.
 /
 
 &preproc_plumerisemodel

@@ -50,7 +50,9 @@ def _all_zero(path: Path, var: str) -> bool:
 def _variables(path: Path) -> set[str]:
     try:
         from netCDF4 import Dataset
-    except ImportError:
+    except Exception:
+        # Not just ImportError: a numpy/netCDF4 ABI mismatch raises ValueError or
+        # RuntimeError at import time in some stacks.
         import subprocess
         proc=subprocess.run(['ncdump','-h',str(path)],capture_output=True,text=True)
         if proc.returncode: raise RuntimeError(proc.stderr)

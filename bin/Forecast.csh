@@ -447,7 +447,12 @@ if ( "${doBburnPrm}" == "True" ) then
   # frp_* is only read by the model when config_do_FRP is true.
   set prmNonZero = "firesize_biob_modis_avg"
   if ( "${doFrp}" == "True" ) set prmNonZero = "${prmNonZero},frp_biob_modis_avg"
-  python3 -m mpas_emissions.validate_streams ${StreamsFile} --directory . --only-prm --require-nonzero "${prmNonZero}"
+  # Run the check under the emissions python: the forecast task's environment is
+  # the JEDI stack, whose netCDF4/numpy are ABI-incompatible ("numpy.dtype size
+  # changed"), which would make every inspection fail. The subshell keeps the
+  # conda/module changes from leaking into the model run.
+  ( source ${mainScriptDir}/config/environmentEmissions.csh >& /dev/null ; \
+    python3 -m mpas_emissions.validate_streams ${StreamsFile} --directory . --only-prm --require-nonzero "${prmNonZero}" )
   if ( $status != 0 ) then
     echo "ERROR ${0}: plume rise is enabled but the staged PRM file does not provide usable prm_lowbc_* fire input" > ./FAIL
     exit 1

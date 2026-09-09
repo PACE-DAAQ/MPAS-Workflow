@@ -43,7 +43,8 @@ class Cycle(SuiteBase):
     self.c['members'] = Members(conf)
 
     self.c['externalanalyses'] = ExternalAnalyses(conf, self.c['hpc'], meshes)
-    self.c['initic'] = InitIC(conf, self.c['hpc'], meshes, self.c['externalanalyses'], self.c['emissions'])
+    self.c['initic'] = InitIC(conf, self.c['hpc'], meshes, self.c['externalanalyses'], self.c['emissions'],
+                self.c['workflow'])
 
     self.c['da'] = DA(conf, self.c['hpc'], self.c['observations'], meshes, self.c['model'], self.c['members'], self.c['workflow'])
     self.c['forecast'] = Forecast(conf, self.c['hpc'], meshes['Outer'], self.c['members'], self.c['model'],
