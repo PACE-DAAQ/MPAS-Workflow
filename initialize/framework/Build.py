@@ -87,8 +87,14 @@ class Build(Component):
       if config._bundle_dir != None:
         self.variablesWithDefaults['mpas bundle'] = [config._bundle_dir, str]
       else:
+        # Project mpas-bundle. The upstream cron build is a different, much
+        # smaller JEDI build whose core_atmosphere ships no CCN_ACTIVATE_DATA;
+        # running the aerosol DA against it segfaults in MPAS geometry creation.
+        # Both reference experiments (junpark, swei) use this bundle.
+        #self.variablesWithDefaults['mpas bundle'] = \
+        #  ['/glade/derecho/scratch/jwittig/repos-s/mpas-bundle-cron/build-gnu-1p_latest', str] ## develop
         self.variablesWithDefaults['mpas bundle'] = \
-          ['/glade/derecho/scratch/jwittig/repos-s/mpas-bundle-cron/build-gnu-1p_latest', str] ## develop
+          ['/glade/campaign/ncar/nmmm0081/Src/mpas-bundle/build', str]
 
       self.variablesWithDefaults['bundle compiler used'] = ['gnu-cray', str,
         ['gnu-cray', 'intel-cray']]
