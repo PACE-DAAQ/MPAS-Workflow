@@ -217,16 +217,19 @@ class Build(Component):
               self.log('could not find forecast executable in ' + self['forecast directory'], level=self.MSG_QUIET)
 
       if system == 'derecho':
-        # Lookup tables must come from the build that produced the executable.
-        # A GOCART2G build needs CCN_ACTIVATE_DATA for mp_thompson_gocart2G, which
-        # the stock bundle's core_atmosphere does not ship; linking the bundle's
-        # tables against a separate forecast build aborts with
-        # "table_ccnAct:: error opening CCN_ACTIVATE_DATA".
-        if self['forecast directory'] == 'bundle':
-          self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_atmosphere')
-        else:
-          self._set('MPASLookupDir', self['forecast directory'])
+        self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_atmosphere')
         self._set('MPASLookupFileGlobs', ['.TBL', '.DBL', 'DATA', 'VERSION'])
+
+        # A GOCART2G forecast build needs CCN_ACTIVATE_DATA for
+        # mp_thompson_gocart2G, which the stock bundle's core_atmosphere does not
+        # ship, so bin/Forecast.csh links this directory on top of MPASLookupDir.
+        # It is deliberately separate from MPASLookupDir: the latter also feeds
+        # bin/Variational.csh and bin/PrepJEDI.csh, whose executables come from
+        # the bundle and must keep the bundle's tables.
+        if self['forecast directory'] == 'bundle':
+          self._set('ForecastLookupDir', '')
+        else:
+          self._set('ForecastLookupDir', self['forecast directory'])
       elif system == 'cheyenne':
         self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_'+model['MPASCore'])
         self._set('MPASLookupFileGlobs', ['.TBL', '.DBL', 'DATA', 'COMPATABILITY', 'VERSION'])

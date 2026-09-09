@@ -205,6 +205,16 @@ foreach fileGlob ($MPASLookupFileGlobs)
   ln -sfv ${MPASLookupDir}/*${fileGlob} .
 end
 
+## A separate forecast build (e.g. gocartMPAS) ships tables the bundle does not,
+## such as CCN_ACTIVATE_DATA for mp_thompson_gocart2G. Link them over the bundle's.
+if ( $?ForecastLookupDir ) then
+  if ( "${ForecastLookupDir}" != "" ) then
+    foreach fileGlob ($MPASLookupFileGlobs)
+      ln -sfv ${ForecastLookupDir}/*${fileGlob} .
+    end
+  endif
+endif
+
 if (${Microphysics} == 'mp_thompson' ||${Microphysics} == 'mp_thompson_gocart2G' ) then # a
   ln -svf $MPThompsonTablesDir/* .
 endif
