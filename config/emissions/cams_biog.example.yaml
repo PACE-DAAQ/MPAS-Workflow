@@ -1,3 +1,7 @@
+# TODO(reorg): move to input/ once the RAW inventory files are staged there.
+# input/mpas/emissions/EMISv0/* holds products already regridded to x1.163842, not
+# raw source, so pointing this pipeline there would feed processed data to a
+# raw-source stage and give wrong results rather than an error.
 # NOTE: list.Data.txt shows no local raw CAMS/orig directory under /glade/campaign/ncar/nmmm0081/Data/EMIS/CAMS.
 # In source-first mode keep the raw CAMS path explicit; prebuilt mode/seed uses /glade/campaign/ncar/nmmm0081/Data/EMIS/CAMS.
 # Workflow-native CAMS biogenic configuration.

@@ -4,6 +4,10 @@ inventory: QFED
 year: 2024
 source:
   # Product-specific source files are set under each output below.
+  # TODO(reorg): move to input/ once the RAW inventory files are staged there.
+  # input/mpas/emissions/EMISv0/* holds products already regridded to x1.163842, not
+  # raw source, so pointing this pipeline there would feed processed data to a
+  # raw-source stage and give wrong results rather than an error.
   files: /glade/campaign/ncar/nmmm0081/Data/EMIS/QFED/orig/qfed2.emis_bc.061.{year}.nc4
   time: time
   latitude: [lat, latitude]

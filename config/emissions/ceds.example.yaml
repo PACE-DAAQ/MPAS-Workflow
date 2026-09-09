@@ -4,6 +4,10 @@ inventory: CEDS
 year: 2024
 source:
   # Product-level source files below override this placeholder.
+  # TODO(reorg): move to input/ once the RAW inventory files are staged there.
+  # input/mpas/emissions/EMISv0/* holds products already regridded to x1.163842, not
+  # raw source, so pointing this pipeline there would feed processed data to a
+  # raw-source stage and give wrong results rather than an error.
   files: '/glade/campaign/ncar/nmmm0081/Data/EMIS/CEDS/orig/CEDS_Glb_0.1x0.1_{year}_anthro_BC_v2025_monthly.nc'
   time: time
   latitude: lat
