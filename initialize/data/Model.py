@@ -57,8 +57,10 @@ class Model(Component):
   variablesWithDefaults = {
     ## GraphInfoDir
     # directory containing x{{meshRatio}}.{{nCells}}.graph.info* files
-    # Project archive rather than another user's scratch. input/mpas/mesh holds
-    # only global_60km, so the multi-mesh Data holding is still the right source.
+    # Project archive rather than another user's scratch.
+    # TODO(reorg): move to input/mpas/mesh once graph partitions are staged there for
+    # meshes beyond global_60km; today input/mpas/mesh holds only the 60km set, while the
+    # Data holding covers x1.40962, x1.163842, x1.655362 and x1.2621442.
     #'GraphInfoDir': ['/glade/derecho/scratch/taosun/pandac/MPAS_GRAPH', str],
     'GraphInfoDir': ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/MPAS_GRAPH', str],
 
