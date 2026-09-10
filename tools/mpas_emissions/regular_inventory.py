@@ -264,7 +264,18 @@ class RegularInventoryProcessor:
             for f in product_files:
                 la, lo, lf = _read_lat_lon(f, cfg)
                 if lf != lat_flip or regular_grid_fingerprint(la, lo) != source_tag:
-                    raise ValueError(f"source grid changes across files/products: {f}")
+                    # Say how the grid differs. Sizes or orientation changing is a
+                    # real inventory change; a sub-quantum coordinate delta means
+                    # the provider re-encoded identical centers and the quantum in
+                    # regular_grid.py needs revisiting rather than the data.
+                    detail = f"flip {lat_flip}->{lf}" if lf != lat_flip else ""
+                    if la.size != lat.size or lo.size != lon.size:
+                        detail = (detail + f" shape {lat.size}x{lon.size}->{la.size}x{lo.size}").strip()
+                    else:
+                        dlat = float(np.max(np.abs(np.asarray(la, float) - lat)))
+                        dlon = float(np.max(np.abs(np.asarray(lo, float) - lon)))
+                        detail = (detail + f" max|dlat|={dlat:.3e} max|dlon|={dlon:.3e} deg").strip()
+                    raise ValueError(f"source grid changes across files/products: {f} ({detail})")
             records = discover_records(product_files, cfg)
             time_cfg = dict(base_time_cfg); time_cfg.update(product.get("time", {}))
             start = parse_datetime(str(time_cfg.get("start", f"{year}-01-01T00:00:00")).format(year=year))
