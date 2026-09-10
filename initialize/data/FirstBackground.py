@@ -150,6 +150,18 @@ class FirstBackground(Component):
         '''+ea['PrepareExternalAnalysisInner']+'''
         '''+ea['PrepareExternalAnalysisEnsemble']]
 
+      # ColdForecast runs bin/Forecast.csh, which repoints EmissionDir/PRMAreaDir
+      # at the PrepareEmissions output whenever emissions mode is workflow. The
+      # only other PrepareEmissions edge lives in Forecast's ForecastTimes
+      # recurrence, whose first instance is one offset after the initial cycle
+      # point, so without this R1 edge the cold forecast links nothing ('ln: No
+      # match.', unchecked in tcsh) and MPAS aborts opening the emission streams.
+      if (fc.emissions is not None and fc.emissions.ready is not None
+          and 'ColdForecast' in self['PrepareFirstBackgroundOuter']):
+        self._dependencies += ['''
+        # workflow-native emissions must exist before the cold-start forecast
+        '''+fc.emissions.ready+''' => '''+self['PrepareFirstBackgroundOuter']]
+
       self._dependencies = self.tf.updateDependencies(self._dependencies)
 
       # close graph

@@ -28,6 +28,14 @@ class Build(Component):
     #'forecast directory': ['bundle', str],
     'forecast directory': ['/replace/this/in/host/specific/code/below/', str],
 
+    # init directory
+    # Directory containing the init_atmosphere executable.  'bundle' uses the
+    # mpas-bundle build.  A GOCART2G chemistry cold start (initic.chemistry
+    # mode != off) requires a gocartMPAS build configured with
+    # GOCART2G=true PRM=true, which the bundle does not provide; point this at
+    # that build directory instead.
+    'init directory': ['bundle', str],
+
     ## bundle compiler used
     # {compiler}-{mpi-implementation}/{version} combination that selects the JEDI module used to build
     # the executables described herein
@@ -46,12 +54,12 @@ class Build(Component):
       ['/glade/campaign/mmm/parc/ivette/pandac/codeBuild/obs2iodaV3/build/bin', str],
 
     # Update ATM vars
-    #'updateATMvars build directory': ['/glade/campaign/ncar/nmmm0081/Src/script', str],
+    # copy_mpas_vars.py is shipped under tools/ in the current branch.
 
     ## gocartMPAS data directories
     # Emission (resolution-dependent; default is 60km, monthly snapshot 202411)
     'gocart emission directory':
-      ['/glade/campaign/ncar/nmmm0081/input/mpas/emissions/all', str],
+      ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/emission/all', str],
 
     # Background LUT
     'gocart background lut directory':
@@ -64,10 +72,10 @@ class Build(Component):
     ## PRM (plume rise model) static input
     # directory holding the biomass-burning AREA file linked into every gocart forecast
     'prm area directory':
-      ['/glade/campaign/ncar/nmmm0081/input/mpas/emissions/PRM', str],
-    # AREA filename; '{{nCells}}' is resolved to the mesh nCells at run time in bin/Forecast.csh
+      ['/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/prm', str],
+    # AREA filename; '{{year}}' and '{{nCells}}' are resolved at run time in bin/Forecast.csh
     'prm area file':
-      ['FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.{{nCells}}.static_daily_oct01-nov30.nc', str],
+      ['FINNv2.5.1_modvrs_nrt_MOZART_{{year}}_{{grid}}.static_daily_oct01-nov30.nc', str],
   }
 
   def __init__(self, config:Config, model:Model=None):
@@ -79,8 +87,14 @@ class Build(Component):
       if config._bundle_dir != None:
         self.variablesWithDefaults['mpas bundle'] = [config._bundle_dir, str]
       else:
+        # Project mpas-bundle. The upstream cron build is a different, much
+        # smaller JEDI build whose core_atmosphere ships no CCN_ACTIVATE_DATA;
+        # running the aerosol DA against it segfaults in MPAS geometry creation.
+        # Both reference experiments (junpark, swei) use this bundle.
+        #self.variablesWithDefaults['mpas bundle'] = \
+        #  ['/glade/derecho/scratch/jwittig/repos-s/mpas-bundle-cron/build-gnu-1p_latest', str] ## develop
         self.variablesWithDefaults['mpas bundle'] = \
-          ['/glade/derecho/scratch/jwittig/repos-s/mpas-bundle-cron/build-gnu-1p_latest', str] ## develop
+          ['/glade/campaign/ncar/nmmm0081/Src/mpas-bundle/build', str]
 
       self.variablesWithDefaults['bundle compiler used'] = ['gnu-cray', str,
         ['gnu-cray', 'intel-cray']]
@@ -151,8 +165,28 @@ class Build(Component):
 
       # MPAS-Model
       # ----------
-      self._set('InitBuildDir', self['mpas bundle']+'/bin')
-      self._set('InitEXE', 'mpas_init_'+model['MPASCore'])
+      # either use the init executable from the bundle or a separate
+      # MPAS-Atmosphere build (required for GOCART2G chemistry cold starts)
+      if self['init directory'] == 'bundle':
+        self._set('InitBuildDir', self['mpas bundle']+'/bin')
+        self._set('InitEXE', 'mpas_init_'+model['MPASCore'])
+      else:
+        initDir = self['init directory']
+        for d, exe in [
+          (initDir, 'init_'+model['MPASCore']+'_model'),
+          (initDir, 'mpas_init_'+model['MPASCore']),
+          (initDir+'/bin', 'mpas_init_'+model['MPASCore']),
+        ]:
+          self.log('looking for ' + d + '/' + exe, level=self.MSG_DEBUG)
+          if Path(d + '/' + exe).is_file():
+            self._set('InitBuildDir', d)
+            self._set('InitEXE', exe)
+            self.log('Setting InitBuildDir to ' + d + ' , InitEXE to ' + exe, level=self.MSG_QUIET)
+            break
+        else:
+          self.log('could not find init executable in ' + self['init directory'], level=self.MSG_QUIET)
+          self._set('InitBuildDir', self['mpas bundle']+'/bin')
+          self._set('InitEXE', 'mpas_init_'+model['MPASCore'])
 
       # either use forecast executable from the bundle or a separate MPAS-Atmosphere build
       self.log('self[mpas bundle] ' + self['mpas bundle'], level=self.MSG_DEBUG)
@@ -190,8 +224,18 @@ class Build(Component):
 
       if system == 'derecho':
         self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_atmosphere')
-      #  self._set('MPASLookupDir', self['forecast directory']) # need to obtain files from the directory of MPAS executable
         self._set('MPASLookupFileGlobs', ['.TBL', '.DBL', 'DATA', 'VERSION'])
+
+        # A GOCART2G forecast build needs CCN_ACTIVATE_DATA for
+        # mp_thompson_gocart2G, which the stock bundle's core_atmosphere does not
+        # ship, so bin/Forecast.csh links this directory on top of MPASLookupDir.
+        # It is deliberately separate from MPASLookupDir: the latter also feeds
+        # bin/Variational.csh and bin/PrepJEDI.csh, whose executables come from
+        # the bundle and must keep the bundle's tables.
+        if self['forecast directory'] == 'bundle':
+          self._set('ForecastLookupDir', '')
+        else:
+          self._set('ForecastLookupDir', self['forecast directory'])
       elif system == 'cheyenne':
         self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_'+model['MPASCore'])
         self._set('MPASLookupFileGlobs', ['.TBL', '.DBL', 'DATA', 'COMPATABILITY', 'VERSION'])
@@ -224,8 +268,7 @@ class Build(Component):
 
     # Update MPASVars code
     # -----------
-    #self._set('CopyMPASVarEXE', 'copy_mpas_vars.py')
-    #self._set('CopyMPASVarBuildDir', self['updateATMvars build directory'])
+    # copy_mpas_vars.py is invoked from ${mainScriptDir}/tools by Forecast.csh.
 
     # Mean state calculator
     # ---------------------

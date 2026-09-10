@@ -1,0 +1,40 @@
+workflow:
+  first cycle point: 20241031T18
+  final cycle point: 20241101T06
+model:
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+  do bburn prm: true
+  do frp: false
+externalanalyses:
+  resource: GFS.RDA
+firstbackground:
+  resource: PANDAC.GFS
+  resources:
+    PANDAC:
+      GFS:
+        60km:
+          directory: /glade/derecho/scratch/syha/firstbkg/60kmMeshGFS/{{FirstCycleDate}}
+observations:
+  resource: PANDACArchive
+members:
+  n: 1
+variational:
+  DAType: 3dvar
+build:
+  init directory: /glade/derecho/scratch/syha/gocartMPAS-init-build
+  forecast directory: /glade/derecho/scratch/syha/gocartMPAS
+  gocart emission directory: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/gocart2g/emission/all
+  prm area directory: /glade/derecho/scratch/syha/pandac/syha_3dvar-60-iter_O60km/Emissions/60km
+emissions:
+  mode: prebuilt
+initic:
+  chemistry mode: workflow
+  chemistry source config: config/chemistry/merra2_source.example.yaml
+extendedforecast:
+  lengthHR: 0
+experiment:
+  name: gocart2g_warmstart_smoke
+forecast:
+  updateATMVarsFromCold: true

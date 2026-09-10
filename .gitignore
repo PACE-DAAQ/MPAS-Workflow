@@ -11,3 +11,9 @@ config/jedi/ObsPlugs/retrieveObsErrors/*.yaml
 
 # ctags symbol file
 tags
+
+# Local workflow-development/package artifacts
+*.swp
+/mpas_emissions_*
+/MPAS-Workflow-*.zip
+/V1_*_NOTES.md

@@ -1,0 +1,82 @@
+emissions:
+  # Existing experiments remain unchanged by default.
+  #   prebuilt: Forecast uses build.gocart emission directory directly.
+  #   workflow: PrepareEmissions stages/generates mesh-specific emissions.
+  mode: prebuilt
+
+  # Valid workflow-native products:
+  #   mesh       - cache MPAS neighbors and derive SCRIP from the active mesh
+  #   cams-anth  - conservative CAMS anthropogenic -> MPAS
+  #   cams-biog  - conservative CAMS biogenic -> MPAS
+  #   cams       - shorthand for cams-anth + cams-biog
+  #   finn       - FINN point emissions -> MPAS using a spherical KD-tree
+  #   ceds       - config-driven regular-grid CEDS -> MPAS
+  #   gfas       - config-driven regular-grid GFAS -> MPAS
+  #   qfed       - config-driven regular-grid QFED -> MPAS
+  prepare: [mesh]
+
+  # Transitional fallback to the existing project EmissionDir/PRMAreaDir.
+  # Keep true while an ensemble still needs a product not generated from raw
+  # sources (currently CAMS-MIX unless you supply a raw-mix processor/config).
+  # Set false once all required inventories are source-first.
+  seed prebuilt: true
+
+  # Default Python environment. Override for an ESMPy-enabled environment when
+  # automatic weight generation is required for a new mesh.
+  environment script: config/environmentEmissions.csh
+  python executable: python3
+
+  work directory: Emissions/{{mesh}}
+  cache directory: Emissions/cache/{{mesh}}
+
+  # Optional override. Empty means use the invariant/static MPAS file already
+  # configured by MPAS-Workflow.
+  mesh file: ''
+
+  # CAMS YAML supplies source/species settings. SERR_scrip_file, CAMS_grid_file,
+  # and Regridding_weights_file are not required because geometry is derived
+  # from the source file and active MPAS mesh.
+  cams anth config: ''
+  cams biog config: ''
+
+  # Optional existing conservative weight file. If empty, a cache filename is
+  # derived from source-grid + MPAS-mesh fingerprints and generated once with
+  # ESMPy/ESMF_RegridWeightGen when missing.
+  cams anth weights file: ''
+  cams biog weights file: ''
+  cams chunk links: 2000000
+  cams conservation tolerance: 5.0e-5
+
+  # FINN YAML supplies source/species settings; MPAS mesh/output paths are
+  # overridden by workflow state.
+  finn config: ''
+
+  # PRM fire-size statistics are independent of the biomass-emission inventory.
+  # Recommended: keep FINN-derived fire size common across FINN/GFAS/QFED so
+  # ensemble perturbations isolate emission-inventory differences.
+  # Options: finn | prebuilt
+  prm source: finn
+
+  finn reject outside: false
+  finn interior only: false
+  finn max distance factor: 2.5
+
+  # Generic regular-grid inventories.  These use one shared conservative
+  # regrid/time-normalization engine; inventory-specific variable names, units,
+  # cadence and output filenames live in YAML rather than Python.
+  ceds config: ''
+  ceds weights file: ''
+  gfas config: ''
+  gfas weights file: ''
+  qfed config: ''
+  qfed weights file: ''
+  regular chunk links: 2000000
+  regular conservation tolerance: 5.0e-5
+
+  reuse existing: true
+
+  job:
+    seconds: 3600
+    nodes: 1
+    PEPerNode: 8
+    memory: 96GB

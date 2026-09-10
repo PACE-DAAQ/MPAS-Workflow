@@ -69,6 +69,7 @@ class Forecast(Component):
     workflow:Workflow,
     ea:ExternalAnalyses,
     warmIC:StateEnsemble,
+    emissions=None,
   ):
     super().__init__(config)
     self.__globalConf = config
@@ -77,6 +78,7 @@ class Forecast(Component):
     self.model = model
     self.workflow = workflow
     self.ea = ea
+    self.emissions = emissions
     self.NN = members.n
     self.memFmt = members.memFmt
 
@@ -225,6 +227,10 @@ class Forecast(Component):
     # depends on previous DA
     previousDA = daFinished+'[-PT'+str(self.workflow['DA2FCOffsetHR'])+'H]'
     self.tf.addDependencies([previousDA])
+    # Optional workflow-native emissions preparation. In prebuilt mode the
+    # Emissions component exposes no ready task and existing behavior is unchanged.
+    if self.emissions is not None and self.emissions.ready is not None:
+      self._dependencies += ['\n        '+self.emissions.ready+' => '+self.tf.pre]
 
     self._dependencies = self.tf.updateDependencies(self._dependencies)
     self._tasks = self.tf.updateTasks(self._tasks, self._dependencies)

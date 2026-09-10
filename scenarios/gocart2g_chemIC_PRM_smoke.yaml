@@ -1,0 +1,34 @@
+workflow:
+  first cycle point: 20241025T00
+  final cycle point: 20241025T06
+observations:
+  resource: GladeRDAOnline
+members:
+  n: 1
+model:
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+  do bburn prm: true
+  do frp: false
+externalanalyses:
+  resource: GFS.RDA
+variational:
+  DAType: 3dvar
+  biasCorrection: true
+build:
+  init directory: /glade/derecho/scratch/syha/gocartMPAS-init-build
+  forecast directory: /glade/derecho/scratch/syha/gocartMPAS
+emissions:
+  mode: workflow
+  prepare:
+  - mesh
+  - finn
+  prm source: finn
+  finn config: /glade/derecho/scratch/syha/gocart2g_smoke/finn_2024_nrt.yaml
+  seed prebuilt: true
+initic:
+  chemistry mode: workflow
+  chemistry source config: config/chemistry/merra2_source.example.yaml
+extendedforecast:
+  lengthHR: 0

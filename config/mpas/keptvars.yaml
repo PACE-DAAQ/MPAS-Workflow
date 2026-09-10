@@ -48,3 +48,19 @@ fields:
   - tslb
   - vorticity
   - w
+
+  # GOCART2G prognostic/persistent chemistry that is not directly part of the
+  # current JEDI analysis-variable list.  These fields must remain available
+  # when "deallocate non-da fields" is true so the analysis can be used as
+  # the warm chemistry source for the next forecast.
+  - qso2
+  - qso2v
+  - qso4v
+  - qdms
+  - qmsa
+  - qnh3
+  - qnh4a
+  - qsoapa
+  - qsoapbb
+  - qsoapbg
+  - persistent_hno3
