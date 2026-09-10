@@ -43,10 +43,35 @@ def regular_cell_areas_sr(lat: np.ndarray, lon: np.ndarray) -> np.ndarray:
     dlon = np.deg2rad(lon_bnds[:, 1] - lon_bnds[:, 0])
     return lat_factor[:, None] * dlon[None, :]
 
+# Coordinate quantum, in degrees, used when fingerprinting a regular grid.
+# 1e-4 deg is about 11 m at the equator: three orders below the finest inventory
+# spacing we regrid (0.1 deg = ~11 km), yet well above the ~6e-6 deg noise a
+# provider introduces by storing float32-rounded centers in a float64 variable.
+# It must exceed twice that noise, or the two encodings still land in adjacent
+# quanta and the fingerprints stay split.
+GRID_COORD_QUANTUM_DEG = 1.0e-4
+
+
+def quantize_grid_coords(arr: np.ndarray) -> np.ndarray:
+    """Snap coordinates to GRID_COORD_QUANTUM_DEG so encoding noise is ignored."""
+    a = np.asarray(arr, dtype=np.float64)
+    return np.round(a / GRID_COORD_QUANTUM_DEG) * GRID_COORD_QUANTUM_DEG
+
+
 def regular_grid_fingerprint(lat: np.ndarray, lon: np.ndarray) -> str:
+    """Identify a regular grid, ignoring sub-metre coordinate encoding noise.
+
+    Hashing the raw float64 bytes made the fingerprint sensitive to how a
+    provider happened to encode identical coordinates. QFED is a live example:
+    files through 2024-09-10 carry float32-rounded centers widened to float64
+    (lat[0] = -89.94999695) while 2024-09-11 onward carry true float64
+    (lat[0] = -89.95). The grids are the same to 3e-6 deg, but the raw hashes
+    differ completely, which both split the weight cache in two and made
+    ``process`` reject the series as "source grid changes across files".
+    """
     h = sha256()
-    for arr in (np.asarray(lat, dtype=np.float64), np.asarray(lon, dtype=np.float64)):
-        h.update(np.ascontiguousarray(arr).view(np.uint8))
+    for arr in (lat, lon):
+        h.update(np.ascontiguousarray(quantize_grid_coords(arr)).view(np.uint8))
     return h.hexdigest()[:16]
 
 
