@@ -113,16 +113,69 @@ def _localize_source(path: str, cache_dir: Path, dt: datetime) -> str:
     return str(target)
 
 
+_NULL_TOKENS = ("", "nan", "none", "na", "n/a", "--", "*")
+
+
+def _to_numeric_fortran(series):
+    """Parse numerics, tolerating Fortran ``D`` exponents (``0.7500000000D+06``).
+
+    FINNv1 writes every field -- including LATI/LONGI -- in Fortran double
+    notation, which ``pd.to_numeric`` maps to NaN.  A blanket ``D``->``E``
+    substitution is unsafe because it would also rewrite legitimate text, so
+    retry only the entries that fail a plain parse and only where the ``D``
+    actually sits in exponent position.  FINNv2 values parse on the first pass
+    and are therefore untouched.
+
+    Returns ``(values, n_unparsed)`` where ``n_unparsed`` counts entries that
+    carry a non-null token in the source yet remain NaN.  Callers use that count
+    to fail fast instead of silently aggregating an all-NaN column to zero.
+    """
+    raw = series.astype(str).str.strip()
+    values = pd.to_numeric(raw, errors="coerce")
+    present = ~raw.str.lower().isin(_NULL_TOKENS)
+    bad = values.isna() & present
+    if bad.any():
+        values.loc[bad] = pd.to_numeric(
+            raw[bad].str.replace(r"(?<=[0-9.])[Dd](?=[-+]?\d)", "E", regex=True),
+            errors="coerce",
+        )
+        bad = values.isna() & present
+    return values, int(bad.sum())
+
+
 def _clean_numeric(df):
     df = df.copy()
     df.columns = [str(c).strip() for c in df.columns]
     df = df.loc[:, ~df.columns.astype(str).str.contains(r"^Unnamed")].copy()
     for c in df.columns:
-        if c in ("LATI", "LONGI"):
-            continue
-        s = df[c].astype(str).str.replace("D", "E", regex=False).str.replace("d", "E", regex=False)
-        df[c] = pd.to_numeric(s, errors="coerce")
+        df[c], _ = _to_numeric_fortran(df[c])
     return df
+
+
+def _require_parsed(label, values, n_unparsed, *, source_label=None, tolerance=0.02):
+    """Fail fast when a mandatory column did not survive numeric parsing.
+
+    ``_aggregate_prm_stats`` masks non-finite values out of its bincount, so a
+    column that parses entirely to NaN aggregates to an all-zero PRM field with
+    no error -- the exact silent-zero failure the FINN/PRM policy forbids.
+    """
+    n = len(values)
+    if not n:
+        return
+    finite = int(np.isfinite(values).sum())
+    where = f" in {source_label}" if source_label else ""
+    if finite == 0:
+        raise ValueError(
+            f"FINN PRM column {label!r}{where} parsed to zero usable values out of {n} rows. "
+            "Aggregating it would emit an all-zero fire-size field. Check the numeric "
+            "format (FINNv1 uses Fortran 'D' exponents) and the column alignment."
+        )
+    if n_unparsed > tolerance * n:
+        raise ValueError(
+            f"FINN PRM column {label!r}{where} left {n_unparsed} of {n} rows unparsed "
+            f"({100.0 * n_unparsed / n:.1f}% > {100.0 * tolerance:.0f}%). Refusing to "
+            "aggregate a partially-parsed column into PRM fire size."
+        )
 
 
 def _finn_separator(path: str) -> str:
@@ -165,6 +218,11 @@ def _finn_separator(path: str) -> str:
 def _read_finn_csv(path: str, **kwargs):
     """Read FINN text using content-detected delimiters and trimmed CSV fields."""
     kwargs.setdefault("skipinitialspace", True)
+    # FINNv1 rows carry a trailing comma, so each data line holds one more field
+    # than the header. pandas resolves that by silently promoting column 0 to the
+    # index, which shifts every name one place left -- LATI then reads GENVEG and
+    # longitudes come back as 1e6. Pin index_col so the columns stay aligned.
+    kwargs.setdefault("index_col", False)
     sep = _finn_separator(path)
     if sep != ",":
         kwargs.setdefault("engine", "python")
@@ -202,6 +260,7 @@ def _aggregate_prm_stats(
     area_columns=("AREA", "FIRE_AREA", "area"),
     frp_columns=("FRP", "frp"),
     require_frp=False,
+    source_label=None,
 ):
     """Aggregate FINN each-fire fire properties to MPAS PRM fields.
 
@@ -225,8 +284,12 @@ def _aggregate_prm_stats(
     if frp_col is None and require_frp:
         raise KeyError(f"FINN PRM source lacks FRP column; tried {list(frp_columns)}")
 
-    lat = pd.to_numeric(df[lat_col], errors="coerce").to_numpy(float)
-    lon = pd.to_numeric(df[lon_col], errors="coerce").to_numpy(float)
+    lat_s, lat_bad = _to_numeric_fortran(df[lat_col])
+    lon_s, lon_bad = _to_numeric_fortran(df[lon_col])
+    lat = lat_s.to_numpy(float)
+    lon = lon_s.to_numpy(float)
+    _require_parsed(lat_col, lat, lat_bad, source_label=source_label)
+    _require_parsed(lon_col, lon, lon_bad, source_label=source_label)
     cell_ids, _, accepted = mesh.nearest_cells(
         lat, lon, interior_only=interior_only, reject_outside=reject_outside,
         max_distance_factor=max_distance_factor,
@@ -249,6 +312,14 @@ def _aggregate_prm_stats(
         std[nz] = np.sqrt(var[nz])
         return mean, std
 
+    # AREA is the one field the plume-rise model treats as mandatory
+    # (firesize_avg is passed to plumerisemodel_run unconditionally; FRP only
+    # selects heat_flag), so an unparsed AREA column must never reach moments().
+    area_vals = pd.to_numeric(df[area_col], errors="coerce").to_numpy(float)
+    _require_parsed(
+        area_col, area_vals, int(np.count_nonzero(~np.isfinite(area_vals))),
+        source_label=source_label,
+    )
     area_avg, area_std = moments(df[area_col])
     if frp_col is None:
         frp_avg = np.zeros(mesh.n_cells, dtype=np.float64)
@@ -711,6 +782,7 @@ def _run_locked(a, cfg):
             area_columns=tuple(area_columns),
             frp_columns=tuple(frp_columns),
             require_frp=prm_use_frp,
+            source_label=os.path.basename(str(local_path)),
         )
         if not has_frp:
             _warn_prm(
@@ -1012,6 +1084,25 @@ def _run_locked(a, cfg):
                     prm_day[field] = np.zeros(mesh.n_cells, dtype=np.float64)
             prm_writer.append(dt, {f: prm_day[f] for f in prm_fields})
             resolved_status.append({"date": dt.strftime("%Y-%m-%d"), "source": status, "prm_source": prm_status})
+
+    # Reading fire records but placing none of them on the mesh produces
+    # identically-zero emissions and fire size while both products are still
+    # written and the run exits 0 -- the silent-zero outcome a malformed source
+    # gives. Discard the products so --reuse-existing cannot adopt them, then
+    # fail. (A day with genuinely no fires yields total==0 and is not this case.)
+    for label, acc, tot in (("emissions", accepted, total), ("PRM", prm_accepted, prm_total)):
+        if tot and not acc:
+            for stale in (main_out, prm_out):
+                try:
+                    stale.unlink()
+                except OSError:
+                    pass
+            raise SystemExit(
+                f"ERROR: the {label} source supplied {tot} fire records but none were "
+                f"placed on the mesh, so every {label} field would be identically zero. "
+                "Refusing to write a zero-valued product; check the source numeric "
+                "format (FINNv1 uses Fortran 'D' exponents) and the lat/lon columns."
+            )
 
     if canonical != main_out:
         if canonical.exists() or canonical.is_symlink(): canonical.unlink()
