@@ -221,8 +221,36 @@
 </stream>
 
 
+<stream name="prm_lowbc_area_avg"
+        type="input"
+        filename_template="{{prmArea}}"
+        input_interval="none">
+        immutable="false"
+        <var name="firesize_biob_modis_avg"/>
+</stream>
 
+<stream name="prm_lowbc_area_std"
+        type="input"
+        filename_template="{{prmArea}}"
+        input_interval="none">
+        immutable="false"
+        <var name="firesize_biob_modis_std"/>
+</stream>
 
+<stream name="prm_lowbc_frp_avg"
+        type="input"
+        filename_template="{{prmArea}}"
+        input_interval="none">
+        immutable="false"
+        <var name="frp_biob_modis_avg"/>
+</stream>
 
+<stream name="prm_lowbc_frp_std"
+        type="input"
+        filename_template="{{prmArea}}"
+        input_interval="none">
+        immutable="false"
+        <var name="frp_biob_modis_std"/>
+</stream>
 
 </streams>

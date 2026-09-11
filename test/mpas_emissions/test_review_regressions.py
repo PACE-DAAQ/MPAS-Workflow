@@ -116,6 +116,39 @@ def test_interrupted_emission_write_leaves_no_partial_file():
         assert not list(Path(td).glob('*.tmp.*'))
 
 
+def test_prm_only_validation_rejects_legacy_variable_names():
+    # The archived prebuilt PRM file carries area_biob_modis/_std. MPAS silently
+    # drops stream variables it cannot find, so plume rise would run with fire
+    # size and FRP identically zero; validation must make that fatal instead.
+    import mpas_emissions.validate_streams as vs
+    streams = """<streams>
+<stream name="prm_lowbc_area_avg" type="input" filename_template="prm.nc" input_interval="none">
+  <var name="firesize_biob_modis_avg"/>
+</stream>
+<stream name="anth_bc_emissions" type="input" filename_template="anth.nc" input_interval="none">
+  <var name="bc_anth_sum"/>
+</stream>
+</streams>"""
+    with tempfile.TemporaryDirectory() as td:
+        d = Path(td)
+        (d/'streams.atmosphere').write_text(streams)
+        (d/'prm.nc').write_bytes(b'CDF\x05' + b'\x00'*32)
+        (d/'anth.nc').write_bytes(b'CDF\x05' + b'\x00'*32)
+        old_vars = vs._variables
+        try:
+            # legacy PRM names present, new ones absent; emissions file is fine
+            vs._variables = lambda p: ({'area_biob_modis', 'area_biob_modis_std'}
+                                       if p.name == 'prm.nc' else {'bc_anth_sum'})
+            try:
+                vs.validate(d/'streams.atmosphere', d, only_prm=True)
+            except RuntimeError as exc:
+                assert 'firesize_biob_modis_avg' in str(exc)
+                assert 'anth_bc_emissions' not in str(exc)
+            else:
+                raise AssertionError('legacy PRM variable names should fail validation')
+        finally:
+            vs._variables = old_vars
+
 
 def test_finn_fallback_days_inherit_product_scaling():
     # missing_days.fallback holds {sources, force date ranges, scale method} and
@@ -172,6 +205,41 @@ def test_missing_frp_column_is_fatal_when_do_frp_is_true():
     else:
         raise AssertionError('missing FRP column must be fatal when do frp is true')
 
+
+def test_all_zero_prm_file_is_rejected():
+    # A PRM file with the right names but no fire data makes plume rise a no-op.
+    import mpas_emissions.validate_streams as vs
+    from netCDF4 import Dataset
+    streams = """<streams>
+<stream name="prm_lowbc_area_avg" type="input" filename_template="prm.nc" input_interval="none">
+  <var name="firesize_biob_modis_avg"/>
+</stream>
+</streams>"""
+    with tempfile.TemporaryDirectory() as td:
+        d = Path(td)
+        (d/'streams.atmosphere').write_text(streams)
+
+        def build(path, nonzero):
+            with Dataset(path, 'w', format='NETCDF3_64BIT_DATA') as ds:
+                ds.createDimension('Time', None); ds.createDimension('nCells', 8)
+                v = ds.createVariable('firesize_biob_modis_avg', 'f4', ('Time', 'nCells'))
+                a = np.zeros((1, 8), dtype='f4')
+                if nonzero:
+                    a[0, 3] = 1.0e6
+                v[:, :] = a
+
+        build(d/'prm.nc', nonzero=True)
+        vs.validate(d/'streams.atmosphere', d, only_prm=True,
+                    require_nonzero=['firesize_biob_modis_avg'])
+
+        build(d/'prm.nc', nonzero=False)
+        try:
+            vs.validate(d/'streams.atmosphere', d, only_prm=True,
+                        require_nonzero=['firesize_biob_modis_avg'])
+        except RuntimeError as exc:
+            assert 'identically zero' in str(exc)
+        else:
+            raise AssertionError('all-zero PRM input must be rejected')
 
 
 def main():
