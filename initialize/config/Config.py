@@ -80,9 +80,21 @@ class Config(Logger):
         'options must be a list of valid values or not present at all, not '+str(options))
 
     if typ is not None and v is not None:
-      return typ(v)
-    else:
-      return v
+      v = typ(v)
+
+    # Validate against the permitted values. Previously 'options' was accepted and
+    # never checked, so an out-of-range value passed through silently. That is how
+    # an unquoted 'off' -- a YAML 1.1 boolean -- reached the workflow as the string
+    # 'False' and enabled a branch that was meant to be disabled.
+    if options is not None and v is not None:
+      permitted = [typ(o) if typ is not None else o for o in options]
+      assert v in permitted, (
+        'invalid value for '+dotSeparatedKey+': '+repr(v)
+        +'; expected one of '+str(permitted)
+        +(' (quote the value in the scenario YAML if it is on/off/yes/no)'
+          if str(v) in ('True', 'False') else ''))
+
+    return v
 
   def __getitem__(self, key:str):
     return self.get(key)

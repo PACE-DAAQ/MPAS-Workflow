@@ -83,7 +83,11 @@ class Observations(Component):
     'GDASObsErrtable': ['/glade/campaign/mmm/parc/liuz/pandac_common/fixed_input/GSI_errtables/HRRRENS_errtable_10sep2018.r3dv', str],
 
     ## CRTM
-    'CRTMTABLES': ['/glade/work/nystrom/Code/JEDI/jcsda_internal/CRTM_V3_coeffs/', str],
+    # Project CRTM coefficients. The jcsda_internal set has no GOCART variants, so the
+    # GOCART2G AOD operator fails with "Error initializing CRTM" when it requests
+    # AerosolCoeff.GOCART-GEOS5.nc4.
+    #'CRTMTABLES': ['/glade/work/nystrom/Code/JEDI/jcsda_internal/CRTM_V3_coeffs/', str],
+    'CRTMTABLES': ['/glade/campaign/ncar/nmmm0081/input/jedi/crtm_coeffs/', str],
 
     # static directories for bias correction files
     'fixedCoeff': ['/glade/campaign/mmm/parc/jban/pandac_common/obs/satbias', str],

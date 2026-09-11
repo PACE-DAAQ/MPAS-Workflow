@@ -58,9 +58,9 @@ class HPC(Component):
     system = os.getenv('NCAR_HOST')
     if system == 'derecho':
       topdir = '/glade/derecho/scratch'
-      self.variablesWithDefaults['CriticalQueue'] = ['main', str, ['main', 'preempt']]
-      self.variablesWithDefaults['NonCriticalQueue'] =  ['main', str, ['main', 'preempt']]
-#      self.variablesWithDefaults['SingleProcQueue'] = ['casper@casper-pbs', str, ['casper@casper-pbs', 'main']]
+      self.variablesWithDefaults['CriticalQueue'] = ['main', str, ['main', 'preempt', 'regular']]
+      self.variablesWithDefaults['NonCriticalQueue'] =  ['main', str, ['main', 'preempt', 'regular']]
+      self.variablesWithDefaults['SingleProcQueue'] = ['casper@casper-pbs', str, ['casper@casper-pbs', 'main', 'develop', 'preempt']]
       self.variablesWithDefaults['CriticalPriority'] = ['regular', str, ['premium', 'regular', 'economy', 'preempt']]
       self.variablesWithDefaults['NonCriticalPriority'] = ['regular', str, ['premium', 'regular', 'economy', 'preempt']]
       self.system = system
