@@ -84,6 +84,17 @@ set self_icStateDir = ${ExperimentDirectory}/`echo "${ArgICStateDir}" \
 
 source ./bin/getCycleVars.csh
 
+# In workflow-native mode, PrepareEmissions has already staged an experiment-local
+# directory for this mesh. Preserve Build.EmissionDir in prebuilt mode.
+if ( $?emissionsMode ) then
+  if ( "$emissionsMode" == "workflow" ) then
+    set EmissionDir = "${ExperimentDirectory}/${EmissionsWorkDir}"
+    # PrepareEmissions stages/generates the four-field PRM fire-statistics file in the same
+    # experiment-local directory, so variable-resolution runs are self-contained.
+    set PRMAreaDir = "${ExperimentDirectory}/${EmissionsWorkDir}"
+  endif
+endif
+
 # nCells
 if ("$ArgMesh" == "$outerMesh") then
   set nCells = $nCellsOuter

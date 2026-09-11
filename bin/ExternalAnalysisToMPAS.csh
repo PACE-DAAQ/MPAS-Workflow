@@ -179,6 +179,22 @@ if ( "${initicChemistryMode}" != "off" ) then
   if ( -d "${PRMAreaDir}" ) then
     ln -sfv ${PRMAreaDir}/* ./
   endif
+  # Use the scenario-wide streams variant for the shared cold-start file.
+  # Forecast.csh applies per-member memberVariants for the 9-member emissions ensemble.
+  set saveStreamsFile = "${StreamsFile}"
+  setenv StreamsFile ${StreamsFileInit}
+  set nCells = ${ArgNCells}
+  set meshRatio = ${ArgRatio}
+  rm -f ./FAIL
+  source ${mainScriptDir}/bin/SetStreamsVariant.csh
+  setenv StreamsFile "${saveStreamsFile}"
+  # 'exit' inside a sourced csh file does not terminate the sourcing script, so
+  # SetStreamsVariant.csh's failures must be detected through its ./FAIL sentinel.
+  # Without this the placeholders stay unresolved and the task reports success.
+  if ( -e ./FAIL ) then
+    echo "ERROR ${0}: SetStreamsVariant.csh failed for the cold-start streams file"
+    exit 1
+  endif
   set initTemplate = ${StreamsFileInit}.gocart2g
   set nmlTemplate = ${NamelistFileInit}.gocart2g
 endif

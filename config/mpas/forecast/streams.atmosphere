@@ -82,7 +82,7 @@
 
 <stream name="anth_nh3_emissions"
         type="input"
-        filename_template="x1.163842-2024-anth_ammonia.MPAS.nc"
+        filename_template="{{anthNH3}}"
         input_interval="none">
         immutable="false"
 
@@ -112,7 +112,7 @@
 
 <stream name="anth_iso_emissions"
         type="input"
-        filename_template="x1.163842-2024-anth_isoprene.MPAS.nc"
+        filename_template="{{anthISO}}"
         input_interval="none">
         immutable="false"
 
@@ -121,7 +121,7 @@
 
 <stream name="anth_mnt_emissions"
         type="input"
-        filename_template="x1.163842-2024-anth_monoterpenes.MPAS.nc"
+        filename_template="{{anthMNT}}"
         input_interval="none">
         immutable="false"
 
@@ -244,13 +244,36 @@
         <var name="mntb_biog_megan"/>
 </stream>
 
-<stream name="prm_lbc_area_avg"
+<stream name="prm_lowbc_area_avg"
         type="input"
         filename_template="{{prmArea}}"
         input_interval="none">
         immutable="false"
-        
-        <var name="area_biob_modis"/>
+        <var name="firesize_biob_modis_avg"/>
+</stream>
+
+<stream name="prm_lowbc_area_std"
+        type="input"
+        filename_template="{{prmArea}}"
+        input_interval="none">
+        immutable="false"
+        <var name="firesize_biob_modis_std"/>
+</stream>
+
+<stream name="prm_lowbc_frp_avg"
+        type="input"
+        filename_template="{{prmArea}}"
+        input_interval="none">
+        immutable="false"
+        <var name="frp_biob_modis_avg"/>
+</stream>
+
+<stream name="prm_lowbc_frp_std"
+        type="input"
+        filename_template="{{prmArea}}"
+        input_interval="none">
+        immutable="false"
+        <var name="frp_biob_modis_std"/>
 </stream>
 
 </streams>
