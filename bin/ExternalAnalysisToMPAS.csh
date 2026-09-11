@@ -46,6 +46,10 @@ source config/auto/experiment.csh
 source config/auto/externalanalyses.csh
 source config/auto/model.csh
 source config/auto/invariantstream.csh
+source config/auto/initic.csh
+# Only the Cycle suite instantiates the Emissions component, so this file may not
+# exist. Sourcing a missing file is fatal in csh and exits before ./FAIL is written.
+if ( -e config/auto/emissions.csh ) source config/auto/emissions.csh
 source config/tools.csh
 set yymmdd = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 1-8`
 set hh = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 10-11`
@@ -130,6 +134,54 @@ foreach fileGlob ($MPASLookupFileGlobs)
   rm ./*${fileGlob}
   ln -sfv ${MPASLookupDir}/*${fileGlob} .
 end
+
+# MERRA chemistry intermediates separately and reuses the configured emission
+# file families.  This cold-start conversion is shared across ensemble members;
+# member-specific emission variants are selected later by Forecast.csh.
+set initTemplate = ${StreamsFileInit}
+set nmlTemplate = ${NamelistFileInit}
+if ( "${initicChemistryMode}" != "off" ) then
+  if ( "${initicChemistryMode}" == "workflow" ) then
+    set chemDir = ${ExperimentDirectory}/`echo "${initicChemistryWorkDir}" | sed 's@{{thisValidDate}}@'${thisValidDate}'@'`
+  else
+    set chemDir = `echo "${initicChemistryPrebuiltDir}" | sed 's@{{thisValidDate}}@'${thisValidDate}'@'`
+  endif
+  if ( ! -d "${chemDir}" ) then
+    echo "ERROR ${0}: chemistry intermediate directory not found: ${chemDir}" > ./FAIL
+    exit 1
+  endif
+  ln -sfv ${chemDir}/MERRA2:* ./
+
+  if ( "${initicChemistryBackgroundDir}" != "" ) then
+    set chemBgDir = "${initicChemistryBackgroundDir}"
+  else
+    set chemBgDir = "${BackgroundLUTDir}"
+  endif
+  if ( ! -d "${chemBgDir}" ) then
+    echo "ERROR ${0}: chemistry background directory not found: ${chemBgDir}" > ./FAIL
+    exit 1
+  endif
+  ln -sfv ${chemBgDir}/* ./
+
+  if ( "${initicEmissionMode}" == "workflow" ) then
+    set initEmissionDir = "${ExperimentDirectory}/${initicEmissionWorkDir}"
+  else
+    set initEmissionDir = "${EmissionDir}"
+  endif
+  if ( ! -d "${initEmissionDir}" ) then
+    echo "ERROR ${0}: emissions directory not found: ${initEmissionDir}" > ./FAIL
+    exit 1
+  endif
+  ln -sfv ${initEmissionDir}/* ./
+  # streams.init_atmosphere.gocart2g references {{prmArea}} in four prm_lowbc_*
+  # input streams. bin/Forecast.csh links PRMAreaDir for the same reason; in
+  # prebuilt emission mode the PRM file is not inside EmissionDir.
+  if ( -d "${PRMAreaDir}" ) then
+    ln -sfv ${PRMAreaDir}/* ./
+  endif
+  set initTemplate = ${StreamsFileInit}.gocart2g
+  set nmlTemplate = ${NamelistFileInit}.gocart2g
+endif
 
 ## copy/modify dynamic streams file
 rm ${StreamsFileInit}
