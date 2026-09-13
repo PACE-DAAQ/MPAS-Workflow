@@ -86,8 +86,8 @@ class Forecast(Component):
     self.mesh = mesh
     self.model = model
     self.workflow = workflow
-    self.emissions = emissions
     self.ea = ea
+    self.emissions = emissions
     self.NN = members.n
     self.memFmt = members.memFmt
 
@@ -199,7 +199,17 @@ class Forecast(Component):
       },
     }
 
-  def export(self, daFinished:str, daMeanDir:str):
+  def export(self, daFinished:str, daMeanDir:str, previousStateDependency:str=None):
+    """Wire the forecast into the cycling graph.
+
+    ``previousStateDependency`` overrides the dependency on the analysis that
+    normally precedes the forecast. In a DA cycle the default is correct:
+    DA2FCOffsetHR is 0, so the forecast waits on this cycle's own DA. A
+    forecast-only cycle has no DA and must instead wait on the PREVIOUS
+    cycle's forecast, which the offset arithmetic here cannot express -- pass
+    ``Forecast.previousForecast`` for that. Defaults to None, so DA cycles are
+    unchanged.
+    """
     #########
     # outputs
     #########
@@ -234,14 +244,17 @@ class Forecast(Component):
         # ensure there is a valid sea-surface update file before forecast
         '''+self.ea['PrepareSeaSurfaceUpdate']+''' => '''+self.tf.pre]
 
-    # depends on previous DA
-    previousDA = daFinished+'[-PT'+str(self.workflow['DA2FCOffsetHR'])+'H]'
-    self.tf.addDependencies([previousDA])
-
+    # depends on previous DA, or on whatever state the caller nominates
+    if previousStateDependency is not None:
+      self.tf.addDependencies([previousStateDependency])
+    else:
+      previousDA = daFinished+'[-PT'+str(self.workflow['DA2FCOffsetHR'])+'H]'
+      self.tf.addDependencies([previousDA])
     # Optional workflow-native emissions preparation. In prebuilt mode the
     # Emissions component exposes no ready task and existing behavior is unchanged.
     if self.emissions is not None and self.emissions.ready is not None:
       self._dependencies += ['\n        '+self.emissions.ready+' => '+self.tf.pre]
+
     self._dependencies = self.tf.updateDependencies(self._dependencies)
     self._tasks = self.tf.updateTasks(self._tasks, self._dependencies)
 
