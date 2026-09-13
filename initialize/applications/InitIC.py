@@ -47,10 +47,6 @@ class InitIC(Component):
     assert chemistryMode in ('off', 'prebuilt', 'workflow'), (
       "initic 'chemistry mode' must be one of off/prebuilt/workflow, not "
       +repr(self['chemistry mode'])+" (quote the value in the scenario YAML)")
-    if chemistryMode == 'workflow' and workflow is None:
-      raise ValueError("initic chemistry mode 'workflow' is not supported by this suite; "
-                       "use 'prebuilt' or a suite with chemistry scheduling (Cycle or "
-                       "ForecastFromExternalAnalyses).")
     self._set('chemistry mode', chemistryMode)
     self._set('initicChemistryMode', chemistryMode)
     self._set('initicChemistrySourceConfig', self['chemistry source config'])
@@ -209,10 +205,20 @@ class InitIC(Component):
     edges = self._dependencies
     self._dependencies = []
     for recurrence in recurrences:
+      # updateDependencies ALWAYS appends this task family's own edges
+      # (PreInitIC__ => InitInitIC => ...), whether or not `edges` carried any
+      # chemistry/emissions ordering. The header must therefore be emitted
+      # unconditionally: gating it on `edges` left those family edges bare when
+      # there were none to order -- which is exactly the case in chemistry
+      # 'prebuilt' mode -- and cylc then reads a bare 'A => B' as a recurrence
+      # key and rejects the workflow with "Cannot process recurrence
+      # PreInitIC__". Build the body first and emit nothing if it is empty.
       body = self.tf.updateDependencies(list(edges))
       if not ''.join(body).strip():
         continue
-      self._dependencies += ['\n    '+recurrence+' = """'] + body + ['\n      """']
+      self._dependencies += ['''
+    '''+recurrence+''' = """'''] + body + ['''
+      """''']
 
     self._tasks = self.tf.updateTasks(self._tasks, self._dependencies)
 
