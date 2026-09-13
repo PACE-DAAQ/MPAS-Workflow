@@ -50,7 +50,14 @@ class ForecastOnlyCycle(SuiteBase):
 
   The typical use is a background-error-covariance sample set: cycle 6-hourly
   and launch an extended forecast at a chosen UTC hour (extendedforecast:
-  meanTimes) to produce one sample per day.
+  meanTimes) to produce one sample per day. Note that the first cycle point
+  produces no sample -- it has no previous-cycle state to launch from -- so an
+  N-day window yields N-1 samples.
+
+  Set 'forecast: post: []' unless the background verification is wanted: it
+  defaults to ['verifymodel'], and VerifyModelBG compares against a 'diag'
+  product that this suite's ExternalAnalysisToMPAS does not write, so the task
+  fails every cycle. The failures do not block cycling, but they bury real ones.
   '''
 
   def __init__(self, conf:Config):
@@ -96,9 +103,52 @@ class ForecastOnlyCycle(SuiteBase):
                 self.c['externalanalyses'].outputs['state']['Outer'], self.c['forecast'])
 
     # Extended forecasts (the sample set) start from the same cycled state.
+    #
+    # The mean IC is passed explicitly. ExtendedForecast otherwise defaults it
+    # to the DA mean analysis in CyclingDA/<cycle>/an/mean and schedules a
+    # MeanAnalysis task to build it -- neither of which exists here, because
+    # there is no DA. At nMembers == 1 that failure is silent in a way worth
+    # naming: MeanAnalysis.csh takes its deterministic pass-through branch,
+    # symlinks an analysis that was never written, and exits 0. The extended
+    # forecast then aborts under MPI on a dangling IC with no hint of the
+    # cause.
+    #
+    # With one member the cycled forecast IS the mean, so warmIC[0] is exactly
+    # the right state. With more than one, a real mean over the CyclingFC
+    # members would have to be computed first, and MeanAnalysis.csh cannot do
+    # it -- it reads CyclingDAOutDirs/ANFilePrefix straight from the DA config.
+    assert members.n == 1 or not conf.has('extendedforecast.meanTimes'), \
+      'ForecastOnlyCycle: extendedforecast.meanTimes needs a mean IC, and ' \
+      'computing one over CyclingFC members is not implemented; run with ' \
+      'members.n == 1 or drop meanTimes'
+    meanIC = warmIC[0] if members.n == 1 else None
     self.c['extendedforecast'] = ExtendedForecast(conf, self.c['hpc'], members,
                 self.c['forecast'], self.c['externalanalyses'], self.c['observations'],
-                warmIC, 'internal')
+                warmIC, 'internal', meanIC)
+
+    # Bound the extended-forecast recurrence away from the first cycle point.
+    #
+    # The extended forecast launches from CyclingFC/{{prevCycleDate}}, the same
+    # cycled state the 6-h forecast uses. At the first cycle point that
+    # directory does not exist: cycle 1 runs ColdForecast/FirstBackground from
+    # the external analysis and writes the state valid at cycle 2. Cylc
+    # schedules an extended forecast at cycle 1 regardless -- a dependency on a
+    # task instance with no definition at that point is dropped, not held -- and
+    # the forecast then aborts under MPI on an IC that was never written.
+    #
+    # Expressed as a cylc exclusion rather than an offset start: '^' is the
+    # initial cycle point, so 'T00!^' keeps the daily-at-00Z meaning intact and
+    # drops only the one point that cannot work. An offset start ('+PT6H/T00')
+    # does not parse, and rewriting the recurrence as a period ('R/^+P1D/P1D')
+    # would silently ignore the requested time of day whenever it differs from
+    # the initial cycle point's.
+    #
+    # Consequence for planning: on a 31-day window at T00 this yields 30
+    # samples, the first on day 2.
+    for key in ['meanTimes', 'ensTimes']:
+      times = conf.get('extendedforecast.'+key)
+      if times is not None and '!' not in times:
+        self.c['extendedforecast']._set(key, times+'!^')
 
     meshTitle = 'O'+meshes['Outer'].name
     if meshes['Inner'].name != meshes['Outer'].name:
