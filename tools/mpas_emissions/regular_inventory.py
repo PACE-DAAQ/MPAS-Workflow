@@ -107,6 +107,15 @@ def _read_lat_lon(path: str, cfg: dict):
 def discover_records(files: list[str], cfg: dict) -> list[SourceRecord]:
     from netCDF4 import Dataset
     time_name = cfg["source"].get("time", "time")
+    # Some inventories label a time-averaged record with the END of its
+    # averaging window rather than the period it describes.  Native GFAS is the
+    # case in hand: its GRIB carries dataDate=D, stepType=avg, stepRange=0-24,
+    # so cfgrib gives the NetCDF valid_time D+1T00:00 for what is day D's mean.
+    # Left uncorrected under daily_mean semantics every fire day is applied one
+    # day late.  The offset is added to every discovered source time; it
+    # defaults to 0, so inventories that already label records correctly (CEDS,
+    # QFED) are unaffected.
+    offset = timedelta(hours=float(cfg["source"].get("time offset hours", 0.0)))
     records: list[SourceRecord] = []
     for path in files:
         with Dataset(path) as ds:
@@ -119,10 +128,10 @@ def discover_records(files: list[str], cfg: dict) -> list[SourceRecord]:
                 if not rx: raise ValueError("filename time regex required when time variable is absent")
                 m = re.search(rx, os.path.basename(path))
                 if not m: raise ValueError(f"cannot parse time from {path}")
-                records.append(SourceRecord(datetime.strptime(m.group(1), fmt), path, 0))
+                records.append(SourceRecord(datetime.strptime(m.group(1), fmt) + offset, path, 0))
             else:
                 for i, when in enumerate(_decode_times(ds, time_name)):
-                    records.append(SourceRecord(when, path, i))
+                    records.append(SourceRecord(when + offset, path, i))
     return sorted(records, key=lambda r: r.valid_time)
 
 
@@ -356,6 +365,7 @@ class RegularInventoryProcessor:
                 "regrid_method": "ESMF conservative sparse weights",
                 "time_missing_policy": str(time_cfg.get("missing", "linear")),
                 "source_temporal_semantics": temporal_semantics,
+                "source_time_offset_hours": float(cfg.get("source", {}).get("time offset hours", 0.0)),
                 "emissions_scaling": json.dumps({"inventory": describe_scaling(cfg), "product": describe_scaling(product)}, sort_keys=True),
                 "attribution": "Original ESMF emissions-regridding methodology and utility lineage: Duseong Jo (2021)",
             }
