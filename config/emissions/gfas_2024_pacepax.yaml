@@ -1,0 +1,140 @@
+# Native CAMS GFAS v1.2 -> MPAS for the Jul-Sep 2024 PACE-PAX period.
+#
+# Companion to qfed_2024_pacepax.yaml.  Both cover the PACE-PAX case so the
+# biomass inventory can be swapped without changing anything else; GFAS is the
+# third biomass option alongside FINN and QFED.
+#
+# Why GFAS is worth having for this period:
+#   * it carries iso/mnt, which the archived 2024 QFED files do not, so a GFAS
+#     member needs no FINN fallback for those two species
+#     (see the ISO/MNT note at the end of qfed_2024_pacepax.yaml);
+#   * it has no gap over 2024-09-09..09-15, the window that produced the smoke
+#     the PACE-PAX flights sampled and that FINNv2.5 NRT does not publish.
+#
+# GFAS still cannot supply PRM fire size: it provides FRP and injection height
+# but not the per-fire mean area in m2 the current GOCART2G PRM interface wants,
+# so `emissions: prm source: finn` remains in force for a GFAS member exactly as
+# it does for a QFED one (README_EMISSIONS.md, "Biomass inventory versus PRM
+# source").
+#
+# Unlike qfed_2024_pacepax.yaml, whose dailies were pulled by a separate
+# fetch script, the source files here are retrieved by the processor itself:
+# source.fetch below downloads one native 0.1-degree NetCDF per month from the
+# Copernicus ADS on first run and reuses them afterwards.  The ADS licence for
+# cams-global-fire-emissions-gfas must be accepted once in the web UI and
+# ~/.cdsapirc must point at https://ads.atmosphere.copernicus.eu/api.
+# KNOWN UPSTREAM DATA ISSUE inside this window, flagged by ADS at retrieval:
+# anomalous FRP (and therefore emission flux) from false Aqua MODIS detections
+# at high latitudes over the eastern Arctic, 2024-08-09..08-14.
+#   https://forum.ecmwf.int/t/issue-with-gfas-and-cams-global-forecast-outputs-due-to-contaminated-observations/3995
+# That is far from the PACE-PAX domain, so it does not touch the California
+# fires this case is about, but these are GLOBAL emission files: a global
+# forecast spun up through mid-August will ingest the spurious Arctic source.
+# Measured in the generated x1.163842 product: BC emitted north of 65N is
+# 4.2% of the global total across August generally, but 33.9% on 08-09, 18.0%
+# on 08-10 and 13.6% on 08-11. Integrated over 08-09..08-14 the excess above
+# the August baseline is ~13% of global BC emission for those days. So the
+# contamination is real and large, not marginal. It is confined to the Arctic
+# and does not touch the California fires, but a global spin-up running through
+# mid-August ingests it. Prefer QFED/FINN in the Arctic band, or mask 08-09..
+# 08-14 north of 65N, if high-latitude aerosol matters to the application.
+#
+# Separately, ADS announced this dataset stops being updated after 2025-12-04;
+# irrelevant for a 2024 historical case, but a NRT workflow would need the
+# ECMWF Data Portal instead.
+inventory: GFAS
+year: 2024
+source:
+  # Any native ADS month already cached is used as-is; source.fetch fills gaps.
+  files:
+    - /glade/derecho/scratch/syha/gocart2g_aug2024/gfas/orig/GFAS_v1.2_native_0.1deg_{year}??.nc
+  # The current ADS NetCDF conversion names the time coordinate valid_time,
+  # not time.  source.time is a single name rather than a candidate list, so
+  # this must match the file exactly.
+  time: valid_time
+  # GFAS v1.2 GRIB carries dataDate=D, dataTime=0, stepType=avg, stepRange=0-24:
+  # each field is the mean over D 00Z -> D+1 00Z, i.e. day D's daily mean.
+  # cfgrib labels it with the END of that window (validityDate=D+1), so the
+  # NetCDF valid_time is one day later than the day the data describe.  Undo
+  # that here; without it daily_mean semantics apply every fire day one day
+  # late.  Verified against the GRIB keys directly and consistent with the
+  # QFED daily series over the Sep 2024 California fires.
+  time offset hours: -24
+  latitude: [latitude, lat]
+  longitude: [longitude, lon]
+  fetch:
+    enabled: true
+    provider: cams_ads_gfas
+    cache directory: /glade/derecho/scratch/syha/gocart2g_aug2024/gfas/orig
+    overwrite: false
+
+time:
+  # Three whole months: July spin-up through the last PACE-PAX research flight
+  # (RF0930).  Starts 2024-07-01 rather than QFED's 07-19 so the GFAS product
+  # covers complete calendar months, which is also how ADS chunks the download.
+  start: "{year}-07-01T00:00:00"
+  end: "{year}-09-30T23:00:00"
+  target frequency: hourly
+  target step hours: 1
+  # GFAS v1.2 is a daily 00--23 UTC mean. Repeat that mean across the day;
+  # interpolate only if an entire GFAS daily analysis is missing.
+  source temporal semantics: daily_mean
+  missing: linear
+  max interpolation gap days: 3
+  allow extrapolation: false
+
+outputs:
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.bc.hourly.nc
+    fields:
+      bc_biob_modis:
+        source variable aliases: [bcfire, wildfire_flux_of_black_carbon]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 12.011
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.oc.hourly.nc
+    fields:
+      oc_biob_modis:
+        source variable aliases: [ocfire, wildfire_flux_of_organic_carbon]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 12.011
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.nh3.hourly.nc
+    fields:
+      nh3_biob_modis:
+        source variable aliases: [nh3fire, wildfire_flux_of_ammonia]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 17.031
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.so2.hourly.nc
+    fields:
+      so2_biob_modis:
+        source variable aliases: [so2fire, wildfire_flux_of_sulphur_dioxide]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 64.066
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.co.hourly.nc
+    fields:
+      co_biob_modis:
+        source variable aliases: [cofire, wildfire_flux_of_carbon_monoxide]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 28.0101
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.iso.hourly.nc
+    fields:
+      iso_biob_modis:
+        source variable aliases: [c5h8fire, wildfire_flux_of_isoprene]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 68.117
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.mnt.hourly.nc
+    fields:
+      mnt_biob_modis:
+        source variable aliases: [terpenesfire, wildfire_flux_of_terpenes]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 136.24
+
+scaling:
+  default: 1.0
+  species:
+    nh3: 1.0

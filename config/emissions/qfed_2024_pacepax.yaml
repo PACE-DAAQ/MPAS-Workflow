@@ -38,7 +38,10 @@ time:
   # Range covers the free-forecast spin-up through the last PACE-PAX research
   # flight (RF0930). The two fires of interest are out by 09-17, so the tail is
   # spin-down only.
-  start: "{year}-07-19T00:00:00"
+  #
+  # Extended back from 07-19 to 07-01 so QFED spans the whole free-forecast
+  # start, matching GFAS and GBBEPx; this also covers the July Jasper fire.
+  start: "{year}-07-01T00:00:00"
   end: "{year}-09-30T23:00:00"
   target frequency: hourly
   target step hours: 1
