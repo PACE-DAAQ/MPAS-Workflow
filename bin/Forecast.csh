@@ -92,12 +92,22 @@ set self_WorkDir = ${ExperimentDirectory}/`echo "${ArgWorkDir}" \
   | sed 's@{{thisCycleDate}}@'${thisCycleDate}'@' \
   `
 
+source ./bin/getCycleVars.csh
+
+# Resolve ArgICStateDir AFTER getCycleVars.csh, which is what defines
+# prevCycleDate. A forecast-only cycle takes its IC from the PREVIOUS cycle's
+# own forecast (CyclingFC/{{prevCycleDate}}), unlike a DA cycle whose IC is this
+# cycle's analysis -- so {{prevCycleDate}} has to be substitutable here. It was
+# not: only thisCycleDate/thisValidDate were handled, and the substitution ran
+# before prevCycleDate existed. The template then survived into the path, tcsh
+# stripped the braces, and the IC symlink pointed at a literal
+# ".../CyclingFC/prevCycleDate/..." -- a dangling link that surfaced far away as
+# copy_mpas_vars.py failing to open <icFile>_tmp.
 set self_icStateDir = ${ExperimentDirectory}/`echo "${ArgICStateDir}" \
   | sed 's@{{thisCycleDate}}@'${thisCycleDate}'@' \
   | sed 's@{{thisValidDate}}@'${thisValidDate}'@' \
+  | sed 's@{{prevCycleDate}}@'${prevCycleDate}'@' \
   `
-
-source ./bin/getCycleVars.csh
 
 # In workflow-native mode, PrepareEmissions has already staged an experiment-local
 # directory for this mesh. Preserve Build.EmissionDir in prebuilt mode.
@@ -217,6 +227,16 @@ foreach fileGlob ($MPASLookupFileGlobs)
   rm ./*${fileGlob}
   ln -sfv ${MPASLookupDir}/*${fileGlob} .
 end
+
+## A separate forecast build (e.g. gocartMPAS) ships tables the bundle does not,
+## such as CCN_ACTIVATE_DATA for mp_thompson_gocart2G. Link them over the bundle's.
+if ( $?ForecastLookupDir ) then
+  if ( "${ForecastLookupDir}" != "" ) then
+    foreach fileGlob ($MPASLookupFileGlobs)
+      ln -sfv ${ForecastLookupDir}/*${fileGlob} .
+    end
+  endif
+endif
 
 if (${Microphysics} == 'mp_thompson' ||${Microphysics} == 'mp_thompson_gocart2G' ) then # a
   ln -svf $MPThompsonTablesDir/* .
