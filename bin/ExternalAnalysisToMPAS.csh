@@ -155,6 +155,22 @@ if ( "${initicChemistryMode}" != "off" ) then
     echo "ERROR ${0}: chemistry intermediate directory not found: ${chemDir}" > ./FAIL
     exit 1
   endif
+  # Two independent preconditions, both needed.
+  #
+  # (1) The producer signalled completion. PrepareChemIC.csh touches
+  #     PREPARE_CHEM_SUCCESS only after merra_chem exits 0, so its absence means
+  #     this valid time is incomplete or still being written. Checking only -d
+  #     lets a half-written MERRA2:* be linked and fed to init_atmosphere -- the
+  #     failure mode that matters for a SHARED prebuilt cache being filled
+  #     concurrently by another experiment, because the directory appears the
+  #     instant the first byte lands.
+  if ( ! -e "${chemDir}/PREPARE_CHEM_SUCCESS" ) then
+    echo "ERROR ${0}: chemistry intermediate incomplete (no PREPARE_CHEM_SUCCESS): ${chemDir}" > ./FAIL
+    exit 1
+  endif
+  # (2) The intermediate for THIS valid time exists and is non-empty. The
+  #     sentinel is per-directory, not per-time, so it cannot speak for an
+  #     individual file.
   set chemInput = "${chemDir}/MERRA2:`echo ${thisMPASNamelistDate} | cut -c 1-13`"
   if ( ! -s "${chemInput}" ) then
     echo "ERROR ${0}: chemistry intermediate missing or empty: ${chemInput}" > ./FAIL
