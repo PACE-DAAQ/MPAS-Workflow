@@ -58,7 +58,14 @@ class ExtendedForecast(Component):
 
     ## updateSea
     # whether to update surface fields before a forecast (e.g., sst, xice)
-    'updateSea': [False, bool],
+    #
+    # Defaults True because that is what actually happened before this option
+    # was honoured on both IC paths: fromInternalAnalysis hard-coded True in the
+    # ArgUpdateSea slot, so every DA-cycling experiment updated the surface
+    # regardless of this setting (issue #24). Keeping the old default of False
+    # while making the option authoritative would have silently switched surface
+    # updates OFF for those runs.
+    'updateSea': [True, bool],
 
     ## updateATMVarsFromCold
     # whether to update the IC atmospheric variables from the cold-start IC
@@ -222,7 +229,7 @@ class ExtendedForecast(Component):
       self.fc.mesh.name,
       True,
       False,
-      True,
+      self['updateSea'],
       self.workDir+'/{{thisCycleDate}}/mean',
       meanInternalAnaIC.directory(),
       meanInternalAnaIC.prefix(),
@@ -242,7 +249,7 @@ class ExtendedForecast(Component):
         self.fc.mesh.name,
         True,
         False,
-        True,
+        self['updateSea'],
         self.workDir+'/{{thisCycleDate}}'+self.memFmt.format(mm),
         states[mm-1].directory(),
         states[mm-1].prefix(),
