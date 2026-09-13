@@ -85,6 +85,7 @@ class ExtendedForecast(Component):
     obs:Observations,
     ic:StateEnsemble,
     icType:str,
+    meanIC:State=None,
   ):
     self.__globalConf = config
     super().__init__(config)
@@ -130,7 +131,7 @@ class ExtendedForecast(Component):
     if icType == 'external':
       self.fromExternalAnalysis(ic)
     elif icType == 'internal':
-      self.fromInternalAnalysis(ic)
+      self.fromInternalAnalysis(ic, meanIC)
 
   def fromExternalAnalysis(self, states:StateEnsemble):
     # When NN > 1 each member must have its own external IC state (provided by a member-aware
@@ -182,7 +183,7 @@ class ExtendedForecast(Component):
       else:
         self.ensAnaArgs[str(mm)] = self.meanAnaArgs
 
-  def fromInternalAnalysis(self, states:StateEnsemble):
+  def fromInternalAnalysis(self, states:StateEnsemble, meanIC:State=None):
     # mean analysis
     attr = {
       'seconds': {'def': 300},
@@ -195,25 +196,44 @@ class ExtendedForecast(Component):
     meanjob = Resource(self._conf, attr, ('job', 'meananalysis'))
     meantask = TaskLookup[self.hpc.system](meanjob)
 
-    if self.doMean:
-      self._tasks += ['''
+    # Where the mean IC comes from.
+    #
+    # By default it is the DA mean analysis, which this suite must first
+    # produce: MeanAnalysis averages the member analyses into
+    # CyclingDA/<cycle>/an/mean.
+    #
+    # A caller may instead hand over a mean state it already has. A
+    # forecast-only suite is the case in hand: there is no DA, so
+    # CyclingDA/<cycle>/an/ is never written, and the state to launch from is
+    # the previous cycle's forecast. Scheduling MeanAnalysis there is worse
+    # than useless -- at nMembers == 1 MeanAnalysis.csh takes a pass-through
+    # branch that only symlinks the deterministic analysis, so it SUCCEEDS
+    # while leaving a dangling link, and the failure surfaces much later as an
+    # unexplained MPI_Abort inside the extended forecast itself.
+    if meanIC is None:
+      if self.doMean:
+        self._tasks += ['''
   [[MeanAnalysis]]
     inherit = '''+self.tf.init+''', BATCH
     script = $origin/bin/MeanAnalysis.csh
 '''+meantask.job()+meantask.directives()]
 
-    # outputs from MeanAnalysis
-    # TODO: create MeanAnalysis class that defines meanANDir
-    #   and passes it to MeanAnalysis.csh as an arg
-    #   Can MeanAnalysis class depend on DA?
-    #meanANDir = DA.workDir+'/{{thisCycleDate}}/'+DA.analysisPrefix+'/mean'
-    meanANDir = 'CyclingDA/{{thisCycleDate}}/an/mean'
+      # outputs from MeanAnalysis
+      # TODO: create MeanAnalysis class that defines meanANDir
+      #   and passes it to MeanAnalysis.csh as an arg
+      #   Can MeanAnalysis class depend on DA?
+      #meanANDir = DA.workDir+'/{{thisCycleDate}}/'+DA.analysisPrefix+'/mean'
+      meanANDir = 'CyclingDA/{{thisCycleDate}}/an/mean'
 
-    meanInternalAnaIC = State({
-        'directory': meanANDir,
-        #'prefix': DA.analysisPrefix,
-        'prefix': 'an',
-    }, states.mesh())
+      meanInternalAnaIC = State({
+          'directory': meanANDir,
+          #'prefix': DA.analysisPrefix,
+          'prefix': 'an',
+      }, states.mesh())
+    else:
+      assert meanIC.mesh() == states.mesh(), \
+        'ExtendedForecast: meanIC must be on the same mesh as the member ICs'
+      meanInternalAnaIC = meanIC
     args = [
       1,
       self['lengthHR'],
