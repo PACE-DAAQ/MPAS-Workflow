@@ -64,6 +64,16 @@ class ExtendedForecast(Component):
     # whether to update the IC atmospheric variables from the cold-start IC
     # (mirrors forecast: updateATMVarsFromCold; passed to bin/Forecast.csh as the 12th arg)
     'updateATMVarsFromCold': [False, bool],
+    ## restart interval
+    # MPAS output_interval for the restart stream, passed to bin/Forecast.csh.
+    # Separate per application because the 6-hourly cycling forecast and the long
+    # extended forecast share one streams template and want different answers.
+    #   none        no restart file (default -- nothing changes for existing runs)
+    #   final_only  one restart at the end, a continuation point for a long forecast
+    #   5_00:00:00  periodic, so a crash late in a long run does not cost all of it
+    # A restart file is roughly mpasout-sized (~2 GB on x1.163842 with chemistry).
+    'restart interval': ['none', str],
+
   }
 
   def __init__(self,
@@ -145,6 +155,7 @@ class ExtendedForecast(Component):
       states[0].directory(),
       states[0].prefix(),
       self.updateATMVarsFromCold,
+      self['restart interval'],
     ]
     self.meanAnaArgs = ' '.join(['"'+str(a)+'"' for a in args])
 
@@ -165,6 +176,7 @@ class ExtendedForecast(Component):
           states[mm-1].directory(),
           states[mm-1].prefix(),
           self.updateATMVarsFromCold,
+          self['restart interval'],
         ]
         self.ensAnaArgs[str(mm)] = ' '.join(['"'+str(a)+'"' for a in args])
       else:
@@ -215,6 +227,7 @@ class ExtendedForecast(Component):
       meanInternalAnaIC.directory(),
       meanInternalAnaIC.prefix(),
       self.updateATMVarsFromCold,
+      self['restart interval'],
     ]
     self.meanAnaArgs = ' '.join(['"'+str(a)+'"' for a in args])
 
@@ -234,6 +247,7 @@ class ExtendedForecast(Component):
         states[mm-1].directory(),
         states[mm-1].prefix(),
         self.updateATMVarsFromCold,
+        self['restart interval'],
       ]
       self.ensAnaArgs[str(mm)] = ' '.join(['"'+str(a)+'"' for a in args])
 

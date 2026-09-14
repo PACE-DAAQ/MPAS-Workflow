@@ -253,4 +253,25 @@
         <var name="area_biob_modis"/>
 </stream>
 
+<!-- Restart. Absent until now, which is why no forecast in this workflow has ever
+     produced a restart file: MPAS defines "restart" in the Registry with
+     output_interval="1_00:00:00", but a streams file replaces those defaults, so a
+     stream not declared here is simply never created.
+
+     {{restartInterval}} is per-application, NOT global, because this template is
+     shared by the 6-hourly cycling Forecast and the much longer ExtendedForecast.
+     It defaults to "none" everywhere, so cycling writes nothing extra unless asked;
+     a long free forecast can set "final_only" to leave a continuation point, or an
+     interval such as "5_00:00:00" so a crash on day 15 does not cost the whole run.
+
+     type is input;output as in the Registry, so a file written here can also be
+     read back with config_do_restart = true. -->
+<immutable_stream name="restart"
+                  type="input;output"
+                  precision="{{PRECISION}}"
+                  filename_template="restart.$Y-$M-$D_$h.$m.$s.nc"
+                  io_type="pnetcdf,cdf5"
+                  input_interval="initial_only"
+                  output_interval="{{restartInterval}}" />
+
 </streams>
