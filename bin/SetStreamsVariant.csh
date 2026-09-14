@@ -199,11 +199,11 @@ switch ($vBiob)
     # back to FINN. Note it is on a DIFFERENT source grid from GFAS/QFED
     # (1801 x 3600 node-centred vs 1800 x 3600 cell-centred), so it fingerprints
     # separately and must not reuse their regridding weights.
-    set biobBC  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.bc.hourly.nc"
-    set biobOC  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.oc.hourly.nc"
-    set biobNH3 = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.nh3.hourly.nc"
-    set biobSO2 = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.so2.hourly.nc"
-    set biobCO  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.co.hourly.nc"
+    set biobBC  = "GBBEPx_${emissionGrid}_${emissionPeriod}_bc_hourly.nc"
+    set biobOC  = "GBBEPx_${emissionGrid}_${emissionPeriod}_oc_hourly.nc"
+    set biobNH3 = "GBBEPx_${emissionGrid}_${emissionPeriod}_nh3_hourly.nc"
+    set biobSO2 = "GBBEPx_${emissionGrid}_${emissionPeriod}_so2_hourly.nc"
+    set biobCO  = "GBBEPx_${emissionGrid}_${emissionPeriod}_co_hourly.nc"
     set biobISO = "$FINN"
     set biobMNT = "$FINN"
     breaksw
