@@ -222,9 +222,14 @@ def _period_token(targets, year: int) -> str:
     if not targets:
         return str(year)
     t0, t1 = min(targets), max(targets)
-    whole_year = (t0.year == t1.year == year
-                  and (t0.month, t0.day) == (1, 1)
-                  and t1.month == 12)
+    # A monthly product may carry a 13th record at 1 Jan of the FOLLOWING year so
+    # that December can be bracketed for time interpolation rather than held or
+    # extrapolated. That closing endpoint is not extra coverage, so it must not
+    # turn "2024" into "20240101-20250101" -- which would leave one file named
+    # differently from its siblings purely because it interpolates correctly.
+    closing_endpoint = (t1.year == year + 1 and (t1.month, t1.day) == (1, 1))
+    whole_year = ((t0.month, t0.day) == (1, 1) and t0.year == year
+                  and ((t1.year == year and t1.month == 12) or closing_endpoint))
     if whole_year:
         return str(year)
     return f"{t0:%Y%m%d}-{t1:%Y%m%d}"
