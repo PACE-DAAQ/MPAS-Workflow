@@ -9,4 +9,5 @@ required files:
   - BACKGROUND_dms.dat
   - BACKGROUND_sulf.dat
 # The model may require additional files in the selected release. The staging
-# code links the complete directory and validates the explicit required list.
+# code links the complete directory and checks these three minimum files in
+# ExternalAnalysisToMPAS.csh. This example is documentation, not a runtime config.

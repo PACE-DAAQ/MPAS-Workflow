@@ -150,6 +150,11 @@ if ( "${initicChemistryMode}" != "off" ) then
     echo "ERROR ${0}: chemistry intermediate directory not found: ${chemDir}" > ./FAIL
     exit 1
   endif
+  set chemInput = "${chemDir}/MERRA2:`echo ${thisMPASNamelistDate} | cut -c 1-13`"
+  if ( ! -s "${chemInput}" ) then
+    echo "ERROR ${0}: chemistry intermediate missing or empty: ${chemInput}" > ./FAIL
+    exit 1
+  endif
   ln -sfv ${chemDir}/MERRA2:* ./
 
   if ( "${initicChemistryBackgroundDir}" != "" ) then
@@ -161,6 +166,12 @@ if ( "${initicChemistryMode}" != "off" ) then
     echo "ERROR ${0}: chemistry background directory not found: ${chemBgDir}" > ./FAIL
     exit 1
   endif
+  foreach backgroundFile (BACKGROUND_ptrop.dat BACKGROUND_dms.dat BACKGROUND_sulf.dat)
+    if ( ! -s "${chemBgDir}/${backgroundFile}" ) then
+      echo "ERROR ${0}: required chemistry background missing or empty: ${chemBgDir}/${backgroundFile}" > ./FAIL
+      exit 1
+    endif
+  end
   ln -sfv ${chemBgDir}/* ./
 
   if ( "${initicEmissionMode}" == "workflow" ) then
@@ -173,26 +184,39 @@ if ( "${initicChemistryMode}" != "off" ) then
     exit 1
   endif
   ln -sfv ${initEmissionDir}/* ./
-  # streams.init_atmosphere.gocart2g references {{prmArea}} in four prm_lowbc_*
-  # input streams. bin/Forecast.csh links PRMAreaDir for the same reason; in
-  # prebuilt emission mode the PRM file is not inside EmissionDir.
-  if ( -d "${PRMAreaDir}" ) then
-    ln -sfv ${PRMAreaDir}/* ./
-  endif
   set initTemplate = ${StreamsFileInit}.gocart2g
   set nmlTemplate = ${NamelistFileInit}.gocart2g
 endif
 
 ## copy/modify dynamic streams file
 rm ${StreamsFileInit}
-cp -v $ModelConfigDir/initic/${StreamsFileInit} .
+cp -v $ModelConfigDir/initic/${initTemplate} ${StreamsFileInit}
 sed -i 's@{{nCells}}@'${ArgNCells}'@' ${StreamsFileInit}
 sed -i 's@{{PRECISION}}@'${model__precision}'@' ${StreamsFileInit}
 sed -i 's@{{meshRatio}}@'${ArgRatio}'@' ${StreamsFileInit}
 
+# Substitute only after copying the selected template. Initialization uses the
+# scenario-wide inventory; per-member variants are applied by Forecast.csh.
+if ( "${initicChemistryMode}" != "off" ) then
+  set saveStreamsFile = "${StreamsFile}"
+  setenv StreamsFile ${StreamsFileInit}
+  source ${mainScriptDir}/bin/SetStreamsVariant.csh
+  set variantStatus = $status
+  setenv StreamsFile "${saveStreamsFile}"
+  if ( $variantStatus != 0 || -e ./FAIL ) then
+    echo "ERROR ${0}: emission filename resolution failed" > ./FAIL
+    exit 1
+  endif
+  grep -q '{{' ${StreamsFileInit}
+  if ( $status == 0 ) then
+    echo "ERROR ${0}: unresolved placeholder in ${StreamsFileInit}" > ./FAIL
+    exit 1
+  endif
+endif
+
 ## copy/modify dynamic namelist
 rm ${NamelistFileInit}
-cp -v $ModelConfigDir/initic/${NamelistFileInit} .
+cp -v $ModelConfigDir/initic/${nmlTemplate} ${NamelistFileInit}
 sed -i 's@startTime@'${thisMPASNamelistDate}'@' $NamelistFileInit
 sed -i 's@nCells@'${ArgNCells}'@' $NamelistFileInit
 sed -i 's@{{meshRatio}}@'${ArgRatio}'@' $NamelistFileInit

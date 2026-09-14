@@ -1,11 +1,14 @@
 """Resolve original data resources with local/HPC-first and HTTPS fallback."""
 from __future__ import annotations
 from pathlib import Path
-import os, shutil, subprocess
+import os, re, shutil, subprocess, tempfile
 
 
 def expand(s: str, **kw) -> str:
-    return os.path.expanduser(os.path.expandvars(str(s))).format(**kw)
+    expanded = os.path.expanduser(os.path.expandvars(str(s)))
+    if re.search(r'\$(?:\{[^}]+\}|[A-Za-z_][A-Za-z0-9_]*)', expanded):
+        raise FileNotFoundError(f"resource candidate contains an unset environment variable: {s}")
+    return expanded.format(**kw)
 
 
 def obtain(*, local_candidates, url_candidates=(), cache_dir, output_name, template_vars=None):
@@ -16,23 +19,37 @@ def obtain(*, local_candidates, url_candidates=(), cache_dir, output_name, templ
     """
     kw = dict(template_vars or {})
     for item in local_candidates or []:
-        p = Path(expand(item, **kw))
-        if p.exists():
+        try:
+            p = Path(expand(item, **kw))
+        except FileNotFoundError:
+            continue
+        if p.is_file():
             return p, {"access": "local", "source": str(p)}
     cache = Path(cache_dir); cache.mkdir(parents=True, exist_ok=True)
     dst = cache / output_name
     if dst.exists() and dst.stat().st_size > 0:
         return dst, {"access": "cache", "source": str(dst)}
     for item in url_candidates or []:
-        url = expand(item, **kw)
-        tmp = dst.with_suffix(dst.suffix + ".part")
+        try:
+            url = expand(item, **kw)
+        except FileNotFoundError:
+            continue
+        # Jobs may share a monthly OVP cache. Each download owns its temporary
+        # file; readers see only a complete artifact after atomic replacement.
+        fd, name = tempfile.mkstemp(prefix=dst.name + ".", suffix=".part", dir=cache)
+        os.close(fd)
+        tmp = Path(name)
         cmd = ["curl", "-fL", "--retry", "3", "--retry-delay", "3", "--netrc", "-o", str(tmp), url]
         try:
             subprocess.run(cmd, check=True)
+            if tmp.stat().st_size == 0:
+                continue
             tmp.replace(dst)
             return dst, {"access": "https", "source": url, "cached_as": str(dst)}
         except (subprocess.CalledProcessError, FileNotFoundError):
-            if tmp.exists(): tmp.unlink()
+            pass
+        finally:
+            tmp.unlink(missing_ok=True)
     raise FileNotFoundError(f"resource unavailable: local={local_candidates}, urls={url_candidates}")
 
 

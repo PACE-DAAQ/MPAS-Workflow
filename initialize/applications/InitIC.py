@@ -46,6 +46,10 @@ class InitIC(Component):
     assert chemistryMode in ('off', 'prebuilt', 'workflow'), (
       "initic 'chemistry mode' must be one of off/prebuilt/workflow, not "
       +repr(self['chemistry mode'])+" (quote the value in the scenario YAML)")
+    if chemistryMode == 'workflow' and workflow is None:
+      raise ValueError("initic chemistry mode 'workflow' is not supported by this suite; "
+                       "use 'prebuilt' or a suite with chemistry scheduling (Cycle or "
+                       "ForecastFromExternalAnalyses).")
     self._set('chemistry mode', chemistryMode)
     self._set('initicChemistryMode', chemistryMode)
     self._set('initicChemistrySourceConfig', self['chemistry source config'])
@@ -204,13 +208,10 @@ class InitIC(Component):
     edges = self._dependencies
     self._dependencies = []
     for recurrence in recurrences:
-      block = ['''
-    '''+recurrence+''' = """'''] + list(edges) if edges else []
-      block = self.tf.updateDependencies(block)
-      if edges:
-        block += ['''
-      """''']
-      self._dependencies += block
+      body = self.tf.updateDependencies(list(edges))
+      if not ''.join(body).strip():
+        continue
+      self._dependencies += ['\n    '+recurrence+' = """'] + body + ['\n      """']
 
     self._tasks = self.tf.updateTasks(self._tasks, self._dependencies)
 

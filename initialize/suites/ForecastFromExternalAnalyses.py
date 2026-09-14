@@ -71,7 +71,7 @@ class ForecastFromExternalAnalyses(SuiteBase):
       'observations',
     ]
 
-    self.dependencyComponents += ['extendedforecast']
+    self.dependencyComponents += ['extendedforecast', 'initic']
 
     self.taskComponents += [
       'extendedforecast',
