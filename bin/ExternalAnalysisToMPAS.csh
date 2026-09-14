@@ -120,7 +120,12 @@ endif
 ## a chemistry cold start; fail here with an actionable message instead.
 if ( $?initicChemistryMode ) then
   if ( "${initicChemistryMode}" != "off" ) then
-    ncdump -h "${thisInvariantFile}" | grep -q 'nDustErosionDim'
+    # Do NOT use 'grep -q' here: it exits on the first match and closes the pipe
+    # while ncdump is still writing the (2000+ line) header, so ncdump dies on
+    # SIGPIPE and csh reports $status 141 for the pipeline even though the match
+    # succeeded -- rejecting every invariant file, valid ones included. Letting
+    # grep drain the pipe and discarding its output keeps $status meaningful.
+    ncdump -h "${thisInvariantFile}" | grep 'nDustErosionDim' > /dev/null
     if ( $status != 0 ) then
       echo "ERROR ${0}: initic chemistry mode is '${initicChemistryMode}' but the invariant file has no GOCART2G static dust fields (nDustErosionDim/erod): ${thisInvariantFile}" > ./FAIL
       echo "  regenerate the invariant with a GOCART2G init_atmosphere, or set 'initic: chemistry mode: off'" >> ./FAIL
