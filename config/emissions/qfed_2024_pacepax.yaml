@@ -47,7 +47,9 @@ time:
   target step hours: 1
   source temporal semantics: daily_mean
   # Only if a whole daily record is absent do we interpolate between days.
-  # Verified 74/74 days staged for all five species, so this should not trigger;
+  # Verified 92/92 days staged for all five species over the extended
+  # 07-01..09-30 window (re-checked after moving the start from 07-19), so this
+  # should not trigger;
   # it stays enabled so a single missing day degrades rather than aborts.
   missing: linear
   max interpolation gap days: 3

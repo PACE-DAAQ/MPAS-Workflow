@@ -45,8 +45,10 @@ sources:
     annual_day_mode: auto
     annual_chunksize: 250000
 
-  # Project archive on Derecho. Files are flat in this directory (no {year}
-  # subdirectory) and cover 2024-10-25..2024-11-30 with a gap at 11-04..11-09.
+  # Project archive on Derecho, under a {year} subdirectory. For 2024 that is
+  # .../finn/2024/, holding the NRT dailies for this Jul-Sep window.
+  # (The previous note here described the Oct-Dec experiment's flat staging and
+  # no longer applied.)
   # Listed before the HTTPS source so compute nodes never need outbound network.
   - name: pacepax-finn-nrt-local
     start year: 2024

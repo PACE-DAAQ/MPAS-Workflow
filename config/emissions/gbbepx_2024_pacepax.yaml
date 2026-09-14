@@ -12,6 +12,14 @@
 # PACE AOD collections; the source glob pins v5r0 so a later reprocessing cannot
 # quietly mix in.
 #
+# KNOWN LIMITATION: the regular-grid adapter treats every source coordinate as a
+# cell CENTRE (write_gridspec_from_centers / regular_cell_areas_sr), so for this
+# node-centred source the two polar rows are built as full 0.1 deg cells centred
+# exactly on +/-90 rather than as half-cells. GBBEPx fire emissions there are
+# zero, so the effect on this product is nil -- but the fingerprint does not
+# encode the centring convention, so do not assume the same weights are correct
+# for another node-centred source where the poles carry signal.
+#
 # Grid note: GBBEPx is 1801 x 3600 (node-centred, -90..90 inclusive), whereas
 # GFAS and QFED are 1800 x 3600 (cell-centred). It therefore fingerprints to a
 # different source grid and gets its own conservative weights -- do not seed its

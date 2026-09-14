@@ -2,7 +2,7 @@
 #
 # Companion to qfed_2024_pacepax.yaml.  Both cover the PACE-PAX case so the
 # biomass inventory can be swapped without changing anything else; GFAS is the
-# third biomass option alongside FINN and QFED.
+# one of four biomass options alongside FINN, QFED and GBBEPx.
 #
 # Why GFAS is worth having for this period:
 #   * it carries iso/mnt, which the archived 2024 QFED files do not, so a GFAS
@@ -45,7 +45,13 @@
 inventory: GFAS
 year: 2024
 source:
-  # Any native ADS month already cached is used as-is; source.fetch fills gaps.
+  # source.fetch is ALL OR NOTHING, not a gap-filler. RegularInventoryProcessor
+  # only calls it when no source file matches at all; a single cached month makes
+  # the lookup succeed and the fetch is skipped, so a PARTIAL cache is never
+  # completed and the missing days reach the time-bracketing step instead (and
+  # fail once a gap exceeds 'max interpolation gap days'). Either let it fetch
+  # every month, or stage them all yourself. Making the fetch coverage-aware is
+  # a worthwhile follow-up in regular_inventory.py.
   files:
     - /glade/derecho/scratch/syha/gocart2g_aug2024/gfas/orig/GFAS_v1.2_native_0.1deg_{year}??.nc
   # The current ADS NetCDF conversion names the time coordinate valid_time,
@@ -70,8 +76,9 @@ source:
 
 time:
   # Three whole months: July spin-up through the last PACE-PAX research flight
-  # (RF0930).  Starts 2024-07-01 rather than QFED's 07-19 so the GFAS product
-  # covers complete calendar months, which is also how ADS chunks the download.
+  # (RF0930).  Starts 2024-07-01, the same window QFED now uses, so the GFAS
+  # product covers complete calendar months -- which is also how ADS chunks the
+  # download.
   start: "{year}-07-01T00:00:00"
   end: "{year}-09-30T23:00:00"
   target frequency: hourly
