@@ -89,12 +89,23 @@ endif
 
 # --------------------------------------------------------------------------------------------------
 # (1) variant -> default (anth / biog / biob) inventory combination          [EDIT HERE to add perts]
+#
+# The nine combinations are a 3 (anth) x 3 (biob) sampling; 'cntl' is whichever
+# corner the campaign treats as the control. It is cams/cams/GFAS because GFAS is
+# this campaign's biomass inventory -- FINN supplies PRM fire size, not burned
+# mass. cntl and pert01 were swapped for that reason; the SET of nine
+# combinations is unchanged, so the emission ensemble PR #14 recenters on is
+# unaffected.
+#
+# Change the control here rather than by defaulting 'biob emissions' in
+# scenarios/defaults: that override is applied unconditionally in section (2) and
+# would force every pert onto one inventory, collapsing the ensemble silently.
 # --------------------------------------------------------------------------------------------------
 switch ($streamsVariant)
   case cntl:
-    set vAnth = cams     ; set vBiog = cams ; set vBiob = finn ; breaksw
-  case pert01:
     set vAnth = cams     ; set vBiog = cams ; set vBiob = gfas ; breaksw
+  case pert01:
+    set vAnth = cams     ; set vBiog = cams ; set vBiob = finn ; breaksw
   case pert02:
     set vAnth = cams     ; set vBiog = cams ; set vBiob = qfed ; breaksw
   case pert03:
