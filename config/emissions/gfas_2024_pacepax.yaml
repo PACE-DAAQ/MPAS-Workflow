@@ -1,7 +1,7 @@
 # Native CAMS GFAS v1.2 -> MPAS for the Jul-Sep 2024 PACE-PAX period.
 #
 # Companion to qfed_2024_pacepax.yaml.  Both cover the PACE-PAX case so the
-# biomass inventory can be swapped without changing anything else; GFAS is the
+# biomass inventory can be swapped without changing anything else; GFAS is
 # one of four biomass options alongside FINN, QFED and GBBEPx.
 #
 # Why GFAS is worth having for this period:
