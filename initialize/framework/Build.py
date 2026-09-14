@@ -196,6 +196,21 @@ class Build(Component):
       # either use forecast executable from the bundle or a separate MPAS-Atmosphere build
       self.log('self[mpas bundle] ' + self['mpas bundle'], level=self.MSG_DEBUG)
       self.log('self[forecast directory] ' + self['forecast directory'], level=self.MSG_DEBUG)
+      # A separate forecast build (e.g. gocartMPAS) ships lookup tables the stock
+      # bundle does not -- CCN_ACTIVATE_DATA for mp_thompson_gocart2G,
+      # NoahmpTable.TBL, and so on. bin/Forecast.csh links ForecastLookupDir on
+      # top of MPASLookupDir for exactly that reason, and it must stay SEPARATE
+      # from MPASLookupDir: the latter also feeds bin/Variational.csh and
+      # bin/PrepJEDI.csh, whose executables come from the bundle and must keep the
+      # bundle's tables.
+      #
+      # Without this, bin/Forecast.csh's `if ( $?ForecastLookupDir )` is simply
+      # never true and those tables are silently not linked.
+      if self['forecast directory'] == 'bundle':
+        self._set('ForecastLookupDir', '')
+      else:
+        self._set('ForecastLookupDir', self['forecast directory'])
+
       if self['forecast directory'] == 'bundle':
         self._set('ForecastBuildDir', self['mpas bundle']+'/bin')
         self._set('ForecastEXE', 'mpas_'+model['MPASCore'])

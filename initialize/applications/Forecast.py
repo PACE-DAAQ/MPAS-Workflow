@@ -306,7 +306,12 @@ class Forecast(Component):
 
         # mean-state model verification
         # also diagnoses posterior/inflated ensemble spread (after RTPP)
-        self.postconf['verifymodel']['dependencies'] += [daFinished]
+        # daFinished is None in a no-DA suite (ForecastOnlyCycle passes it), and
+        # TaskFamily.addDependencies concatenates these as strings, so appending
+        # None raises TypeError while GENERATING the suite. Only add the DA
+        # dependency when there is a DA to depend on.
+        if daFinished is not None:
+          self.postconf['verifymodel']['dependencies'] += [daFinished]
 
         self.postconf['hofx'] = self.postconf['verifyobs']
 

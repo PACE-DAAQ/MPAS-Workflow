@@ -43,9 +43,17 @@ class ForecastOnlyCycle(SuiteBase):
       Variational allows no 'none' DAType, so it cannot be run without DA.
 
   This suite is Cycle minus DA: the forecast IC is the PREVIOUS cycle's own
-  forecast, so chemistry and (with model: updateATMVarsFromCold) land state
-  carry forward, while meteorology is refreshed from the external analysis each
-  cycle by bin/Forecast.csh. That gives a reference/free-cycling run, and a
+  forecast, so CHEMISTRY carries forward, while meteorology is refreshed from the
+  external analysis each cycle by bin/Forecast.csh (forecast:
+  updateATMVarsFromCold -- a Forecast option, not a Model one).
+
+  Land state does NOT carry forward. tools/copy_mpas_vars.py grew an
+  --include-land flag for soil and snow, but bin/Forecast.csh invokes it with the
+  two positional paths only and no configuration reaches the flag, so cycling is
+  chemistry-only. Wiring it needs another positional argument to Forecast.csh,
+  which would collide with the restart-interval argument already on
+  mpas-gocart2g; worth doing once this stack is rebased onto that, and not worth
+  a merge conflict before then. That gives a reference/free-cycling run, and a
   spin-up whose meteorology stays on the rails.
 
   The typical use is a background-error-covariance sample set: cycle 6-hourly
@@ -136,6 +144,14 @@ class ForecastOnlyCycle(SuiteBase):
     # task instance with no definition at that point is dropped, not held -- and
     # the forecast then aborts under MPI on an IC that was never written.
     #
+    # LIMITATION: this is unconditional, including for a restart run. When
+    # 'restart cycle point' is later than the first cycle point, Workflow starts
+    # ForecastTimes at the restart point and CyclingFC/{{prevCycleDate}} does
+    # exist there, so the first extended forecast would be valid and is dropped
+    # anyway -- costing one sample, or the only one for a single-point restart.
+    # Making the exclusion conditional on not-a-restart is the right fix and needs
+    # the restart semantics checked against Workflow first.
+    #
     # Expressed as a cylc exclusion rather than an offset start: '^' is the
     # initial cycle point, so 'T00!^' keeps the daily-at-00Z meaning intact and
     # drops only the one point that cannot work. An offset start ('+PT6H/T00')
@@ -168,7 +184,14 @@ class ForecastOnlyCycle(SuiteBase):
     # has no source for N > 0 and init_atmosphere aborts. Fall back to the
     # components' own default of [0] -- just the analysis time.
     ef = self.c['extendedforecast']
-    icOffsets = ef['extLengths'] if ef['post'] else [0]
+    # 'post' alone is not enough: it defaults NON-empty, while ExtendedForecast
+    # emits verification tasks only when meanTimes (or a usable ensTimes) is set.
+    # Gating on post alone therefore still expanded extLengths -- and recreated the
+    # per-lead conversions that cannot succeed -- for the common case of a scenario
+    # that leaves both defaults alone. Require post AND something actually
+    # scheduled to verify.
+    verifies = bool(ef['post']) and (ef['meanTimes'] is not None or ef['ensTimes'] is not None)
+    icOffsets = ef['extLengths'] if verifies else [0]
 
     for k, c_ in self.c.items():
       if k in ['observations', 'initic', 'externalanalyses']:

@@ -28,7 +28,13 @@ from pathlib import Path
 
 # Files that define the scientific configuration. Deliberately NOT
 # experiment.csh / workflow.csh / naming.csh, which are per-run identity.
-FILES = ["model.csh", "build.csh", "emissions.csh", "initic.csh", "observations.csh"]
+# externalanalyses.csh and members.csh are scientific configuration too: two
+# experiments can differ in analysis resource or ensemble size and would otherwise
+# compare as MATCH. workflow.csh stays out -- it is dominated by per-run identity
+# (dates, restart point), and the keys worth comparing there are better handled
+# individually than by including the file wholesale.
+FILES = ["model.csh", "build.csh", "emissions.csh", "initic.csh", "observations.csh",
+         "externalanalyses.csh", "members.csh"]
 
 # Per-user or per-run by nature; differing here is not drift.
 IGNORE = re.compile(r"""
@@ -38,6 +44,10 @@ IGNORE = re.compile(r"""
 """, re.X)
 
 SETENV = re.compile(r'^\s*setenv\s+(\S+)\s+(.*?)\s*$')
+# Component.varToCsh emits list-valued settings as `set NAME = (a b c)`, not
+# setenv. Parsing only setenv made those invisible, so two experiments could use
+# different emission prepare lists or observation sets and still report MATCH.
+SETVAR = re.compile(r'^\s*set\s+(\S+)\s*=\s*(.*?)\s*$')
 
 
 def read_config(expdir: Path) -> dict:
@@ -52,7 +62,7 @@ def read_config(expdir: Path) -> dict:
         if not f.is_file():
             continue
         for line in f.read_text().splitlines():
-            m = SETENV.match(line)
+            m = SETENV.match(line) or SETVAR.match(line)
             if not m:
                 continue
             key, val = m.group(1), m.group(2).strip().strip('"')
