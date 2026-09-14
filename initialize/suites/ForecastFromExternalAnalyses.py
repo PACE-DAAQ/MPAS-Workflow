@@ -71,7 +71,15 @@ class ForecastFromExternalAnalyses(SuiteBase):
       'observations',
     ]
 
-    self.dependencyComponents += ['extendedforecast', 'initic']
+    self.dependencyComponents += [
+      'extendedforecast',
+      # InitIC contributes the PrepareChemIC => ExternalAnalysisToMPAS and
+      # PrepareEmissions => ExternalAnalysisToMPAS edges. Without it those tasks
+      # are emitted under [runtime] but never referenced by the graph, so cylc
+      # never runs them and ExternalAnalysisToMPAS.csh aborts with
+      # "chemistry intermediate directory not found: .../ChemIC/<date>".
+      'initic',
+    ]
 
     self.taskComponents += [
       'extendedforecast',

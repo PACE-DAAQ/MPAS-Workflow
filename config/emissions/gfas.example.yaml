@@ -8,7 +8,14 @@ source:
   # source.fetch downloads monthly native 0.1-degree NetCDF files from ADS.
   files:
     - ${GFAS_RAW_DIR}/GFAS_v1.2_native_0.1deg_{year}*.nc
-  time: time
+  # The ADS NetCDF converter names the coordinate valid_time, not time.
+  time: valid_time
+  # Native GFAS is labelled one day LATE: the GRIB carries dataDate=D,
+  # stepType=avg, stepRange=0-24, so each field is the mean over D 00Z -> D+1 00Z
+  # and cfgrib writes valid_time as D+1T00:00. Under daily_mean semantics that
+  # applies every fire day 24 h late, silently. Inventories that already label
+  # records correctly (CEDS, QFED) leave this at its default of 0.
+  time offset hours: -24
   latitude: [latitude, lat]
   longitude: [longitude, lon]
   fetch:

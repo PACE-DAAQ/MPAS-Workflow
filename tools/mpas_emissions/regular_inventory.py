@@ -107,6 +107,15 @@ def _read_lat_lon(path: str, cfg: dict):
 def discover_records(files: list[str], cfg: dict) -> list[SourceRecord]:
     from netCDF4 import Dataset
     time_name = cfg["source"].get("time", "time")
+    # Some inventories label a time-averaged record with the END of its
+    # averaging window rather than the period it describes.  Native GFAS is the
+    # case in hand: its GRIB carries dataDate=D, stepType=avg, stepRange=0-24,
+    # so cfgrib gives the NetCDF valid_time D+1T00:00 for what is day D's mean.
+    # Left uncorrected under daily_mean semantics every fire day is applied one
+    # day late.  The offset is added to every discovered source time; it
+    # defaults to 0, so inventories that already label records correctly (CEDS,
+    # QFED) are unaffected.
+    offset = timedelta(hours=float(cfg["source"].get("time offset hours", 0.0)))
     records: list[SourceRecord] = []
     for path in files:
         with Dataset(path) as ds:
@@ -119,10 +128,10 @@ def discover_records(files: list[str], cfg: dict) -> list[SourceRecord]:
                 if not rx: raise ValueError("filename time regex required when time variable is absent")
                 m = re.search(rx, os.path.basename(path))
                 if not m: raise ValueError(f"cannot parse time from {path}")
-                records.append(SourceRecord(datetime.strptime(m.group(1), fmt), path, 0))
+                records.append(SourceRecord(datetime.strptime(m.group(1), fmt) + offset, path, 0))
             else:
                 for i, when in enumerate(_decode_times(ds, time_name)):
-                    records.append(SourceRecord(when, path, i))
+                    records.append(SourceRecord(when + offset, path, i))
     return sorted(records, key=lambda r: r.valid_time)
 
 
@@ -178,6 +187,27 @@ def _read_field(record: SourceRecord, field_cfg: dict, cfg: dict, *, lat_flip: b
         molecular_weight_g_mol=field_cfg.get("molecular weight g mol-1"),
         scale=float(field_cfg.get("scale", 1.0)),
     )
+
+
+def _existing_offset(path: Path):
+    """source_time_offset_hours recorded in an existing product, or None.
+
+    None means the file predates the attribute (or cannot be read), in which case
+    it is reused as before -- this check exists to catch a CHANGED convention, not
+    to force a rebuild of every product written before the attribute existed.
+    """
+    from netCDF4 import Dataset
+    try:
+        with Dataset(path) as ds:
+            if "source_time_offset_hours" in ds.ncattrs():
+                return float(ds.getncattr("source_time_offset_hours"))
+            return None          # predates the attribute; reuse as before
+    except OSError as e:
+        # Unreadable is NOT the same as "no attribute": silently treating it as
+        # absent would reuse a product whose convention we cannot confirm. Say so.
+        print(f"  WARNING: cannot read {path.name} to check its time convention "
+              f"({e}); reusing it unchecked", flush=True)
+        return None
 
 
 def _output_path(template: str, *, output_dir: Path, year: int, mesh: MpasMesh, grid_name: str) -> Path:
@@ -324,7 +354,19 @@ class RegularInventoryProcessor:
             grid_name = self.grid_name or f"x1.{self.mesh.n_cells}"
             out = _output_path(product["file"], output_dir=self.output_dir, year=year, mesh=self.mesh, grid_name=grid_name)
             if out.is_symlink(): out.unlink()
-            if reuse_existing and out.exists(): outputs.append(out); continue
+            if reuse_existing and out.exists():
+                # Reuse only a product built under the SAME time convention.
+                # 'reuse existing' defaults to true, so without this check adding
+                # 'time offset hours: -24' to a config leaves an older zero-offset
+                # product in place and the advertised fix silently does nothing --
+                # the emissions stay a day late and nothing says so.
+                want_offset = float(cfg.get("source", {}).get("time offset hours", 0.0))
+                have_offset = _existing_offset(out)
+                if have_offset is not None and have_offset != want_offset:
+                    print(f"  rebuilding {out.name}: source_time_offset_hours "
+                          f"{have_offset} -> {want_offset}", flush=True)
+                else:
+                    outputs.append(out); continue
             fields_cfg = product.get("fields", {})
             if not fields_cfg: raise ValueError(f"output {product.get('file')}: no fields")
             stats = {"exact": 0, "interpolated": 0, "held_or_nearest": 0, "largest_gap_hours": 0.0}
@@ -356,6 +398,7 @@ class RegularInventoryProcessor:
                 "regrid_method": "ESMF conservative sparse weights",
                 "time_missing_policy": str(time_cfg.get("missing", "linear")),
                 "source_temporal_semantics": temporal_semantics,
+                "source_time_offset_hours": float(cfg.get("source", {}).get("time offset hours", 0.0)),
                 "emissions_scaling": json.dumps({"inventory": describe_scaling(cfg), "product": describe_scaling(product)}, sort_keys=True),
                 "attribution": "Original ESMF emissions-regridding methodology and utility lineage: Duseong Jo (2021)",
             }
