@@ -438,6 +438,10 @@ class RegularInventoryProcessor:
                 "inventory": cfg.get("inventory"), "year": year,
                 "source_files": product_files, "target_count": len(targets), "source_record_count": len(records),
                 "time_fill": stats, "source_grid_fingerprint": source_tag,
+                # Also in the NetCDF attrs, but the sidecar is what gets read when
+                # auditing a product without opening it -- and a wrong time
+                # convention is exactly what an audit is looking for.
+                "source_time_offset_hours": float(cfg.get("source", {}).get("time offset hours", 0.0)),
                 "mesh_fingerprint": self.mesh.fingerprint, "weight_file": str(weight_file),
                 "emissions_scaling": {"inventory": describe_scaling(cfg), "product": describe_scaling(product)},
             }, indent=2, default=str)+"\n")
