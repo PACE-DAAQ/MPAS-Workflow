@@ -77,6 +77,10 @@ source config/auto/members.csh
 source config/auto/model.csh
 source config/auto/invariantstream.csh
 source config/auto/workflow.csh
+# Guarded because only suites that construct an Emissions component generate this file;
+# without it $?emissionsMode below is always 0 and workflow-mode emissions silently fall
+# back to the prebuilt EmissionDir, i.e. this whole feature is a no-op at runtime.
+if ( -e config/auto/emissions.csh ) source config/auto/emissions.csh
 set yymmdd = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 1-8`
 set hh = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 10-11`
 set thisCycleDate = ${yymmdd}${hh}
