@@ -220,11 +220,30 @@ ln -sfv ${PRMAreaDir}/* .
 foreach staticfile ( \
 stream_list.${MPASCore}.surface \
 stream_list.${MPASCore}.diagnostics \
-stream_list.${MPASCore}.dastate \
 )
   if( -e $staticfile ) rm ./$staticfile
   ln -sfv $ModelConfigDir/forecast/$staticfile .
 end
+
+## The da_state list is ASSEMBLED rather than linked, because some of its fields
+## exist only in a GOCART2G build. A name the Registry does not define is fatal,
+## not ignored: xml_stream_parser.c reads this file line by line and any
+## stream_mgr_add_field_c error sets *status = 1 and aborts the parse. So a stock
+## executable must not be handed chemistry field names.
+##
+## Base list first, then the GOCART-only additions when chemistry is active. A
+## copy, not a symlink, since it is built per run; and concatenation rather than
+## two complete lists, so the shared fields have exactly one definition and cannot
+## drift apart.
+set dastateList = stream_list.${MPASCore}.dastate
+if( -e $dastateList ) rm ./$dastateList
+cp $ModelConfigDir/forecast/$dastateList ./$dastateList
+if ( "$PhysicsSuite" == "MPAS-GOCART2G" ) then
+  if ( -e $ModelConfigDir/forecast/${dastateList}.gocart2G ) then
+    cat $ModelConfigDir/forecast/${dastateList}.gocart2G >> ./$dastateList
+    echo "$0 (INFO): added GOCART2G fields to ${dastateList}"
+  endif
+endif
 
 ## copy/modify dynamic streams file
 if( -e ${StreamsFile}) rm ${StreamsFile}
