@@ -210,8 +210,30 @@ def _existing_offset(path: Path):
         return None
 
 
-def _output_path(template: str, *, output_dir: Path, year: int, mesh: MpasMesh, grid_name: str) -> Path:
-    name = str(template).format(year=year, nCells=mesh.n_cells, grid=grid_name)
+def _period_token(targets, year: int) -> str:
+    """Period field of the unified emission filename, from the ACTUAL output times.
+
+    A whole calendar year collapses to "YYYY"; anything else becomes an explicit
+    "YYYYMMDD-YYYYMMDD" window. Deriving it from `targets` rather than from a
+    configured string is the point: the filename cannot then disagree with the
+    file's contents, which is exactly how 2208-record Jul-Sep fire products ended
+    up named "..._2024_..." and relying on a directory name to disambiguate them.
+    """
+    if not targets:
+        return str(year)
+    t0, t1 = min(targets), max(targets)
+    whole_year = (t0.year == t1.year == year
+                  and (t0.month, t0.day) == (1, 1)
+                  and t1.month == 12)
+    if whole_year:
+        return str(year)
+    return f"{t0:%Y%m%d}-{t1:%Y%m%d}"
+
+
+def _output_path(template: str, *, output_dir: Path, year: int, mesh: MpasMesh, grid_name: str,
+                 period: str | None = None) -> Path:
+    name = str(template).format(year=year, nCells=mesh.n_cells, grid=grid_name,
+                                period=period if period is not None else str(year))
     return output_dir / name
 
 
@@ -352,7 +374,8 @@ class RegularInventoryProcessor:
                                             max_gap=max_gap, allow_extrapolation=bool(time_cfg.get("allow extrapolation", False)))
 
             grid_name = self.grid_name or f"x1.{self.mesh.n_cells}"
-            out = _output_path(product["file"], output_dir=self.output_dir, year=year, mesh=self.mesh, grid_name=grid_name)
+            out = _output_path(product["file"], output_dir=self.output_dir, year=year, mesh=self.mesh,
+                               grid_name=grid_name, period=_period_token(targets, year))
             if out.is_symlink(): out.unlink()
             if reuse_existing and out.exists():
                 # Reuse only a product built under the SAME time convention.

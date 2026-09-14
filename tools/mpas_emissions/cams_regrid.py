@@ -71,9 +71,44 @@ def _source_candidates(pattern: str, year: int, species_token: str) -> list[str]
     return sorted(glob.glob(p)) if any(ch in p for ch in "*?[") else ([p] if os.path.exists(p) else [])
 
 
+# Long CAMS species names -> the short tokens used by the unified emission
+# filename rule, so CAMS products are named like every other inventory instead of
+# carrying their own convention.
+_SPECIES_TOKEN = {
+    "black-carbon": "bc",
+    "organic-carbon": "oc",
+    "sulfur-dioxide": "so2",
+    "carbon-monoxide": "co",
+    "ammonia": "nh3",
+    "isoprene": "iso",
+    "monoterpenes": "mnt",
+    "other-monoterpenes": "mnt",
+    "alpha-pinene": "apin",
+    "beta-pinene": "bpin",
+    "nitrogen-dioxide": "no2",
+}
+
+
 def _safe_output_file(output_dir: Path, mesh: MpasMesh, year: int, kind: str, long_name: str, grid_name: str) -> Path:
+    """Unified emission filename: <inventory>_<mesh>_<period>_<species>_<frequency>.nc
+
+    CAMS anthropogenic and biogenic products are monthly over a whole calendar
+    year, so <period> is the bare year. `kind` carries the sector (anth, biog, or
+    a regional-mix variant), which becomes part of the inventory token so every
+    name has exactly five underscore-separated fields.
+    """
     canonical = {"sulphur-dioxide": "sulfur-dioxide"}.get(long_name, long_name)
-    return output_dir / f"{grid_name}-{year}-{kind}_{canonical}.MPAS.nc"
+    species = _SPECIES_TOKEN.get(canonical)
+    if species is None:
+        raise ValueError(
+            f"CAMS species {canonical!r} has no short token; add it to _SPECIES_TOKEN "
+            "rather than letting a long name leak into the filename")
+    # `kind` is 'anth'/'biog' for the global CAMS products but already carries its
+    # own prefix for regional-mix variants ('CAMS_MIX_anth'), so only prepend when
+    # it is absent -- otherwise the token doubles up as CAMS-CAMS-MIX-anth.
+    token = str(kind).replace("_", "-")
+    inventory = token if token.upper().startswith("CAMS") else "CAMS-" + token
+    return output_dir / f"{inventory}_{grid_name}_{year}_{species}_monthly.nc"
 
 
 def _write_mpas_monthly(

@@ -23,7 +23,7 @@ time:
 
 outputs:
   # BC/OC/SO2/CO source-variable mappings remain inventory-release specific.
-  - file: CEDS_Glb_{year}_MPAS.{grid}.grid.BC.nc
+  - file: CEDS_{grid}_{period}_bc_monthly.nc
     source files:
       - '${CEDS_ANT_DIR}/CEDS_Glb_0.1x0.1_{year}_anthro_BC_v2025_monthly.nc'
       - '/glade/campaign/ncar/nmmm0081/Data/EMIS/CEDS/orig/CEDS_Glb_0.1x0.1_{year}_anthro_BC_v2025_monthly.nc'
@@ -31,7 +31,7 @@ outputs:
       bc_anth_sum: {source variable: CHANGE_ME_BC_TOTAL, source units: kg m-2 s-1, target units: kg m-2 s-1}
       bc_anth_res: {source variable: CHANGE_ME_BC_RESIDENTIAL, source units: kg m-2 s-1, target units: kg m-2 s-1}
 
-  - file: CEDS_Glb_{year}_MPAS.{grid}.grid.OC.nc
+  - file: CEDS_{grid}_{period}_oc_monthly.nc
     source files:
       - '${CEDS_ANT_DIR}/CEDS_Glb_0.1x0.1_{year}_anthro_OC_v2025_monthly.nc'
       - '/glade/campaign/ncar/nmmm0081/Data/EMIS/CEDS/orig/CEDS_Glb_0.1x0.1_{year}_anthro_OC_v2025_monthly.nc'
@@ -39,21 +39,21 @@ outputs:
       oc_anth_sum: {source variable: CHANGE_ME_OC_TOTAL, source units: kg m-2 s-1, target units: kg m-2 s-1}
       oc_anth_res: {source variable: CHANGE_ME_OC_RESIDENTIAL, source units: kg m-2 s-1, target units: kg m-2 s-1}
 
-  - file: CEDS_Glb_{year}_MPAS.{grid}.grid.SO2.nc
+  - file: CEDS_{grid}_{period}_so2_monthly.nc
     source files:
       - '${CEDS_ANT_DIR}/CEDS_Glb_0.1x0.1_{year}_anthro_SO2_v2025_monthly.nc'
       - '/glade/campaign/ncar/nmmm0081/Data/EMIS/CEDS/orig/CEDS_Glb_0.1x0.1_{year}_anthro_SO2_v2025_monthly.nc'
     fields:
       so2_anth_sum: {source variable: CHANGE_ME_SO2_TOTAL, source units: kg m-2 s-1, target units: kg m-2 s-1}
 
-  - file: CEDS_Glb_{year}_MPAS.{grid}.grid.CO.nc
+  - file: CEDS_{grid}_{period}_co_monthly.nc
     source files:
       - '${CEDS_ANT_DIR}/CEDS_Glb_0.1x0.1_{year}_anthro_CO_v2025_monthly.nc'
       - '/glade/campaign/ncar/nmmm0081/Data/EMIS/CEDS/orig/CEDS_Glb_0.1x0.1_{year}_anthro_CO_v2025_monthly.nc'
     fields:
       co_anth_sum: {source variable: CHANGE_ME_CO_TOTAL, source units: kg m-2 s-1, target units: kg m-2 s-1}
 
-  - file: CEDS_Glb_{year}_MPAS.{grid}.grid.NH3.nc
+  - file: CEDS_{grid}_{period}_nh3_monthly.nc
     source files:
       - '${CEDS_ANT_DIR}/CEDS_Glb_0.1x0.1_{year}_anthro_NH3_v2025_monthly.nc'
       - '/glade/campaign/ncar/nmmm0081/Data/EMIS/CEDS/orig/CEDS_Glb_0.1x0.1_{year}_anthro_NH3_v2025_monthly.nc'
