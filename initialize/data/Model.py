@@ -123,7 +123,13 @@ class Model(Component):
     # Exported as doBburnPrm / doFrp and substituted into the namelist by bin/Forecast.csh.
     # 'do bburn prm': enable biomass-burning plume rise (config_do_bburnPRM).
     # 'do frp'      : use Fire Radiative Power instead of area-based emissions (config_do_FRP).
-    'do bburn prm': [False, bool],
+    # Default TRUE: every PACE-DAAQ GOCART2G experiment runs with biomass-burning
+    # plume rise, so it is the shared baseline rather than something each scenario
+    # has to remember to switch on. A scenario that wants it off must say so.
+    'do bburn prm': [True, bool],
+    # Stays FALSE. The plume-rise implementation has been exercised with fire AREA,
+    # not with FRP; turning this on changes which input drives injection height and
+    # is not a validated configuration yet.
     'do frp': [False, bool],
   }
 
