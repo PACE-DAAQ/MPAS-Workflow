@@ -228,8 +228,24 @@ def _period_token(targets, year: int) -> str:
     # turn "2024" into "20240101-20250101" -- which would leave one file named
     # differently from its siblings purely because it interpolates correctly.
     closing_endpoint = (t1.year == year + 1 and (t1.month, t1.day) == (1, 1))
-    whole_year = ((t0.month, t0.day) == (1, 1) and t0.year == year
-                  and ((t1.year == year and t1.month == 12) or closing_endpoint))
+    in_year = [t for t in targets if t.year == year]
+
+    # Month coverage, not first/last dates. Two reasons:
+    #  * monthly inventories need not start on the 1st -- CF-convention CEDS
+    #    timestamps mid-month and the monthly branch deliberately anchors on the
+    #    source records, so a full year can run 16 Jan .. 16 Dec. Requiring day 1
+    #    would name that 20240116-20241216 and the file would no longer match the
+    #    CEDS_<grid>_<year>_... name SetStreamsVariant.csh looks for.
+    #  * "ends in December" is not the same as "covers December": 1 Jan .. 15 Dec
+    #    is a partial window and must keep explicit endpoints.
+    months = {t.month for t in in_year}
+    whole_year = (len(months) == 12
+                  and (t1.year == year or closing_endpoint))
+    if whole_year and len(in_year) > 12:
+        # Sub-monthly cadence (hourly/daily): every month being present is not
+        # enough, the span must actually reach the ends of the year.
+        whole_year = (t0.month, t0.day) == (1, 1) and (
+            closing_endpoint or (t1.month, t1.day) == (12, 31))
     if whole_year:
         return str(year)
     return f"{t0:%Y%m%d}-{t1:%Y%m%d}"

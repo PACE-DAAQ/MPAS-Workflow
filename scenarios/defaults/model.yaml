@@ -9,7 +9,8 @@ model:
   #   biob emissions: finn | gfas | gbbepx | qfed
   #   biog emissions: cams
   # PRM (plume rise model) namelist flags for &plumerisemodel (defaults shown):
-  #   do bburn prm: true    # config_do_bburnPRM  -- ON by default, the shared baseline
+  #   do bburn prm: false   # config_do_bburnPRM  -- OFF by default; the PACE-DAAQ
+  #                         # shared scenario turns it on
   #   do frp: false         # config_do_FRP       -- OFF; validated with AREA, not FRP
   #
   # NOTE on the emission overrides above: 'anth/biob/biog emissions' override the

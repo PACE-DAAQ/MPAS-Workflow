@@ -268,7 +268,17 @@ sed -i 's@{{biogBPIN}}@'"$biogBPIN"'@' ${StreamsFile}
 # "CRITICAL ERROR: file '...' not in run directory", inside a batch job, after the
 # IC has been read. Check here instead, where the message can name the variant and
 # all the missing files at once.
-if ( $?EmissionDir ) then
+## Only meaningful for a GOCART2G run. EmissionDir is set unconditionally by
+## Build.py, so without this a plain meteorological forecast -- which never reads
+## these streams -- would be failed for emission files it does not need.
+## PhysicsSuite is resolved for the mesh in use by bin/Forecast.csh before this
+## file is sourced; doBburnPrm would NOT work as the test, since it is set for
+## every run regardless of whether chemistry is active.
+set gocartOn = 0
+if ( $?PhysicsSuite ) then
+  if ( "$PhysicsSuite" == "MPAS-GOCART2G" ) set gocartOn = 1
+endif
+if ( ${gocartOn} == 1 && $?EmissionDir ) then
   set missingEmis = ()
   foreach f ( "$anthBC" "$anthOC" "$anthSO2" "$anthCO" "$anthNH3" "$anthISO" "$anthMNT" \
               "$biobBC" "$biobOC" "$biobNH3" "$biobSO2" "$biobCO" "$biobISO" "$biobMNT" \
