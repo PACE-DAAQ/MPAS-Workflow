@@ -56,7 +56,7 @@ time:
   allow extrapolation: false
 
 outputs:
-  - file: QFED_Glb_{year}_MPAS.{grid}.grid.bc.hourly.nc
+  - file: QFED_{grid}_{period}_bc_hourly.nc
     source files: /glade/derecho/scratch/syha/gocart2g_aug2024/qfed/orig/qfed2.emis_bc.061.{year}????.nc4
     fields:
       bc_biob_modis:
@@ -64,7 +64,7 @@ outputs:
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 12.011
-  - file: QFED_Glb_{year}_MPAS.{grid}.grid.oc.hourly.nc
+  - file: QFED_{grid}_{period}_oc_hourly.nc
     source files: /glade/derecho/scratch/syha/gocart2g_aug2024/qfed/orig/qfed2.emis_oc.061.{year}????.nc4
     fields:
       oc_biob_modis:
@@ -72,7 +72,7 @@ outputs:
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 12.011
-  - file: QFED_Glb_{year}_MPAS.{grid}.grid.nh3.hourly.nc
+  - file: QFED_{grid}_{period}_nh3_hourly.nc
     source files: /glade/derecho/scratch/syha/gocart2g_aug2024/qfed/orig/qfed2.emis_nh3.061.{year}????.nc4
     fields:
       nh3_biob_modis:
@@ -80,7 +80,7 @@ outputs:
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 17.031
-  - file: QFED_Glb_{year}_MPAS.{grid}.grid.so2.hourly.nc
+  - file: QFED_{grid}_{period}_so2_hourly.nc
     source files: /glade/derecho/scratch/syha/gocart2g_aug2024/qfed/orig/qfed2.emis_so2.061.{year}????.nc4
     fields:
       so2_biob_modis:
@@ -88,7 +88,7 @@ outputs:
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 64.066
-  - file: QFED_Glb_{year}_MPAS.{grid}.grid.co.hourly.nc
+  - file: QFED_{grid}_{period}_co_hourly.nc
     source files: /glade/derecho/scratch/syha/gocart2g_aug2024/qfed/orig/qfed2.emis_co.061.{year}????.nc4
     fields:
       co_biob_modis:

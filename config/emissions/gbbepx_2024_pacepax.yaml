@@ -52,35 +52,35 @@ time:
   allow extrapolation: false
 
 outputs:
-  - file: GBBEPx_Glb_{year}_MPAS.{grid}.grid.bc.hourly.nc
+  - file: GBBEPx_{grid}_{period}_bc_hourly.nc
     fields:
       bc_biob_modis:
         source variable: BC
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 12.011
-  - file: GBBEPx_Glb_{year}_MPAS.{grid}.grid.oc.hourly.nc
+  - file: GBBEPx_{grid}_{period}_oc_hourly.nc
     fields:
       oc_biob_modis:
         source variable: OC
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 12.011
-  - file: GBBEPx_Glb_{year}_MPAS.{grid}.grid.nh3.hourly.nc
+  - file: GBBEPx_{grid}_{period}_nh3_hourly.nc
     fields:
       nh3_biob_modis:
         source variable: NH3
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 17.031
-  - file: GBBEPx_Glb_{year}_MPAS.{grid}.grid.so2.hourly.nc
+  - file: GBBEPx_{grid}_{period}_so2_hourly.nc
     fields:
       so2_biob_modis:
         source variable: SO2
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 64.066
-  - file: GBBEPx_Glb_{year}_MPAS.{grid}.grid.co.hourly.nc
+  - file: GBBEPx_{grid}_{period}_co_hourly.nc
     fields:
       co_biob_modis:
         source variable: CO
