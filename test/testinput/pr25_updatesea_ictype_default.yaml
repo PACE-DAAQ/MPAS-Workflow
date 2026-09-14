@@ -1,0 +1,126 @@
+# ==================================================================================================
+# HOW TO RUN THIS SAFELY  (read before the first command below)
+#
+# Run.py ALWAYS finishes with suite.submit() -> ./submit.csh -> `cylc play`. There is no
+# generate-only mode. initialize/framework/HPC.py defaults CriticalAccount /
+# NonCriticalAccount / SingleProcAccount to NMMM0015, so an unguarded run can submit PBS
+# jobs -- possibly on an allocation that is not yours. "Run it and stop it quickly" races
+# the scheduler and is not safe.
+#
+# Neutralise cylc for the duration instead. submit.csh does `conda activate $CYLC_ENV`,
+# which would otherwise put the real cylc back ahead of the stub, so CYLC_ENV has to point
+# at the stub as well as PATH:
+#
+#   set stub = /glade/derecho/scratch/$USER/cylcstub
+#   mkdir -p $stub/bin
+#   printf '#!/bin/sh\nexit 0\n' > $stub/bin/cylc
+#   chmod +x $stub/bin/cylc
+#   setenv CYLC_ENV "$stub"
+#   setenv PATH "$stub/bin:$PATH"
+#
+# Paths below are relative to the root of your MPAS-Workflow checkout; run from there.
+# ==================================================================================================
+#
+# PR #25 -- "Honour extendedforecast.updateSea on both IC paths (fixes #24)"
+#
+# WHAT IS UNDER TEST
+#   fromInternalAnalysis used to hard-code True in the ArgUpdateSea slot while
+#   fromExternalAnalysis already read self['updateSea'] (default False), so the option was
+#   honoured on one path and ignored on the other. The PR makes both paths read the option.
+#   A single class-wide default could not preserve both behaviours, so the effective default
+#   is resolved from icType in ExtendedForecast.__init__:
+#
+#       if self._conf.get('updateSea', bool) is None:
+#         self._set('updateSea', icType == 'internal')
+#
+#   The regression this guards against is a SILENT one: an external-analysis forecast that
+#   omits the option starting to update SST/ice, and gaining a PrepareSeaSurfaceUpdate
+#   dependency it never had.
+#
+# WHERE IT SHOWS UP
+#   updateSea is not exported to config/auto/*.csh. It is passed as ARG 8 of the
+#   bin/Forecast.csh invocation written into flow.cylc (see Forecast.csh:34,
+#   `set ArgUpdateSea = "$8"`), and at ExtendedForecast.py:359 it also gates a
+#   PrepareSeaSurfaceUpdate graph edge.
+#
+# HOW TO RUN
+#   [1] set up the cylc stub above
+#   [2] ./Run.py test/testinput/pr25_updatesea_ictype_default.yaml
+#   [3] set EXP = /glade/derecho/scratch/$USER/pandac/test_pr25_updatesea
+#       (no ${USER}_ prefix: this file sets `experiment: prefix: ''`)
+#       grep -n 'Forecast.csh' $EXP/MPAS-Workflow/flow.cylc
+#
+# PASS CRITERIA
+#   Arg 8 of the ExtendedMeanFC script line is the ONLY observable. Verified on this branch
+#   by generating the suite twice and diffing: with and without the option the two flow.cylc
+#   files differ on exactly one line, that one.
+#
+#   CHECK A -- external path, option omitted (this file omits it deliberately):
+#         grep -F 'bin/Forecast.csh' $EXP/MPAS-Workflow/flow.cylc
+#       and read the 8th quoted argument. Verified actual output on this branch:
+#         script = $origin/bin/Forecast.csh "1" "12" "12" "False" "120km" "False" "False" "False" ...
+#                                                                                   ^^^^^^^ arg 8
+#       PASS = "False".  FAIL = "True" -- that is the #24 regression this PR must not cause.
+#
+#   CHECK B -- an explicit setting still wins. Add `updateSea: True` under
+#       `extendedforecast:` below, re-run [2], repeat CHECK A.
+#       PASS = arg 8 is "True". Remove the line again afterwards.
+#
+#   CHECK C -- the internal path still defaults True. Run any DA-cycling scenario that
+#       omits the option, e.g.
+#         ./Run.py test/testinput/3dvar_OIE120km_WarmStart.yaml
+#       and read arg 8 of its ExtendedFC line. PASS = "True".
+#       (Pre-PR that path hard-coded True, so "True" means cycling is unchanged.)
+#
+#   DO NOT look for a PrepareSeaSurfaceUpdate task or a new graph edge. ExtendedForecast.py
+#   does gate `sfc_prepEA` on updateSea, but prepEATasks
+#   (GetGFSAnalysisFromRDA => UngribExternalAnalysis => ExternalAnalysisToMPAS-120km) is
+#   ALREADY in the graph through the ordinary prepEA dependency, so the gate adds a
+#   duplicate of an edge that is present either way and the graph is byte-identical.
+#   Verified: `grep -c PrepareSeaSurfaceUpdate flow.cylc` is 0 in BOTH cases.
+#
+# NOT COVERED
+#   The runtime effect of ArgUpdateSea inside bin/Forecast.csh (the sea-surface update
+#   itself, Forecast.csh:281) is not exercised -- that needs a real forecast. This test
+#   covers only which value each IC path resolves and whether the graph edge is emitted,
+#   which is the whole of what PR #25 changes.
+#
+# RUNTIME  ~30 s per Run.py invocation on a login node. No PBS job is submitted.
+
+suite: ForecastFromExternalAnalyses
+
+experiment:
+  # Unique and obviously a test. Run.py deletes the mainScriptDir belonging to whatever
+  # experiment name it is given, so this must never collide with a real experiment.
+  name: 'test_pr25_updatesea'
+  prefix: ''
+
+workflow:
+  first cycle point: 20180415T00
+  final cycle point: 20180416T00
+  max active cycle points: 1
+
+externalanalyses:
+  # GFS.RDA is the resource scenarios/ForecastFromGFSAnalyses.yaml uses; it is the external
+  # path this PR's default applies to.
+  resource: "GFS.RDA"
+
+extendedforecast:
+  # updateSea is DELIBERATELY OMITTED. That omission is the test: the external path must
+  # resolve it to False. Adding it back is CHECK C.
+  meanTimes: T00
+  lengthHR: 12
+  outIntervalHR: 12
+  # Nothing is verified from the extended forecast itself, so keep post empty to avoid
+  # emitting verification tasks that have nothing to do with this PR.
+  post: []
+
+members:
+  n: 1
+
+model:
+  # Smallest mesh in the defaults; the option under test is mesh-independent.
+  outerMesh: 120km
+
+observations:
+  resource: GladeRDAOnline
