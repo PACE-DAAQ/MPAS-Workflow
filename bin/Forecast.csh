@@ -45,6 +45,16 @@ set ArgICStatePrefix = "$11"
 # UPDATE ATM from COLD-START FROM IC: BOOL
 set updateATMVarsFromCold = "$12"
 
+# ArgRestartInterval: str, MPAS output_interval for the restart stream.
+# Per-application on purpose: this script serves both the 6-hourly cycling
+# Forecast and the far longer ExtendedForecast, which share one streams template.
+# "none" (the default everywhere) writes no restart at all; "final_only" leaves a
+# single continuation point at the end; an interval such as "5_00:00:00" writes
+# them periodically. Empty is treated as "none" so older callers passing 12
+# arguments keep working.
+set ArgRestartInterval = "$13"
+if ( "$ArgRestartInterval" == "" ) set ArgRestartInterval = none
+
 ## arg checks
 set test = `echo $ArgMember | grep '^[0-9]*$'`
 set isNotInt = ($status)
@@ -221,6 +231,16 @@ if( -e ${StreamsFile}) rm ${StreamsFile}
 cp -v $ModelConfigDir/forecast/${StreamsFile} ./${StreamsFile}
 sed -i 's@{{nCells}}@'${nCells}'@' ${StreamsFile}
 sed -i 's@{{outputInterval}}@'${self_FCIntervalHR}':00:00@' ${StreamsFile}
+# Reject a value MPAS cannot parse here, where the message is readable, rather
+# than letting the stream manager fail inside the batch job.
+set rIntOK = `echo "${ArgRestartInterval}" | grep -cE '^(none|final_only|initial_only|[0-9]+_[0-9]{2}:[0-9]{2}:[0-9]{2}|[0-9]{2}:[0-9]{2}:[0-9]{2})$'`
+if ( ${rIntOK} != 1 ) then
+  echo "ERROR in $0 : ArgRestartInterval ('${ArgRestartInterval}') is not a valid MPAS output_interval;" > ./FAIL
+  echo "  expected none | final_only | initial_only | D_HH:MM:SS | HH:MM:SS" >> ./FAIL
+  cat ./FAIL
+  exit 1
+endif
+sed -i 's@{{restartInterval}}@'${ArgRestartInterval}'@' ${StreamsFile}
 sed -i 's@{{InvariantFieldsPrefix}}@'${localInvariantFieldsPrefix}'@' ${StreamsFile}
 sed -i 's@{{ICFilePrefix}}@'${ICFilePrefix}'@' ${StreamsFile}
 sed -i 's@{{FCFilePrefix}}@'${FCFilePrefix}'@' ${StreamsFile}

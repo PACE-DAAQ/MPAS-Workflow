@@ -55,7 +55,16 @@ class Forecast(Component):
     ## post
     # list of tasks for Post
     # e.g.: ['verifyobs', 'verifymodel']
-    'post': [['verifymodel'], list]
+    'post': [['verifymodel'], list],
+    ## restart interval
+    # MPAS output_interval for the restart stream, passed to bin/Forecast.csh.
+    # Separate per application because the 6-hourly cycling forecast and the long
+    # extended forecast share one streams template and want different answers.
+    #   none        no restart file (default -- nothing changes for existing runs)
+    #   final_only  one restart at the end, a continuation point for a long forecast
+    #   5_00:00:00  periodic, so a crash late in a long run does not cost all of it
+    # A restart file is roughly mpasout-sized (~2 GB on x1.163842 with chemistry).
+    'restart interval': ['none', str],
 
   }
 
@@ -156,6 +165,7 @@ class Forecast(Component):
         warmIC[mm-1].directory(),
         warmIC[mm-1].prefix(),
         updateATMVarsFromCold,
+        self['restart interval'],
       ]
       fcArgs = ' '.join(['"'+str(a)+'"' for a in args])
 
