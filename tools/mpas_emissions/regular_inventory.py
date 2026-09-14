@@ -189,6 +189,27 @@ def _read_field(record: SourceRecord, field_cfg: dict, cfg: dict, *, lat_flip: b
     )
 
 
+def _existing_offset(path: Path):
+    """source_time_offset_hours recorded in an existing product, or None.
+
+    None means the file predates the attribute (or cannot be read), in which case
+    it is reused as before -- this check exists to catch a CHANGED convention, not
+    to force a rebuild of every product written before the attribute existed.
+    """
+    from netCDF4 import Dataset
+    try:
+        with Dataset(path) as ds:
+            if "source_time_offset_hours" in ds.ncattrs():
+                return float(ds.getncattr("source_time_offset_hours"))
+            return None          # predates the attribute; reuse as before
+    except OSError as e:
+        # Unreadable is NOT the same as "no attribute": silently treating it as
+        # absent would reuse a product whose convention we cannot confirm. Say so.
+        print(f"  WARNING: cannot read {path.name} to check its time convention "
+              f"({e}); reusing it unchecked", flush=True)
+        return None
+
+
 def _output_path(template: str, *, output_dir: Path, year: int, mesh: MpasMesh, grid_name: str) -> Path:
     name = str(template).format(year=year, nCells=mesh.n_cells, grid=grid_name)
     return output_dir / name
@@ -333,7 +354,19 @@ class RegularInventoryProcessor:
             grid_name = self.grid_name or f"x1.{self.mesh.n_cells}"
             out = _output_path(product["file"], output_dir=self.output_dir, year=year, mesh=self.mesh, grid_name=grid_name)
             if out.is_symlink(): out.unlink()
-            if reuse_existing and out.exists(): outputs.append(out); continue
+            if reuse_existing and out.exists():
+                # Reuse only a product built under the SAME time convention.
+                # 'reuse existing' defaults to true, so without this check adding
+                # 'time offset hours: -24' to a config leaves an older zero-offset
+                # product in place and the advertised fix silently does nothing --
+                # the emissions stay a day late and nothing says so.
+                want_offset = float(cfg.get("source", {}).get("time offset hours", 0.0))
+                have_offset = _existing_offset(out)
+                if have_offset is not None and have_offset != want_offset:
+                    print(f"  rebuilding {out.name}: source_time_offset_hours "
+                          f"{have_offset} -> {want_offset}", flush=True)
+                else:
+                    outputs.append(out); continue
             fields_cfg = product.get("fields", {})
             if not fields_cfg: raise ValueError(f"output {product.get('file')}: no fields")
             stats = {"exact": 0, "interpolated": 0, "held_or_nearest": 0, "largest_gap_hours": 0.0}
