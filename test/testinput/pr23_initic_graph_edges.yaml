@@ -1,0 +1,167 @@
+# ==================================================================================================
+# HOW TO RUN THIS SAFELY  (read before the first command below)
+#
+# Run.py ALWAYS finishes with suite.submit() -> ./submit.csh -> `cylc play`. There is no
+# generate-only mode. initialize/framework/HPC.py defaults CriticalAccount /
+# NonCriticalAccount / SingleProcAccount to NMMM0015, so an unguarded run can submit PBS
+# jobs -- possibly on an allocation that is not yours. "Run it and stop it quickly" races
+# the scheduler and is not safe.
+#
+# Neutralise cylc for the duration instead. submit.csh does `conda activate $CYLC_ENV`,
+# which would otherwise put the real cylc back ahead of the stub, so CYLC_ENV has to point
+# at the stub as well as PATH:
+#
+#   set stub = /glade/derecho/scratch/$USER/cylcstub
+#   mkdir -p $stub/bin
+#   printf '#!/bin/sh\nexit 0\n' > $stub/bin/cylc
+#   chmod +x $stub/bin/cylc
+#   setenv CYLC_ENV "$stub"
+#   setenv PATH "$stub/bin:$PATH"
+#
+# Then run the command in the steps below. Everything this test inspects -- suite.rc /
+# flow.cylc, config/auto/*.csh, the resolved streams and namelist files -- is written
+# BEFORE cylc would have been invoked, so stubbing it costs nothing and no job is ever
+# submitted. No `cylc stop` is needed.
+#
+# Paths below are relative to the root of your MPAS-Workflow checkout; run from there.
+# ==================================================================================================
+# =============================================================================
+# PR #23 "Fix four defects that break or duplicate chemistry-IC preparation"
+#   branch fix/chemic-ordering-reuse-and-gfas-dayshift
+#   base   feature/gocart2g-cycling-state
+#
+# WHAT IS UNDER TEST
+#   initialize/suites/ForecastFromExternalAnalyses.py now lists 'initic' in
+#   self.dependencyComponents. SuiteBase.__export() copies a component's
+#   _dependencies into [scheduling][[graph]] ONLY for components named there,
+#   so before this PR the InitIC edges
+#       PrepareChemIC-<dt>hr => ExternalAnalysisToMPAS-<mesh>-<dt>hr
+#   were dropped: PrepareChemIC appeared under [runtime] but was never
+#   referenced by the graph, cylc never instantiated it, and every
+#   ExternalAnalysisToMPAS died with
+#       ERROR .../ExternalAnalysisToMPAS.csh: chemistry intermediate
+#       directory not found: .../ChemIC/<date>
+#   That is a pure suite-GENERATION defect, so this is a generate-and-read
+#   test: no PBS job, no model run, no input data required.
+#   (Cycle.py already listed 'initic' on the parent branch and is unchanged by
+#   this PR, which is why the scenario must use ForecastFromExternalAnalyses.)
+#
+# HOW TO RUN  (derecho login node, well under a minute)
+#   cd <your checkout of fix/chemic-ordering-reuse-and-gfas-dayshift>
+#   source env-setup/machine.csh
+#   rm -f flow.cylc                  # so you cannot read a stale artifact
+#   ./Run.py test/testinput/pr23_initic_graph_edges.yaml
+#   sed -n '/^  \[\[graph\]\]/,/^\[runtime\]/p' flow.cylc | grep -n PrepareChemIC
+#
+# PASS / FAIL  -- look at exactly this
+#   PASS: the sed|grep prints FOUR lines, i.e. a "# initic" block inside
+#         [[graph]] carrying the same two edges under both recurrences:
+#             R1 = """
+#               PrepareChemIC-0hr  => ExternalAnalysisToMPAS-120km-0hr
+#               PrepareChemIC-12hr => ExternalAnalysisToMPAS-120km-12hr
+#             +PT6H/PT6H = """
+#               PrepareChemIC-0hr  => ExternalAnalysisToMPAS-120km-0hr
+#               PrepareChemIC-12hr => ExternalAnalysisToMPAS-120km-12hr
+#   FAIL: it prints NOTHING (zero matches). That is exactly what
+#         feature/gocart2g-cycling-state produces -- note that a plain
+#         "grep PrepareChemIC flow.cylc" still matches there, because the task
+#         is defined under [runtime]; the whole defect is that no match falls
+#         inside [[graph]]. Re-running this same file on the parent branch is
+#         the cheapest way to see the regression fail.
+#
+#   Secondary check, free with the same run (installed experiment copy):
+#     grep initicChemistryMode \
+#       $SCRATCH/pandac/${USER}_test_pr23_initic_graph_edges/MPAS-Workflow/config/auto/initic.csh
+#     -> "workflow".  This is the flag that makes bin/PrepareChemIC.csh do work
+#        and makes bin/ExternalAnalysisToMPAS.csh enter the chemistry branch
+#        that this PR guards with the PREPARE_CHEM_SUCCESS sentinel.
+#
+# WHY THIS SCENARIO CANNOT SUBMIT A JOB
+#   Run.py has no generate-only flag: it always finishes by calling
+#   ./submit.csh (cylc install / validate / play). 'final cycle point' below is
+#   therefore set DELIBERATELY EARLIER than 'first cycle point', so cylc
+#   refuses the workflow and not one task is ever instantiated. flow.cylc is
+#   written by SuiteBase BEFORE submit.csh runs, and the graph text is
+#   date-independent, so the artifact under test is complete and correct.
+#   Tidy up afterwards with:
+#     cylc clean MPAS-Workflow/${USER}_test_pr23_initic_graph_edges
+#     rm -rf $SCRATCH/pandac/${USER}_test_pr23_initic_graph_edges
+# =============================================================================
+
+# The suite whose dependencyComponents list this PR changes.
+suite: ForecastFromExternalAnalyses
+
+experiment:
+  # Unique and obviously a test. Run.py/Experiment does an unconditional
+  # "rm -rf <mainScriptDir>" for whatever name it is given, so this must never
+  # collide with a real experiment name.
+  name: 'test_pr23_initic_graph_edges'
+
+workflow:
+  first cycle point: 20241025T00
+  # NOT A TYPO -- deliberate safety guard. final < first makes cylc
+  # validate/play refuse the workflow, so this scenario can only ever generate
+  # flow.cylc and can never reach PBS. See the header.
+  final cycle point: 20241024T18
+  max active cycle points: 1
+
+members:
+  # The defect is per-suite, not per-member; one member keeps the graph small.
+  n: 1
+
+model:
+  # Smallest mesh defined in scenarios/defaults/model.yaml (x1.40962). The
+  # edges under test only embed the mesh NAME, so 120km exercises them fully
+  # and keeps the task names short and readable.
+  outerMesh: 120km
+
+externalanalyses:
+  # Must be a resource whose PrepareExternalAnalysisTasks contains
+  # "ExternalAnalysisToMPAS-{{mesh}}": InitIC computes __used from exactly that
+  # string, so with a link-only resource (GFS.PANDAC, GEFSMERRA.PANDAC) InitIC
+  # emits no tasks at all and the test would silently prove nothing.
+  # GFS.RDA's task list is
+  #   GetGFSAnalysisFromRDA => UngribExternalAnalysis
+  #     => ExternalAnalysisToMPAS-120km => ExternalAnalysisReady__
+  resource: "GFS.RDA"
+
+initic:
+  # The point of the test: 'workflow' is the only chemistry mode for which
+  # InitIC emits the PrepareChemIC tasks AND the
+  # PrepareChemIC => ExternalAnalysisToMPAS edges that this PR restores to the
+  # graph. Quoting is required -- unquoted off/no are YAML 1.1 booleans.
+  chemistry mode: 'workflow'
+  # Non-empty so the generated config/auto/initic.csh matches what a real
+  # chemistry cold start carries (bin/PrepareChemIC.csh errors out on an empty
+  # value). The file is in this repo; it is only read at task run time, never
+  # during suite generation, so no MERRA2 data is touched by this test.
+  chemistry source config: config/chemistry/merra2_source.example.yaml
+
+extendedforecast:
+  # Gives the suite a real [[graph]] recurrence, so the '# initic' block is
+  # seen next to the normal ExternalAnalysisToMPAS chain rather than in an
+  # otherwise empty graph.
+  meanTimes: T00
+  lengthHR: 12
+  # extLengths = range(0, lengthHR+outIntervalHR, outIntervalHR) = [0, 12].
+  # Two dt offsets, so the artifact shows an edge is emitted for EVERY valid
+  # time -- the behaviour whose absence broke the second and later ChemIC.
+  outIntervalHR: 12
+  # No verifyobs/verifymodel tasks; there is nothing to verify in a
+  # generation-only test and they only add noise to flow.cylc.
+  post: []
+  # Belt and braces on top of the date guard above: drops ExtendedMeanFC from
+  # the graph so even a mis-edited copy of this file cannot submit an MPAS
+  # forecast. The ExternalAnalysisToMPAS chain stays in the graph.
+  execute: False
+
+observations:
+  # Required key (ExternalAnalyses/Observations both demand a resource).
+  # PANDACArchive's PrepareObservationsTasks is just [ObsReady__], i.e. no
+  # download or IODA-conversion tasks are generated.
+  resource: PANDACArchive
+
+# NOTE: there is deliberately no hpc: block. PBS accounts are user-specific and
+# must not be committed; the defaults in initialize/framework/HPC.py are enough
+# to GENERATE the suite, which is all this test does. If you want to run any
+# task for real, add your own account in a local copy and do not commit it.
