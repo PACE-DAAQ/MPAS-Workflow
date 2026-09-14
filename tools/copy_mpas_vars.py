@@ -152,5 +152,14 @@ dst.close()
 # opt_copied, not len(opt_present): a land field present in both files but with a
 # mismatched shape is deliberately skipped above, and reporting it as copied would
 # contradict the warning that was just printed.
-print(f"Done. {len(vars_to_copy)-len(missing_src)} chemistry + {opt_copied} land variables copied.")
+# Say PARTIAL out loud when chemistry fields were retained from the destination
+# rather than transferred. The counts alone are accurate but easy to skim past,
+# and a partial chemistry transfer otherwise reads in the log exactly like a
+# complete one -- cycling silently carrying less state than intended.
+chem_copied = len(vars_to_copy) - len(missing_src)
+if missing_src:
+    print(f"Done. PARTIAL: {chem_copied} of {len(vars_to_copy)} chemistry variables copied "
+          f"({len(missing_src)} retained from the destination), {opt_copied} land.")
+else:
+    print(f"Done. {chem_copied} chemistry + {opt_copied} land variables copied.")
 
