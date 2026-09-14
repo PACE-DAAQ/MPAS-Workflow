@@ -173,11 +173,12 @@ class Build(Component):
         self._set('InitEXE', 'mpas_init_'+model['MPASCore'])
       else:
         initDir = self['init directory']
-        for d, exe in [
+        initCandidates = [
           (initDir, 'init_'+model['MPASCore']+'_model'),
           (initDir, 'mpas_init_'+model['MPASCore']),
           (initDir+'/bin', 'mpas_init_'+model['MPASCore']),
-        ]:
+        ]
+        for d, exe in initCandidates:
           self.log('looking for ' + d + '/' + exe, level=self.MSG_DEBUG)
           if Path(d + '/' + exe).is_file():
             self._set('InitBuildDir', d)
@@ -185,9 +186,17 @@ class Build(Component):
             self.log('Setting InitBuildDir to ' + d + ' , InitEXE to ' + exe, level=self.MSG_QUIET)
             break
         else:
-          self.log('could not find init executable in ' + self['init directory'], level=self.MSG_QUIET)
-          self._set('InitBuildDir', self['mpas bundle']+'/bin')
-          self._set('InitEXE', 'mpas_init_'+model['MPASCore'])
+          # Falling back to the bundle here would run the bundle's
+          # init_atmosphere -- the binary that setting 'init directory' was meant
+          # to avoid -- and the mistake would only surface much later inside
+          # MPAS, as a rejected &preproc_chemistry namelist record on a
+          # GOCART2G cold start. A configured build that does not exist is a
+          # configuration error; report it while the configuration is generated.
+          raise ValueError(
+            "build: 'init directory' is set to "+initDir+" but no init executable was "
+            'found there; tried '+', '.join(d+'/'+exe for d, exe in initCandidates)+
+            ". Point it at a build that contains one, or set 'init directory: bundle' "
+            'to use the mpas-bundle build.')
 
       # either use forecast executable from the bundle or a separate MPAS-Atmosphere build
       self.log('self[mpas bundle] ' + self['mpas bundle'], level=self.MSG_DEBUG)
@@ -236,7 +245,18 @@ class Build(Component):
               self._set('ForecastEXE', forecastExe)
               self.log('Setting ForecastBuildDir to ' + forecastDir + ' , ForecastEXE to ' + forecastExe, level=self.MSG_QUIET)
             else:
-              self.log('could not find forecast executable in ' + self['forecast directory'], level=self.MSG_QUIET)
+              # Same reasoning as the init path above, with a different symptom:
+              # nothing is _set here, so ForecastBuildDir/ForecastEXE stay absent
+              # from the vtable and the run fails later with a KeyError or an
+              # empty csh variable rather than a message naming the directory.
+              raise ValueError(
+                "build: 'forecast directory' is set to "+self['forecast directory']+
+                ' but no forecast executable was found there; tried '+
+                ', '.join([self['forecast directory']+'/'+model['MPASCore']+'_model',
+                           self['forecast directory']+'/mpas_'+model['MPASCore'],
+                           self['forecast directory']+'/bin/mpas_'+model['MPASCore']])+
+                ". Point it at a build that contains one, or set "
+                "'forecast directory: bundle' to use the mpas-bundle build.")
 
       if system == 'derecho':
         self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_atmosphere')
