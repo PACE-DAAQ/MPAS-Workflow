@@ -25,16 +25,16 @@ model:
   innerMesh: 60km
   ensembleMesh: 60km
 
-  # Emission inventories. 'cntl' is cams/cams/finn; this campaign uses GFAS for
-  # biomass burning, which is why biob is overridden here rather than in the
-  # variant table.
+  # Emission inventories. 'cntl' is cams/cams/GFAS -- GFAS is this campaign's
+  # biomass inventory, so it is the control combination itself and needs no
+  # override. (FINN still supplies PRM fire size; see 'prm source' below.)
   #
-  # DO NOT move these three keys into scenarios/defaults or Model.py. The override
-  # in bin/SetStreamsVariant.csh section (2) is unconditional, so a project-wide
-  # default would force pert01..pert08 onto one inventory and silently collapse
-  # the emission ensemble that PR #14 recenters on.
+  # DO NOT add 'anth/biob/biog emissions' here or in scenarios/defaults unless an
+  # experiment genuinely differs: that override is applied unconditionally in
+  # bin/SetStreamsVariant.csh section (2), so it overrides the variant and would
+  # force pert01..pert08 onto a single inventory, silently collapsing the emission
+  # ensemble that PR #14 recenters on.
   streams variant: cntl
-  biob emissions: gfas
 
   # Plume rise. 'do bburn prm' is now TRUE by default (initialize/data/Model.py)
   # and is restated here so the shared baseline is visible rather than implied.

@@ -3,7 +3,7 @@ model:
   # 'streams variant' selects a default (anthropogenic / biogenic / biomass-burning) combination;
   # the variant -> combination mapping and the inventory -> filename tables live in
   # bin/SetStreamsVariant.csh (edit there to add combinations or inventories).
-  #   streams variant: cntl | pert01..pert08   (default cntl = cams / cams / finn)
+  #   streams variant: cntl | pert01..pert08   (default cntl = cams / cams / gfas)
   # Optionally override a single dimension (empty = use the variant's default):
   #   anth emissions: cams | ceds | cams-mix
   #   biob emissions: finn | gfas | gbbepx | qfed
