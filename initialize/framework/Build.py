@@ -28,6 +28,16 @@ class Build(Component):
     #'forecast directory': ['bundle', str],
     'forecast directory': ['/replace/this/in/host/specific/code/below/', str],
 
+    # init directory
+    # Directory containing the init_atmosphere executable.  'bundle' uses the
+    # mpas-bundle build, which is correct whenever that bundle was configured with
+    # DO_GOCART2G=ON (and DO_PRM=ON if the scenario enables config_do_bburnPRM).
+    # A GOCART2G chemistry cold start (initic.chemistry mode != off) needs those
+    # options; the default bundle below is built with them, but a stock JEDI bundle
+    # such as the upstream cron build is not.  Point this at a suitable gocartMPAS
+    # build when the configured bundle lacks them.
+    'init directory': ['bundle', str],
+
     ## bundle compiler used
     # {compiler}-{mpi-implementation}/{version} combination that selects the JEDI module used to build
     # the executables described herein
@@ -156,8 +166,28 @@ class Build(Component):
 
       # MPAS-Model
       # ----------
-      self._set('InitBuildDir', self['mpas bundle']+'/bin')
-      self._set('InitEXE', 'mpas_init_'+model['MPASCore'])
+      # either use the init executable from the bundle or a separate
+      # MPAS-Atmosphere build (required for GOCART2G chemistry cold starts)
+      if self['init directory'] == 'bundle':
+        self._set('InitBuildDir', self['mpas bundle']+'/bin')
+        self._set('InitEXE', 'mpas_init_'+model['MPASCore'])
+      else:
+        initDir = self['init directory']
+        for d, exe in [
+          (initDir, 'init_'+model['MPASCore']+'_model'),
+          (initDir, 'mpas_init_'+model['MPASCore']),
+          (initDir+'/bin', 'mpas_init_'+model['MPASCore']),
+        ]:
+          self.log('looking for ' + d + '/' + exe, level=self.MSG_DEBUG)
+          if Path(d + '/' + exe).is_file():
+            self._set('InitBuildDir', d)
+            self._set('InitEXE', exe)
+            self.log('Setting InitBuildDir to ' + d + ' , InitEXE to ' + exe, level=self.MSG_QUIET)
+            break
+        else:
+          self.log('could not find init executable in ' + self['init directory'], level=self.MSG_QUIET)
+          self._set('InitBuildDir', self['mpas bundle']+'/bin')
+          self._set('InitEXE', 'mpas_init_'+model['MPASCore'])
 
       # either use forecast executable from the bundle or a separate MPAS-Atmosphere build
       self.log('self[mpas bundle] ' + self['mpas bundle'], level=self.MSG_DEBUG)
@@ -195,7 +225,6 @@ class Build(Component):
 
       if system == 'derecho':
         self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_atmosphere')
-      #  self._set('MPASLookupDir', self['forecast directory']) # need to obtain files from the directory of MPAS executable
         self._set('MPASLookupFileGlobs', ['.TBL', '.DBL', 'DATA', 'VERSION'])
       elif system == 'cheyenne':
         self._set('MPASLookupDir', self['mpas bundle']+'/MPAS/core_'+model['MPASCore'])

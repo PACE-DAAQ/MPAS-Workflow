@@ -102,8 +102,27 @@ ln -sfv $GraphInfoDir/x${ArgRatio}.${ArgNCells}.graph.info* .
 ## Link MPAS invariant field
 if ( $ArgType == "Outer" ) then
    ln -sfv $InvariantFieldsDirOuter/$InvariantFieldsFileOuter .
+   set thisInvariantFile = $InvariantFieldsDirOuter/$InvariantFieldsFileOuter
 else
    ln -sfv $InvariantFieldsDirInner/$InvariantFieldsFileInner .
+   set thisInvariantFile = $InvariantFieldsDirInner/$InvariantFieldsFileInner
+endif
+
+## A GOCART2G-enabled init_atmosphere reads erod from the 'input' stream, because
+## erod lives in the mesh var_struct of Registry_init_gocart2G.xml. An invariant file
+## without it aborts deep inside MPAS with
+##   nDustErosionDim *** not found in stream ***
+## Only meshes whose invariant carries the GOCART2G static dust fields can be used for
+## a chemistry cold start; fail here with an actionable message instead.
+if ( $?initicChemistryMode ) then
+  if ( "${initicChemistryMode}" != "off" ) then
+    ncdump -h "${thisInvariantFile}" | grep -q 'nDustErosionDim'
+    if ( $status != 0 ) then
+      echo "ERROR ${0}: initic chemistry mode is '${initicChemistryMode}' but the invariant file has no GOCART2G static dust fields (nDustErosionDim/erod): ${thisInvariantFile}" > ./FAIL
+      echo "  regenerate the invariant with a GOCART2G init_atmosphere, or set 'initic: chemistry mode: off'" >> ./FAIL
+      exit 1
+    endif
+  endif
 endif
 
 ## link lookup tables

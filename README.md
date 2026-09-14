@@ -97,6 +97,73 @@ with fixed source code repository tags/hashes that are consistent with the relea
 version.  Users can copy that file into their mpas-bundle source code directory before executing
 `ecbuild` in order to download the currect repository versions.
 
+### MPAS-GOCART2G builds
+
+A GOCART2G chemistry experiment needs `init_atmosphere` and `atmosphere` executables built
+from gocartMPAS with `DO_GOCART2G=ON`, plus `DO_PRM=ON` for scenarios that enable
+`config_do_bburnPRM`. A bundle configured that way satisfies both, and `build.init
+directory` / `build.forecast directory` can stay at their default of `bundle`. Point them
+at a separate gocartMPAS build only when the configured bundle was not built with those
+options — a stock JEDI bundle, such as the upstream cron build, is not.
+
+The two options are independently required, and omitting either fails in a way that is
+easy to misread as a workflow bug.  (The CMake options are `DO_GOCART2G` / `DO_PRM`; the
+legacy MPAS makefiles spell the same switches `GOCART2G=true` / `PRM=true`.)
+
+- `core_init_atmosphere/Registry.xml` includes the GOCART2G init registry inside
+  `#ifdef DO_GOCART2G`. Without it the `&preproc_chemistry` namelist record does not exist
+  and `init_atmosphere` rejects the namelist.
+- The PRM plume-rise var_struct written into the init output is inside `#ifdef DO_PRM`.
+  Without it the corresponding streams reference variables the binary does not define.
+  On gocartMPAS revisions that carry the plume-rise lower-boundary-condition code this is
+  the `biob_prm_lowbc` var_struct and the `prm_lowbc_*` streams; older revisions use the
+  `bburnPRM` naming.
+
+If building through the legacy MPAS makefiles, build serially.
+`core_init_atmosphere/Makefile` invokes the chemistry sub-build (`core_gocart2G`) without
+declaring a dependency on the init core's own objects, so a parallel `make -j` can compile
+`mpas_chemistry_init_gocart2G_interp.F90` before `init_atm_hinterp.mod` exists and fail
+with `error #7002: Error in opening the compiled module file`. This does not apply to the
+CMake/ecbuild bundle build, which compiles the chemistry sources into the
+`core_init_atmosphere` target and orders them correctly; `make -j` is safe there.
+
+To confirm a build is usable before submitting a cycle, check how it was configured:
+
+```shell
+grep -E '^(DO_GOCART2G|DO_PRM|MPAS_DOUBLE_PRECISION):' <build>/CMakeCache.txt
+```
+
+The symbols live in the MPAS shared libraries, **not** in the driver executables under
+`<build>/bin` — running `strings` on `bin/mpas_init_atmosphere` returns zero hits even for
+a correct GOCART2G build, so check the libraries instead:
+
+```shell
+strings <build>/lib/libmpas_init_atmosphere.so | grep -c preproc_chemistry  # non-zero
+strings <build>/lib/libmpas_atmosphere.so      | grep -c gocart2G           # non-zero
+strings <build>/lib/libmpas_atmosphere.so      | grep -c bburn              # non-zero if PRM
+```
+
+Match on `bburn` rather than `prm_lowbc` for the PRM check: older gocartMPAS revisions name
+these sources `*bburnPRM*` and carry no `prm_lowbc` symbol, so a `prm_lowbc` grep reports a
+correctly built `DO_PRM=ON` bundle as broken.
+
+The forecast binary must additionally expose the fourteen `config_gocart2G_optics*`
+namelist options that `bin/Forecast.csh` substitutes.
+
+### GOCART2G static dust fields in the invariant file
+
+A GOCART2G `init_atmosphere` reads `erod` from the `input` stream, because `erod` is
+declared in the `mesh` var_struct of `Registry_init_gocart2G.xml`. The invariant file for
+the mesh must therefore carry `erod`, `clayfrac` and `sandfrac`.
+
+At present only `x1.163842` does. On any other mesh a chemistry cold start aborts inside
+MPAS with `nDustErosionDim *** not found in stream ***`, so `bin/ExternalAnalysisToMPAS.csh`
+now checks the invariant up front and fails with an actionable message instead.
+
+Regenerating those fields (`config_gocart2G_static = .true.`) requires an `erod` geotile
+dataset under `config_geog_data_path`, which the project `mpas_static` holding does not
+provide. **This is an open blocker for running chemistry on a new mesh.**
+
 Periodically the `develop` branch of MPAS-Workflow will be consistent with the source code
 `develop` branches, usually every 1-2 months.  As often as is feasible, that is when a new tagged
 release of MPAS-Workflow will be generated.
