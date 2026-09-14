@@ -160,6 +160,11 @@ switch ($vAnth)
     set anthOC  = "CEDS_${emissionGrid}_${emissionYear}_oc_monthly.nc"
     set anthSO2 = "CEDS_${emissionGrid}_${emissionYear}_so2_monthly.nc"
     set anthCO  = "CEDS_${emissionGrid}_${emissionYear}_co_monthly.nc"
+    # config/emissions/ceds.example.yaml DOES build a CEDS ammonia product, under the
+    # same unified rule, so switching NH3 onto the selected inventory later is this one
+    # line -- nothing else has to change, and no file has to be renamed or restaged:
+    #   set anthNH3 = "CEDS_${emissionGrid}_${emissionYear}_nh3_monthly.nc"
+    # It is left inactive deliberately; see the note above the switch.
     breaksw
   case cams-mix:
     set anthBC  = "CAMS-MIX-anth_${emissionGrid}_${emissionYear}_bc_monthly.nc"
