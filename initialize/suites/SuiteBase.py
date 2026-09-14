@@ -190,12 +190,14 @@ from initialize.suites.Cycle import Cycle
 from initialize.suites.GenerateExternalAnalyses import GenerateExternalAnalyses
 from initialize.suites.GenerateObs import GenerateObs
 from initialize.suites.ForecastFromExternalAnalyses import ForecastFromExternalAnalyses
+from initialize.suites.ForecastOnlyCycle import ForecastOnlyCycle
 from initialize.suites.CloudDirectInsertion import CloudDirectInsertion
 from initialize.suites.CloudDirectInsertionCycle import CloudDirectInsertionCycle
 
 suiteDict = {
   'Cycle': Cycle,
   'ForecastFromExternalAnalyses': ForecastFromExternalAnalyses,
+  'ForecastOnlyCycle': ForecastOnlyCycle,
   'GenerateExternalAnalyses': GenerateExternalAnalyses,
   'GenerateObs': GenerateObs,
   'CloudDirectInsertion': CloudDirectInsertion,
