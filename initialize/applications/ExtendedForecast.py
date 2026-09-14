@@ -59,13 +59,11 @@ class ExtendedForecast(Component):
     ## updateSea
     # whether to update surface fields before a forecast (e.g., sst, xice)
     #
-    # Defaults True because that is what actually happened before this option
-    # was honoured on both IC paths: fromInternalAnalysis hard-coded True in the
-    # ArgUpdateSea slot, so every DA-cycling experiment updated the surface
-    # regardless of this setting (issue #24). Keeping the old default of False
-    # while making the option authoritative would have silently switched surface
-    # updates OFF for those runs.
-    'updateSea': [True, bool],
+    # The default is resolved per IC path in __init__ (see 'icType default'
+    # below), because the two paths behaved differently before this option was
+    # honoured on both of them.  This entry only fixes the type; the value here
+    # is never the one that takes effect for an omitted option.
+    'updateSea': [False, bool],
 
     ## updateATMVarsFromCold
     # whether to update the IC atmospheric variables from the cold-start IC
@@ -105,6 +103,18 @@ class ExtendedForecast(Component):
     assert fc.mesh == ic.mesh(), 'ic must be on same mesh as extended forecast'
     assert icType in ['internal','external'], (
      'ExtendedForecast.__init__: incorrect icType => '+icType)
+
+    ####################
+    # icType default: updateSea
+    ####################
+    # fromInternalAnalysis hard-coded True in the ArgUpdateSea slot while
+    # fromExternalAnalysis already passed self['updateSea'], whose default was
+    # False (issue #24).  Honouring the option on both paths must not change
+    # what either path did when the option is omitted, so the effective default
+    # follows the IC path: True for internal (DA-cycling) analyses, False for
+    # external analyses.  An explicit scenario setting always wins.
+    if self._conf.get('updateSea', bool) is None:
+      self._set('updateSea', icType == 'internal')
 
     ###################
     # derived variables
