@@ -36,8 +36,12 @@ model:
   # ensemble that PR #14 recenters on.
   streams variant: cntl
 
-  # Plume rise. 'do bburn prm' is now TRUE by default (initialize/data/Model.py)
-  # and is restated here so the shared baseline is visible rather than implied.
+  # Plume rise. Set HERE rather than as a framework default: the default is global,
+  # so flipping it would switch plume rise on for every existing scenario that
+  # omits the key -- including non-GOCART ones -- and bin/Forecast.csh then runs
+  # PRM validation that requires the four prm_lowbc_* fields with non-zero fire
+  # size. Those runs would fail on staged files that were fine before. Opting in
+  # here gives the campaign one setting without touching anyone else.
   # 'do frp' stays false: plume rise has been exercised with fire AREA, not FRP.
   do bburn prm: true
   do frp: false
@@ -62,6 +66,14 @@ initic:
   # August ChemIC's provenance JSON records the substitution explicitly.
   chemistry mode: prebuilt
   chemistry prebuilt directory: /glade/derecho/scratch/syha/pace_cycling_2024/ChemIC/{{thisValidDate}}
+
+build:
+  # The campaign's fire products cover 1 Jul - 30 Sep 2024, and their filenames say
+  # so. Without this, <period> falls back to the bare year and the workflow looks
+  # for GFAS_x1.163842_2024_bc_hourly.nc while the staged file is
+  # GFAS_x1.163842_20240701-20240930_bc_hourly.nc. Annual products (CEDS, CAMS,
+  # MIXv2, AEIM-INDIA) are unaffected -- they always use the year.
+  emission period: '20240701-20240930'
 
 observations:
   resource: PANDACArchive

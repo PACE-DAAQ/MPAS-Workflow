@@ -328,7 +328,15 @@ sed -i 's@{{PRECISION}}@'${model__precision}'@' ${StreamsFile}
 
 ## resolve the PRM (plume rise model) AREA filename (mesh-tokenized) into the streams file
 set emissionGrid = "x${meshRatio}.${nCells}"
-set prmAreaFile = `echo "${PRMAreaFile}" | sed 's@{{nCells}}@'${nCells}'@' | sed 's@{{year}}@'${emissionYear}'@' | sed 's@{{grid}}@'${emissionGrid}'@'`
+## {{period}} must be resolved HERE, not in SetStreamsVariant.csh: that file is
+## sourced further down, by which point this expansion has already happened and a
+## literal {{period}} would be baked into the filename. Same fallback rule as
+## there -- an unset emission period means the product covers a whole year.
+set emissionPeriod = "${emissionYear}"
+if ( $?EmissionPeriod ) then
+  if ( "$EmissionPeriod" != "" ) set emissionPeriod = "${EmissionPeriod}"
+endif
+set prmAreaFile = `echo "${PRMAreaFile}" | sed 's@{{nCells}}@'${nCells}'@' | sed 's@{{year}}@'${emissionYear}'@' | sed 's@{{period}}@'${emissionPeriod}'@' | sed 's@{{grid}}@'${emissionGrid}'@'`
 sed -i 's@{{prmArea}}@'${prmAreaFile}'@' ${StreamsFile}
 
 ## select GOCART emission inventories (anth/biog/biob) and substitute the {{...}} emission placeholders
