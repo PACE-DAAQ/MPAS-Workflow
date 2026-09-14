@@ -1,0 +1,170 @@
+# ==================================================================================================
+# HOW TO RUN THIS SAFELY  (read before the first command below)
+#
+# Run.py ALWAYS finishes with suite.submit() -> ./submit.csh -> `cylc play`. There is no
+# generate-only mode. initialize/framework/HPC.py defaults CriticalAccount /
+# NonCriticalAccount / SingleProcAccount to NMMM0015, so an unguarded run can submit PBS
+# jobs -- possibly on an allocation that is not yours. "Run it and stop it quickly" races
+# the scheduler and is not safe.
+#
+# Neutralise cylc for the duration instead. submit.csh does `conda activate $CYLC_ENV`,
+# which would otherwise put the real cylc back ahead of the stub, so CYLC_ENV has to point
+# at the stub as well as PATH:
+#
+#   set stub = /glade/derecho/scratch/$USER/cylcstub
+#   mkdir -p $stub/bin
+#   printf '#!/bin/sh\nexit 0\n' > $stub/bin/cylc
+#   chmod +x $stub/bin/cylc
+#   setenv CYLC_ENV "$stub"
+#   setenv PATH "$stub/bin:$PATH"
+#
+# Then run the command in the steps below. Everything this test inspects -- suite.rc /
+# flow.cylc, config/auto/*.csh, the resolved streams and namelist files -- is written
+# BEFORE cylc would have been invoked, so stubbing it costs nothing and no job is ever
+# submitted. No `cylc stop` is needed.
+#
+# Paths below are relative to the root of your MPAS-Workflow checkout; run from there.
+# ==================================================================================================
+# ==================================================================================================
+# PR #28 -- "Add GFAS, GBBEPx and FINN inventory configs for the Jul-Sep 2024 period"
+#           branch config/pacepax-2024-fire-inventories, onto fix/initic-recurrence-emission
+#
+# FEATURE UNDER TEST
+#   PR #28 adds three emission-inventory YAMLs (config/emissions/{gfas,gbbepx,finn}_2024_pacepax.yaml)
+#   and, to make one of them selectable, a new `gbbepx` case in bin/SetStreamsVariant.csh plus the
+#   `biob emissions: gbbepx` option in initialize/data/Model.py / scenarios/defaults/model.yaml.
+#   This scenario proves the selection chain end to end, with no compute-node job:
+#
+#     this file            model: biob emissions: gbbepx
+#       -> initialize/data/Model.py     option accepted (not silently dropped)
+#         -> config/auto/model.csh      setenv biobEmissions "gbbepx"
+#           -> bin/SetStreamsVariant.csh  new `case gbbepx` -> per-species filename table
+#             -> streams.atmosphere     GBBEPx_Glb_2024_MPAS.x1.40962.grid.{bc,oc,nh3,so2,co}.hourly.nc
+#                                       with iso/mnt falling back to FINN, as GBBEPx has neither
+#
+#   and that those resolved names are exactly the names the PR's own
+#   config/emissions/gbbepx_2024_pacepax.yaml promises to write (`outputs: - file:` with
+#   {year}=2024, {grid}=x1.40962, the grid string bin/PrepareEmissions.csh passes as --grid-name).
+#   A mismatch between those two halves of the PR is the failure this test exists to catch: it
+#   would otherwise surface hours later as MPAS aborting on a missing input file.
+#
+#   `streams variant: cntl` is set deliberately: cntl's biomass default is FINN, so seeing GBBEPx
+#   names appear proves the per-dimension override took effect rather than a variant default.
+#
+# NO HPC REQUIRED -- this is a suite-GENERATION + configuration test.
+#   No forecast is scheduled: `extendedforecast: meanTimes`/`ensTimes` are left at their default
+#   (None), so ExtendedForecast contributes no tasks to the cylc graph. Run.py still hands the
+#   suite to cylc at the end; what plays is a handful of no-op placeholder markers that finish in
+#   seconds. Nothing is submitted to PBS, so no `hpc:` account block is needed (and none is
+#   committed here -- add your own locally if you extend this to a real run). Everything you
+#   inspect below is written before cylc is reached.
+#
+# HOW TO RUN  (tcsh, on a Derecho login node; ~1 minute)
+#   cd <your MPAS-Workflow clone, on config/pacepax-2024-fire-inventories>
+#   ./Run.py test/testinput/pr28_fire_inventory_selection.yaml
+#   # Run.py sets CYLC_ENV itself and ends by playing the (no-op) suite; stop it when you like:
+#   cylc stop --kill MPAS-Workflow/${USER}_test_pr28_fire_inventory   # <-- NOT NEEDED with the cylc stub above; left for reference only
+#
+#   setenv EXP /glade/derecho/scratch/${USER}/pandac/${USER}_test_pr28_fire_inventory/MPAS-Workflow
+#
+#   # (A) the selection survived configuration
+#   grep -E 'streamsVariant|Emissions' ${EXP}/config/auto/model.csh
+#
+#   # (B) the selection resolves to real filenames, exactly as bin/Forecast.csh does it
+#   #     (bin/Forecast.csh ~line 330 sources this same script after copying the template)
+#   setenv W /glade/derecho/scratch/${USER}/pr28_streams_check
+#   mkdir -p ${W}
+#   cd ${W}
+#   cp ${EXP}/config/mpas/forecast/streams.atmosphere .
+#   source ${EXP}/config/auto/model.csh       # StreamsFile, streamsVariant, biobEmissions
+#   source ${EXP}/config/auto/build.csh       # PRMAreaFile (optional; resolves {{prmArea}} too)
+#   setenv nCells     $nCellsOuter            # 40962, taken from the generated config
+#   setenv meshRatio  $meshRatioOuter         # 1
+#   setenv thisCycleDate 2024080100           # emissionYear=2024, the period this PR is about
+#   source ${EXP}/bin/SetStreamsVariant.csh
+#   grep -E 'GBBEPx|FINNv2' streams.atmosphere
+#   grep -F -c '{{biob' streams.atmosphere       # must print 0
+#   ls ./FAIL                                 # must NOT exist
+#
+#   # (C) the two halves of the PR agree on the filenames
+#   grep 'file: GBBEPx' ${EXP}/config/emissions/gbbepx_2024_pacepax.yaml
+#
+# PASS / FAIL
+#   (A) ${EXP}/config/auto/model.csh contains, verbatim:
+#           setenv streamsVariant "cntl"
+#           setenv biobEmissions "gbbepx"
+#       FAIL if biobEmissions is empty or absent -- the option never reached the generated config.
+#   (B) sourcing bin/SetStreamsVariant.csh prints
+#           SetStreamsVariant.csh (INFO): emission inventories: anth=cams biog=cams biob=gbbepx (variant=cntl)
+#       and streams.atmosphere then contains these five filename_template values
+#           GBBEPx_Glb_2024_MPAS.x1.40962.grid.bc.hourly.nc    (stream biob_bc_emissions)
+#           GBBEPx_Glb_2024_MPAS.x1.40962.grid.oc.hourly.nc    (stream biob_oc_emissions)
+#           GBBEPx_Glb_2024_MPAS.x1.40962.grid.nh3.hourly.nc   (stream biob_ni_emissions)
+#           GBBEPx_Glb_2024_MPAS.x1.40962.grid.so2.hourly.nc   (stream biob_su_emissions)
+#           GBBEPx_Glb_2024_MPAS.x1.40962.grid.co.hourly.nc    (stream biob_co_emissions)
+#       plus, for iso/mnt (GBBEPx carries neither, so they fall back to FINN by design)
+#           FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.40962.static_hourly_netcdf3.nc
+#       `grep -F -c '{{biob' streams.atmosphere` prints 0 and no ./FAIL file is written.
+#       FAIL if any {{biob...}} placeholder survives (unknown inventory / missing case) or if a
+#       name differs by even one character from the list above.
+#   (C) the five `- file: GBBEPx_Glb_{year}_MPAS.{grid}.grid.<sp>.hourly.nc` lines in
+#       config/emissions/gbbepx_2024_pacepax.yaml, with {year}=2024 and {grid}=x1.40962, must be
+#       character-identical to the five names from (B). FAIL on any difference: the processor would
+#       then write files the forecast never opens.
+#   Negative control (1 minute, optional): delete the `biob emissions: gbbepx` line, re-run Run.py
+#       and repeat (B). Every biob stream must come back as the FINN file -- that is the cntl
+#       variant default, and it is what proves the single key under test is what changed the answer.
+#   Extra, free (optional): repeat (B) with `setenv biobEmissions gfas` after sourcing model.csh to
+#       see the pre-existing GFAS branch resolve GFAS_Glb_2024_MPAS.x1.40962.grid.*.hourly.nc
+#       (7 species, no FINN fallback) -- the contract gfas_2024_pacepax.yaml writes against.
+#
+# WHAT THIS DOES NOT TEST
+#   * it does not run tools/mpas_emissions, so no GFAS/GBBEPx/FINN product is actually generated or
+#     validated (that needs a PrepareEmissions job, ADS credentials and hours);
+#   * GBBEPx has no workflow product at all: `gbbepx` is absent from the `foreach inv ( ceds gfas
+#     qfed )` loop in bin/PrepareEmissions.csh and there is no `gbbepx config` key in
+#     initialize/data/Emissions.py, so gbbepx_2024_pacepax.yaml is reachable only through the
+#     standalone tools/mpas_emissions CLI;
+#   * no GBBEPx_Glb_*.nc product exists anywhere on disk yet (the campaign emission directory holds
+#     only x1.163842 CAMS/CEDS/FINN/GFAS/QFED), so a real forecast with this setting would fail on a
+#     missing input -- expected, and outside what this test claims.
+# ==================================================================================================
+
+suite: ForecastFromExternalAnalyses
+
+experiment:
+  # MUST stay unique: Run.py does `rm -rf <mainScriptDir>` for whatever name it is given.
+  name: 'test_pr28_fire_inventory'
+
+members:
+  # ForecastFromExternalAnalyses indexes the external IC per member; n must be set (an unset n
+  # means 0 members and the suite fails to build). The feature is not per-member, so 1.
+  n: 1
+
+model:
+  # Smallest available mesh. The inventory tables in bin/SetStreamsVariant.csh are templated on
+  # x{meshRatio}.{nCells}, so 120km (x1.40962) exercises them exactly as 60km would.
+  outerMesh: 120km
+
+  # Explicit control combination. cntl's biomass default is FINN, so the GBBEPx filenames that
+  # appear below can only have come from the per-dimension override on the next line.
+  streams variant: cntl
+
+  # THE FEATURE UNDER TEST: the new biomass-burning inventory added by this PR.
+  biob emissions: gbbepx
+
+externalanalyses:
+  # Pre-staged campaign ICs, so the generated suite contains no download/ungrib tasks.
+  # Nothing is linked or read here -- no forecast is scheduled (see the header).
+  resource: "GFS.PANDAC"
+
+observations:
+  # Required by the Observations component even though nothing is verified here.
+  resource: PANDACArchive
+
+workflow:
+  # One cycle point inside the PR's own Jul-Sep 2024 window, so the year the filename tables
+  # resolve (emissionYear, from thisCycleDate) is the 2024 these inventory configs are built for.
+  first cycle point: 20240801T00
+  final cycle point: 20240801T00
+  max active cycle points: 1

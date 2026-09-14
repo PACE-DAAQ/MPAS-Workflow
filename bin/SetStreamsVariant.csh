@@ -184,15 +184,6 @@ switch ($vBiob)
     set biobISO = "$FINN"
     set biobMNT = "$FINN"
     breaksw
-  case gbbepx:
-    set biobBC  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.bc.hourly.nc"
-    set biobOC  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.oc.hourly.nc"
-    set biobNH3 = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.nh3.hourly.nc"
-    set biobSO2 = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.so2.hourly.nc"
-    set biobCO  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.co.hourly.nc"
-    set biobISO = "$FINN"
-    set biobMNT = "$FINN"
-    breaksw
   default:
     echo "ERROR in SetStreamsVariant.csh : unknown biob emissions '$vBiob'" > ./FAIL
     exit 1
