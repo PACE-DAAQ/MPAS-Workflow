@@ -46,6 +46,10 @@ source config/auto/experiment.csh
 source config/auto/externalanalyses.csh
 source config/auto/model.csh
 source config/auto/invariantstream.csh
+source config/auto/initic.csh
+# Only the Cycle suite instantiates the Emissions component, so this file may not
+# exist. Sourcing a missing file is fatal in csh and exits before ./FAIL is written.
+if ( -e config/auto/emissions.csh ) source config/auto/emissions.csh
 source config/tools.csh
 set yymmdd = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 1-8`
 set hh = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 10-11`
@@ -116,7 +120,12 @@ endif
 ## a chemistry cold start; fail here with an actionable message instead.
 if ( $?initicChemistryMode ) then
   if ( "${initicChemistryMode}" != "off" ) then
-    ncdump -h "${thisInvariantFile}" | grep -q 'nDustErosionDim'
+    # Do NOT use 'grep -q' here: it exits on the first match and closes the pipe
+    # while ncdump is still writing the (2000+ line) header, so ncdump dies on
+    # SIGPIPE and csh reports $status 141 for the pipeline even though the match
+    # succeeded -- rejecting every invariant file, valid ones included. Letting
+    # grep drain the pipe and discarding its output keeps $status meaningful.
+    ncdump -h "${thisInvariantFile}" | grep 'nDustErosionDim' > /dev/null
     if ( $status != 0 ) then
       echo "ERROR ${0}: initic chemistry mode is '${initicChemistryMode}' but the invariant file has no GOCART2G static dust fields (nDustErosionDim/erod): ${thisInvariantFile}" > ./FAIL
       echo "  regenerate the invariant with a GOCART2G init_atmosphere, or set 'initic: chemistry mode: off'" >> ./FAIL
@@ -131,16 +140,88 @@ foreach fileGlob ($MPASLookupFileGlobs)
   ln -sfv ${MPASLookupDir}/*${fileGlob} .
 end
 
+# MERRA chemistry intermediates separately and reuses the configured emission
+# file families.  This cold-start conversion is shared across ensemble members;
+# member-specific emission variants are selected later by Forecast.csh.
+set initTemplate = ${StreamsFileInit}
+set nmlTemplate = ${NamelistFileInit}
+if ( "${initicChemistryMode}" != "off" ) then
+  if ( "${initicChemistryMode}" == "workflow" ) then
+    set chemDir = ${ExperimentDirectory}/`echo "${initicChemistryWorkDir}" | sed 's@{{thisValidDate}}@'${thisValidDate}'@'`
+  else
+    set chemDir = `echo "${initicChemistryPrebuiltDir}" | sed 's@{{thisValidDate}}@'${thisValidDate}'@'`
+  endif
+  if ( ! -d "${chemDir}" ) then
+    echo "ERROR ${0}: chemistry intermediate directory not found: ${chemDir}" > ./FAIL
+    exit 1
+  endif
+  set chemInput = "${chemDir}/MERRA2:`echo ${thisMPASNamelistDate} | cut -c 1-13`"
+  if ( ! -s "${chemInput}" ) then
+    echo "ERROR ${0}: chemistry intermediate missing or empty: ${chemInput}" > ./FAIL
+    exit 1
+  endif
+  ln -sfv ${chemDir}/MERRA2:* ./
+
+  if ( "${initicChemistryBackgroundDir}" != "" ) then
+    set chemBgDir = "${initicChemistryBackgroundDir}"
+  else
+    set chemBgDir = "${BackgroundLUTDir}"
+  endif
+  if ( ! -d "${chemBgDir}" ) then
+    echo "ERROR ${0}: chemistry background directory not found: ${chemBgDir}" > ./FAIL
+    exit 1
+  endif
+  foreach backgroundFile (BACKGROUND_ptrop.dat BACKGROUND_dms.dat BACKGROUND_sulf.dat)
+    if ( ! -s "${chemBgDir}/${backgroundFile}" ) then
+      echo "ERROR ${0}: required chemistry background missing or empty: ${chemBgDir}/${backgroundFile}" > ./FAIL
+      exit 1
+    endif
+  end
+  ln -sfv ${chemBgDir}/* ./
+
+  if ( "${initicEmissionMode}" == "workflow" ) then
+    set initEmissionDir = "${ExperimentDirectory}/${initicEmissionWorkDir}"
+  else
+    set initEmissionDir = "${EmissionDir}"
+  endif
+  if ( ! -d "${initEmissionDir}" ) then
+    echo "ERROR ${0}: emissions directory not found: ${initEmissionDir}" > ./FAIL
+    exit 1
+  endif
+  ln -sfv ${initEmissionDir}/* ./
+  set initTemplate = ${StreamsFileInit}.gocart2g
+  set nmlTemplate = ${NamelistFileInit}.gocart2g
+endif
+
 ## copy/modify dynamic streams file
 rm ${StreamsFileInit}
-cp -v $ModelConfigDir/initic/${StreamsFileInit} .
+cp -v $ModelConfigDir/initic/${initTemplate} ${StreamsFileInit}
 sed -i 's@{{nCells}}@'${ArgNCells}'@' ${StreamsFileInit}
 sed -i 's@{{PRECISION}}@'${model__precision}'@' ${StreamsFileInit}
 sed -i 's@{{meshRatio}}@'${ArgRatio}'@' ${StreamsFileInit}
 
+# Substitute only after copying the selected template. Initialization uses the
+# scenario-wide inventory; per-member variants are applied by Forecast.csh.
+if ( "${initicChemistryMode}" != "off" ) then
+  set saveStreamsFile = "${StreamsFile}"
+  setenv StreamsFile ${StreamsFileInit}
+  source ${mainScriptDir}/bin/SetStreamsVariant.csh
+  set variantStatus = $status
+  setenv StreamsFile "${saveStreamsFile}"
+  if ( $variantStatus != 0 || -e ./FAIL ) then
+    echo "ERROR ${0}: emission filename resolution failed" > ./FAIL
+    exit 1
+  endif
+  grep -q '{{' ${StreamsFileInit}
+  if ( $status == 0 ) then
+    echo "ERROR ${0}: unresolved placeholder in ${StreamsFileInit}" > ./FAIL
+    exit 1
+  endif
+endif
+
 ## copy/modify dynamic namelist
 rm ${NamelistFileInit}
-cp -v $ModelConfigDir/initic/${NamelistFileInit} .
+cp -v $ModelConfigDir/initic/${nmlTemplate} ${NamelistFileInit}
 sed -i 's@startTime@'${thisMPASNamelistDate}'@' $NamelistFileInit
 sed -i 's@nCells@'${ArgNCells}'@' $NamelistFileInit
 sed -i 's@{{meshRatio}}@'${ArgRatio}'@' $NamelistFileInit

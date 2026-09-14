@@ -87,7 +87,11 @@ echo "SetStreamsVariant.csh (INFO): emission inventories: anth=$vAnth biog=$vBio
 # --------------------------------------------------------------------------------------------------
 # (3) inventory -> per-species filenames                                  [EDIT HERE to add inventories]
 # --------------------------------------------------------------------------------------------------
-# (3a) anthropogenic (only BC/OC/SO2/CO vary; NH3/ISO/MNT stay CAMS, hardcoded in the template)
+# (3a) anthropogenic (only BC/OC/SO2/CO vary; NH3/ISO/MNT stay CAMS)
+# The initialization template uses placeholders for these fixed CAMS fields too.
+set anthNH3 = "x1.163842-2024-anth_ammonia.MPAS.nc"
+set anthISO = "x1.163842-2024-anth_isoprene.MPAS.nc"
+set anthMNT = "x1.163842-2024-anth_monoterpenes.MPAS.nc"
 switch ($vAnth)
   case cams:
     set anthBC  = "x1.163842-2024-anth_black-carbon.MPAS.nc"
@@ -158,6 +162,9 @@ endsw
 # --------------------------------------------------------------------------------------------------
 # (4) substitute placeholders in ${StreamsFile}
 # --------------------------------------------------------------------------------------------------
+sed -i 's@{{anthNH3}}@'"$anthNH3"'@' ${StreamsFile}
+sed -i 's@{{anthISO}}@'"$anthISO"'@' ${StreamsFile}
+sed -i 's@{{anthMNT}}@'"$anthMNT"'@' ${StreamsFile}
 sed -i 's@{{anthBC}}@'"$anthBC"'@'     ${StreamsFile}
 sed -i 's@{{anthOC}}@'"$anthOC"'@'     ${StreamsFile}
 sed -i 's@{{anthSO2}}@'"$anthSO2"'@'   ${StreamsFile}
