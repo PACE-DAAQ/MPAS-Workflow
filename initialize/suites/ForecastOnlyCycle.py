@@ -7,6 +7,10 @@
  which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 '''
 
+import datetime as dt
+
+import tools.dateFormats as dtf
+
 from initialize.applications.ExtendedForecast import ExtendedForecast
 from initialize.applications.Forecast import Forecast
 from initialize.applications.InitIC import InitIC
@@ -144,13 +148,12 @@ class ForecastOnlyCycle(SuiteBase):
     # task instance with no definition at that point is dropped, not held -- and
     # the forecast then aborts under MPI on an IC that was never written.
     #
-    # LIMITATION: this is unconditional, including for a restart run. When
-    # 'restart cycle point' is later than the first cycle point, Workflow starts
-    # ForecastTimes at the restart point and CyclingFC/{{prevCycleDate}} does
-    # exist there, so the first extended forecast would be valid and is dropped
-    # anyway -- costing one sample, or the only one for a single-point restart.
-    # Making the exclusion conditional on not-a-restart is the right fix and needs
-    # the restart semantics checked against Workflow first.
+    # A restart run is the exception and is exempted below. When 'restart cycle
+    # point' is later than the first cycle point, SuiteBase sets the suite's
+    # initial cycle point ('^') to the restart point, and Workflow requires
+    # CyclingFC output from the cycle before it, so CyclingFC/{{prevCycleDate}}
+    # does exist at '^' and the first extended forecast is valid. Excluding it
+    # there would cost a sample -- the only one, for a single-point restart.
     #
     # Expressed as a cylc exclusion rather than an offset start: '^' is the
     # initial cycle point, so 'T00!^' keeps the daily-at-00Z meaning intact and
@@ -161,10 +164,14 @@ class ForecastOnlyCycle(SuiteBase):
     #
     # Consequence for planning: on a 31-day window at T00 this yields 30
     # samples, the first on day 2.
-    for key in ['meanTimes', 'ensTimes']:
-      times = conf.get('extendedforecast.'+key)
-      if times is not None and '!' not in times:
-        self.c['extendedforecast']._set(key, times+'!^')
+    wf = self.c['workflow']
+    isRestart = (dt.datetime.strptime(wf['restart cycle point'], dtf.abbrevISO8601Fmt)
+                 > dt.datetime.strptime(wf['first cycle point'], dtf.abbrevISO8601Fmt))
+    if not isRestart:
+      for key in ['meanTimes', 'ensTimes']:
+        times = conf.get('extendedforecast.'+key)
+        if times is not None and '!' not in times:
+          self.c['extendedforecast']._set(key, times+'!^')
 
     meshTitle = 'O'+meshes['Outer'].name
     if meshes['Inner'].name != meshes['Outer'].name:
