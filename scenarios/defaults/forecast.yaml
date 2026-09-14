@@ -7,8 +7,22 @@ forecast:
       baseSeconds: 60
       secondsPerForecastHR: 500
 
-      # cylc retry string
-      retry: '0*PT30S'
+      # cylc retry string.
+      #
+      # Two retries, not zero. These are the longest and most node-exposed tasks
+      # in the workflow -- a 48 h sample forecast runs ~29 min across 256 ranks --
+      # so they are the ones most likely to be caught by a transient node or
+      # interconnect problem. With no retry a single such failure stalls the graph,
+      # and the stall timer then shuts the scheduler down, which cost ~8.5 h of a
+      # 30-sample campaign on 2026-09-13 (ExtendedMeanFC at 20240708T00 died after
+      # 6.8 min of a 49 min limit using 270 of 470 GB, one rank exiting 1 with no
+      # error in the model log -- nothing deterministic).
+      #
+      # A genuine model failure still fails, just four minutes later. The backoff
+      # is PT2M rather than PT30S so a retry is less likely to land back on a node
+      # that is still unhealthy. enkf and rtpp already retry; forecasts were the
+      # outlier.
+      retry: '2*PT2M'
 
     #{{outerMesh}}:
     #  baseSeconds: int
