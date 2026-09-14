@@ -1,0 +1,196 @@
+# ==================================================================================================
+# HOW TO RUN THIS SAFELY  (read before the first command below)
+#
+# Run.py ALWAYS finishes with suite.submit() -> ./submit.csh -> `cylc play`. There is no
+# generate-only mode. initialize/framework/HPC.py defaults CriticalAccount /
+# NonCriticalAccount / SingleProcAccount to NMMM0015, so an unguarded run can submit PBS
+# jobs -- possibly on an allocation that is not yours. "Run it and stop it quickly" races
+# the scheduler and is not safe.
+#
+# Neutralise cylc for the duration instead. submit.csh does `conda activate $CYLC_ENV`,
+# which would otherwise put the real cylc back ahead of the stub, so CYLC_ENV has to point
+# at the stub as well as PATH:
+#
+#   set stub = /glade/derecho/scratch/$USER/cylcstub
+#   mkdir -p $stub/bin
+#   printf '#!/bin/sh\nexit 0\n' > $stub/bin/cylc
+#   chmod +x $stub/bin/cylc
+#   setenv CYLC_ENV "$stub"
+#   setenv PATH "$stub/bin:$PATH"
+#
+# Then run the command in the steps below. Everything this test inspects -- suite.rc /
+# flow.cylc, config/auto/*.csh, the resolved streams and namelist files -- is written
+# BEFORE cylc would have been invoked, so stubbing it costs nothing and no job is ever
+# submitted. No `cylc stop` is needed.
+#
+# Paths below are relative to the root of your MPAS-Workflow checkout; run from there.
+# ==================================================================================================
+# ==================================================================================================
+# PR #29 -- "Give every emission file one filename rule"
+#   branch feature/unified-emission-filenames, based on config/pacepax-2024-fire-inventories
+#
+# FEATURE UNDER TEST ------------------------------------------------------------------------------
+#   Every emission product now follows ONE filename rule:
+#
+#       <inventory>_<mesh>_<period>_<species>_<frequency>.nc
+#
+#   <period> is the 4-digit YEAR for annual products (CAMS anth/biog, CAMS-MIX, CEDS) and a
+#   YYYYMMDD-YYYYMMDD WINDOW for campaign fire products (GFAS, QFED, GBBEPx, FINN, FINN PRM).
+#   Three independently maintained sides have to agree on that name:
+#     producer  config/emissions/*.yaml and
+#               tools/mpas_emissions/{cams_regrid,finn_cli,regular_inventory}.py
+#     consumer  bin/SetStreamsVariant.csh  (+ the {{period}} expansion added to bin/Forecast.csh)
+#     plumbing  initialize/framework/Build.py -- the new 'emission period' key, exported as
+#               $EmissionPeriod, and the new 'prm area file' default
+#               FINN_{{grid}}_{{period}}_firesize_daily.nc
+#   A rename on one side alone is silent until MPAS aborts with "file not in run directory",
+#   inside a batch job, after the IC has been read. The PR also adds a guard for that (section (5)
+#   of bin/SetStreamsVariant.csh), swaps cntl/pert01 so the control is cams/cams/GFAS, and keeps
+#   the framework default 'do bburn prm' FALSE.
+#
+# NO HPC, NO PBS, NO CYLC. This PR changes filename construction in suite generation and in one
+# csh script, not model physics. So the test generates the experiment configuration and then
+# resolves the forecast streams file on a login node for all nine variants plus the GBBEPx
+# override, and reads the filenames back. ~30 s. Every task component below carries
+# `execute: False`, so even a full ./Run.py puts no forecast/init/DA task into the cylc graph.
+#
+# HOW TO RUN --------------------------------------------------------------------------------------
+# From the root of a checkout of feature/unified-emission-filenames, in tcsh. (The steps below are
+# also in the PR-test how_to_run text, ready to paste; strip the leading "#   " if copying here.)
+#
+#   [1] module load conda/latest ; conda activate npl
+#       setenv W `pwd` ; setenv T /glade/derecho/scratch/$USER/pr29 ; mkdir -p $T
+#       python3 -c "from initialize.config.Scenario import Scenario; from initialize.suites.SuiteBase import SuiteLookup; s=Scenario('test/testinput/pr29_unified_emission_filenames.yaml',None,None); s.initialize(); SuiteLookup(s.getConfig().getOrDefault('suite','Cycle'), s.getConfig())"
+#       grep -E 'EmissionPeriod|PRMAreaFile|EmissionDir' config/auto/build.csh
+#       grep -E 'streamsVariant|doBburnPrm|PhysicsSuiteOuter' config/auto/model.csh
+#       ^ this is ./Run.py minus suite.submit(): it writes config/auto/*.csh and plays no suite.
+#         It deletes and recreates only .../pandac/${USER}_test_pr29_UnifiedEmissionFilenames.
+#
+#   [2] source config/auto/model.csh ; source config/auto/build.csh
+#       setenv nCells $nCellsOuter ; setenv meshRatio $meshRatioOuter
+#       setenv PhysicsSuite $PhysicsSuiteOuter ; setenv StreamsFile streams.atmosphere
+#       setenv thisCycleDate 2024080100
+#       foreach v ( cntl pert01 pert02 pert03 pert04 pert05 pert06 pert07 pert08 gbbepx )
+#         ... resolve + validate_streams --list-only, one directory per combination ...
+#       end
+#       ^ exactly what bin/Forecast.csh does around bin/SetStreamsVariant.csh, minus the model run.
+#
+#   [3] compare the resolved names against what the PRODUCERS write (config/emissions/*.yaml,
+#       cams_regrid._safe_output_file, finn_cli._format_output) -- the mismatch this PR is about.
+#
+#   [4] re-run [2] against a directory of touched stubs named from [2] to see the new guard pass.
+#
+# PASS / FAIL -- exactly what to look at ----------------------------------------------------------
+#   [1] config/auto/build.csh must contain
+#           setenv EmissionPeriod "20240701-20240930"
+#           setenv PRMAreaFile "FINN_{{grid}}_{{period}}_firesize_daily.nc"
+#       and config/auto/model.csh must contain
+#           setenv streamsVariant "cntl"    and    setenv doBburnPrm "False"
+#       The first two are the new Build.py plumbing. doBburnPrm "False" confirms the framework
+#       default did NOT flip -- the PACE-DAAQ opt-in lives in scenarios/PACE-DAAQ_GOCART2G_shared.yaml.
+#   [2] Ten "emission inventories:" lines. cntl must read  anth=cams biog=cams biob=gfas  (the
+#       cntl/pert01 swap: GFAS is now the control) and pert01 must read biob=finn.
+#       Across the ten resolved streams.atmosphere files: 0 occurrences of '{{' (nothing left
+#       unresolved), 40 distinct filenames, and every one matching
+#         ^[A-Za-z0-9.-]+_x[0-9]+\.[0-9]+_([0-9]{4}|[0-9]{8}-[0-9]{8})_[a-z0-9]+_(monthly|hourly|daily)\.nc$
+#       Check the split by eye: GFAS/QFED/GBBEPx/FINN carry 20240701-20240930 while
+#       CAMS-anth/CAMS-biog/CAMS-MIX-anth/CEDS carry 2024 -- both from the same cycle date.
+#   [3] The producer/consumer comparison must list NOTHING: every filename the streams files ask
+#       for is a filename some producer writes.
+#   [4] Against the stub directory all ten runs print EXIT=0. Against the real EmissionDir all ten
+#       print EXIT=1 and the log names the 19 missing files and ends with
+#           a mismatch usually means <period> disagrees (emission period = '20240701-20240930').
+#       That EXIT=1 is EXPECTED and is not a defect in this PR:
+#       /glade/campaign/ncar/nmmm0081/input/mpas/emissions/all still holds only legacy names
+#       (GFAS_Glb_2024_MPAS.x1.163842.grid.bc.hourly.nc, ...); nothing has been re-staged under the
+#       new rule yet. The guard firing with a readable message IS the new behaviour working.
+#
+# CLEANUP:  rm -f config/auto/*.csh        (gitignored; ./Run.py deletes them itself)
+#           rm -rf /glade/derecho/scratch/$USER/pandac/${USER}_test_pr29_UnifiedEmissionFilenames
+#           rm -rf /glade/derecho/scratch/$USER/pr29 /glade/derecho/scratch/$USER/pr29stub
+#
+# No `hpc:` block and no PBS account on purpose: nothing here is submitted, and accounts are
+# user-specific. Add your own in a local copy if you want to take this further and run a forecast.
+# ==================================================================================================
+
+# Pure forecast-from-external-analysis suite: the lightest suite that still builds the Build and
+# Model components (where the emission filename configuration lives) plus a forecast streams file.
+suite: ForecastFromExternalAnalyses
+
+experiment:
+  # MUST stay unique and obviously a test: suite generation does
+  # `rm -rf <ExperimentDirectory>/MPAS-Workflow` on whatever name is given here.
+  name: 'test_pr29_UnifiedEmissionFilenames'
+
+workflow:
+  # One cycle point is enough: filenames are built per forecast task from the cycle date, and
+  # nothing in the rule is cycle-to-cycle. August 2024 is deliberate -- it sits INSIDE the
+  # 1 Jul - 30 Sep fire window, so from a single cycle date the annual products must resolve to
+  # 2024 while the fire products resolve to 20240701-20240930. That contrast is the whole point.
+  first cycle point: 20240801T00
+  final cycle point: 20240801T00
+  max active cycle points: 1
+
+members:
+  # The filename rule is not per-member, and 'member variants' is untouched by this PR.
+  n: 1
+
+model:
+  # 60km, not 120km: 60km is the only mesh resource whose PhysicsSuite is MPAS-GOCART2G, and the
+  # new missing-file guard (bin/SetStreamsVariant.csh section (5)) is gated on exactly that. On
+  # 120km (mesoscale_reference) the guard is skipped and part of the PR would go untested. 60km
+  # also gives the mesh token x1.163842 that every staged emission product actually uses.
+  outerMesh: 60km
+
+  # The control combination. PR #29 swaps cntl and pert01, so this must now resolve to
+  # anth=cams biog=cams biob=gfas. It is also the default; set explicitly so the expected INFO
+  # line is readable from this file without the diff.
+  streams variant: cntl
+
+  # Deliberately NOT set here:
+  #  * 'do bburn prm' -- the PR's final state keeps the framework default False and moves the
+  #    PACE-DAAQ opt-in into scenarios/PACE-DAAQ_GOCART2G_shared.yaml. Setting it here would hide
+  #    the thing worth checking; expect doBburnPrm "False" in config/auto/model.csh.
+  #  * 'anth/biob/biog emissions' -- these override the variant UNCONDITIONALLY and would collapse
+  #    all ten combinations onto one inventory. The GBBEPx case uses 'biob emissions' on purpose,
+  #    from the resolver loop in step [2], because no variant selects gbbepx.
+
+build:
+  # THE NEW KEY this PR adds (initialize/framework/Build.py -> $EmissionPeriod, consumed by
+  # bin/SetStreamsVariant.csh and bin/Forecast.csh). Without it <period> falls back to the bare
+  # year and the workflow looks for GFAS_x1.163842_2024_bc_hourly.nc while the campaign file is
+  # GFAS_x1.163842_20240701-20240930_bc_hourly.nc. Annual products ignore it and keep the year.
+  emission period: '20240701-20240930'
+
+  # Deliberately NOT set: 'prm area file' and 'gocart emission directory'. The new PRM default
+  # (FINN_{{grid}}_{{period}}_firesize_daily.nc, replacing a name that hard-coded both 2024 and an
+  # x1 mesh) and the campaign-wide read-only EmissionDir are things the reviewer should see as the
+  # code leaves them, not as this file dictates.
+
+externalanalyses:
+  # Required key. GFS.PANDAC is the pre-staged link path, which also makes InitIC emit no tasks at
+  # all (ExternalAnalysisToMPAS is absent from its PrepareExternalAnalysisTasks list). Nothing in
+  # this test reads an IC; the resource only has to resolve.
+  resource: "GFS.PANDAC"
+  execute: False
+
+observations:
+  # Required key. No observations are fetched or used; execute: False keeps GetObs out of the graph.
+  resource: PANDACArchive
+  execute: False
+
+initic:
+  # No meteorology or chemistry IC is built. 'chemistry mode' stays at its default 'off'.
+  execute: False
+
+extendedforecast:
+  # This is what keeps every batch forecast task out of the cylc graph.
+  execute: False
+  # meanTimes is set ONLY so the graph is non-empty if someone runs the full ./Run.py; with
+  # execute: False the family's Exec phase is dropped and ExtendedMeanFC is never scheduled.
+  # lengthHR is a floor rather than the 240 h default, in case a reviewer later flips execute.
+  meanTimes: T00
+  lengthHR: 6
+  # Required: 'post' defaults to ['verifyobs','verifymodel'], and with meanTimes set that expands
+  # the per-lead-time analysis/obs conversions -- tasks that cannot succeed here and only add noise.
+  post: []

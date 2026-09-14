@@ -71,13 +71,30 @@ class Build(Component):
     'gocart optics directory':
       ['/glade/campaign/ncar/nmmm0081/input/mpas/optics/latest', str],
 
+    ## emission period
+    # Period token used in unified emission filenames for WINDOWED products --
+    # the fire inventories, which cover a campaign window rather than a calendar
+    # year. Annual products (anthropogenic, biogenic) always use the 4-digit year
+    # instead, because that is what they actually contain. Leave unset and
+    # windowed products fall back to the year too, which is correct for an
+    # inventory genuinely processed for a whole year.
+    # Format: YYYYMMDD-YYYYMMDD, e.g. '20240701-20240930'.
+    'emission period':
+      ['', str],
+
     ## PRM (plume rise model) static input
     # directory holding the biomass-burning AREA file linked into every gocart forecast
     'prm area directory':
       ['/glade/campaign/ncar/nmmm0081/input/mpas/emissions/PRM', str],
-    # AREA filename; '{{nCells}}' is resolved to the mesh nCells at run time in bin/Forecast.csh
+    # AREA filename, following the unified emission rule
+    # (<inventory>_<mesh>_<period>_<species>_<frequency>.nc). '{{grid}}',
+    # '{{year}}', '{{period}}' and '{{nCells}}' are resolved at run time in
+    # bin/SetStreamsVariant.csh; '{{period}}' comes from 'emission period' above
+    # and falls back to the year when that is unset. The previous default
+    # hard-coded both the year and the mesh prefix, which silently pinned every
+    # experiment to 2024 and an x1 mesh.
     'prm area file':
-      ['FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.{{nCells}}.static_daily_oct01-nov30.nc', str],
+      ['FINN_{{grid}}_{{period}}_firesize_daily.nc', str],
   }
 
   def __init__(self, config:Config, model:Model=None):
@@ -305,6 +322,7 @@ class Build(Component):
 
     # gocartMPAS (resolution-/time-dependent — override per scenario YAML if needed)
     self._set('EmissionDir', self['gocart emission directory'])
+    self._set('EmissionPeriod', self['emission period'])
     self._set('BackgroundLUTDir', self['gocart background lut directory'])
     self._set('OpticsDir', self['gocart optics directory'])
 
