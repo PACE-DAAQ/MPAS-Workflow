@@ -1,0 +1,195 @@
+# ==================================================================================================
+# HOW TO RUN THIS SAFELY  (read before the first command below)
+#
+# Run.py ALWAYS finishes with suite.submit() -> ./submit.csh -> `cylc play`. There is no
+# generate-only mode. initialize/framework/HPC.py defaults CriticalAccount /
+# NonCriticalAccount / SingleProcAccount to NMMM0015, so an unguarded run can submit PBS
+# jobs -- possibly on an allocation that is not yours. "Run it and stop it quickly" races
+# the scheduler and is not safe.
+#
+# Neutralise cylc for the duration instead. submit.csh does `conda activate $CYLC_ENV`,
+# which would otherwise put the real cylc back ahead of the stub, so CYLC_ENV has to point
+# at the stub as well as PATH:
+#
+#   set stub = /glade/derecho/scratch/$USER/cylcstub
+#   mkdir -p $stub/bin
+#   printf '#!/bin/sh\nexit 0\n' > $stub/bin/cylc
+#   chmod +x $stub/bin/cylc
+#   setenv CYLC_ENV "$stub"
+#   setenv PATH "$stub/bin:$PATH"
+#
+# Then run the command in the steps below. Everything this test inspects -- suite.rc /
+# flow.cylc, config/auto/*.csh, the resolved streams and namelist files -- is written
+# BEFORE cylc would have been invoked, so stubbing it costs nothing and no job is ever
+# submitted. No `cylc stop` is needed.
+#
+# Paths below are relative to the root of your MPAS-Workflow checkout; run from there.
+# ==================================================================================================
+# =============================================================================
+# PR #21 -- "Carry GOCART2G chemistry across cycles and schedule emissions for
+#            the cold start"  (feature/gocart2g-cycling-state, based on
+#            feature/prm-plume-rise)
+#
+# WHAT THIS SCENARIO TESTS
+#   The PR touches four things.  Three of them are decided at suite-GENERATION
+#   time or are static config that Run.py stages into the experiment, so they
+#   can all be checked by generating the suite and reading files -- no model
+#   run, no PBS job:
+#
+#     1. initialize/data/FirstBackground.py -- a NEW R1 graph edge
+#          PrepareEmissions => ColdForecast
+#        that only appears when (a) the suite cold-starts (firstbackground
+#        resource ForecastFromAnalysis, which puts ColdForecast in
+#        PrepareFirstBackgroundOuter) AND (b) emissions.mode == workflow, which
+#        is what makes Emissions.ready non-None.  This scenario sets exactly
+#        those two conditions, which is why it is the one part of the PR that a
+#        scenario file can actually switch on or off.
+#     2. config/mpas/forecast/stream_list.atmosphere.dastate -- persistent_hno3
+#        added, so the field survives the DA cycle in the dastate stream.
+#     3. config/mpas/keptvars.yaml -- 11 GOCART2G chemistry fields added so they
+#        are not deallocated when "deallocate non-da fields: true".
+#     4. tools/copy_mpas_vars.py -- adds qmsa + persistent_hno3, drops
+#        background_hno3, and adds a fatal missing-in-destination check plus a
+#        non-fatal missing-in-source warning.
+#
+#   forecast.updateATMVarsFromCold: True below is what causes bin/Forecast.csh
+#   to invoke copy_mpas_vars.py at all, so it is also the flag that makes item 4
+#   part of this experiment rather than dead code.
+#
+# HOW TO RUN  (derecho login node, ~1 minute, no reservation needed)
+#   cd <your checkout of feature/gocart2g-cycling-state>
+#   source env-setup/machine.csh          # or machine.sh for bash/zsh
+#   # supply YOUR OWN account -- deliberately not in this file:
+#   #   add an  hpc: {CriticalAccount: <acct>, NonCriticalAccount: <acct>,
+#   #                 SingleProcAccount: <acct>}  block locally, or edit a copy
+#   ./Run.py test/testinput/pr21_gocart2g_cycling_state.yaml
+#
+#   Run.py always ends by calling ./submit.csh, which runs "cylc play".  The
+#   file you want (./flow.cylc) is written BEFORE that, so stop the suite as
+#   soon as Run.py returns -- nothing needs to execute for this test:
+#   cylc stop --kill MPAS-Workflow/${USER}_test_pr21_gocart2g_cycling_state   # <-- NOT NEEDED with the cylc stub above; left for reference only
+#
+# WHAT TO LOOK AT  (pass/fail)
+#   A. grep -n 'PrepareEmissions => ColdForecast' ./flow.cylc
+#      PASS: exactly one hit, inside the  R1 = """ ... """  block, reading
+#            PrepareEmissions => ColdForecast:succeed-all => ForecastFinished__
+#      On the base branch (feature/prm-plume-rise) this grep returns nothing --
+#      that is the regression this PR fixes ("ln: No match." then MPAS aborting
+#      on the emission streams during the cold forecast).
+#   B. grep -n 'bin/Forecast.csh' ./flow.cylc
+#      PASS: the [[Forecast1]] line (every-cycle) ends with  "True" "none"
+#            -- arg 12 is updateATMVarsFromCold, so copy_mpas_vars.py runs;
+#            the [[ColdForecast1]] line has only 11 args and no "True"
+#            -- correct: at the cold start there is no previous cycle to carry
+#            chemistry from.
+#   C. grep -n persistent_hno3 \
+#        /glade/derecho/scratch/$USER/pandac/${USER}_test_pr21_gocart2g_cycling_state/MPAS-Workflow/config/mpas/forecast/stream_list.atmosphere.dastate
+#      PASS: present (line 2).
+#      REVIEW QUESTION, please decide before approving: it was added to the BASE
+#      list, which bin/Forecast.csh copies for every PhysicsSuite, not to
+#      stream_list.atmosphere.dastate.gocart2G (which today holds only totPM25
+#      and is appended only when PhysicsSuite == MPAS-GOCART2G).  The comment at
+#      bin/Forecast.csh:259-263 says a Registry-undefined name is fatal to
+#      xml_stream_parser.c, so persistent_hno3 in the base list is a stock
+#      (non-GOCART) build concern.
+#   D. grep -F -E -E '^  - (qso2|qso2v|qso4v|qdms|qmsa|qnh3|qnh4a|qsoapa|qsoapbb|qsoapbg|persistent_hno3)$' \
+#        .../MPAS-Workflow/config/mpas/keptvars.yaml
+#      PASS: 11.
+#   E. copy_mpas_vars.py destination pre-flight (5 s, read-only, no workflow):
+#        module load nco
+#        ncdump -h /glade/campaign/ncar/nmmm0081/input/jedi/externalAnalyses/60kmMeshGFS/2024110100/x1.163842.init.2024-11-01_00.00.00.nc \
+#          | grep -F -oE '\b(qmsa|persistent_hno3|background_hno3)\b' | sort -u
+#      PASS: qmsa and persistent_hno3 both present (so the new fatal
+#            "missing in destination" branch will not misfire on this cycle),
+#            and background_hno3 is present but is correctly NOT in
+#            vars_to_copy -- it is the prescribed relaxation target that must
+#            come from the target-time cold IC.
+#      All 31 entries of vars_to_copy were verified present in that file.
+# =============================================================================
+
+# Default suite; stated so the reader knows which graph the R1 block comes from.
+suite: Cycle
+
+experiment:
+  # MUST stay unique: Run.py/SuiteBase do "rm -rf <mainScriptDir>" for this name.
+  name: 'test_pr21_gocart2g_cycling_state'
+
+workflow:
+  # Two cycle points and no more: T00 is the cold start (ColdForecast, the R1
+  # block that carries the new PrepareEmissions edge) and T06 is the first
+  # cycled analysis + forecast, i.e. the first forecast that runs
+  # copy_mpas_vars.py.  One cycle would not show the carry-over; three would add
+  # nothing.  Both dates are pre-staged under the GFS.PANDAC 60 km holding
+  # (verified present on disk).
+  first cycle point: 20241101T00
+  final cycle point: 20241101T06
+
+members:
+  # The feature is not per-member; one member keeps generation and any
+  # accidental job as small as possible.
+  n: 1
+
+model:
+  # 60 km, not 120 km: in scenarios/defaults/model.yaml the 60 km mesh is the
+  # ONLY one whose PhysicsSuite is MPAS-GOCART2G.  bin/Forecast.csh gates the
+  # stream_list.atmosphere.dastate.gocart2G concatenation and the whole GOCART2G
+  # chemistry path on that string, so a 120 km scenario would not exercise the
+  # chemistry the PR is about.
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+
+externalanalyses:
+  # Pre-staged 60 km init files under
+  # /glade/campaign/ncar/nmmm0081/input/jedi/externalAnalyses/60kmMeshGFS.
+  # Chosen over GFS.RDA because they are link-only (no ungrib, no download) AND
+  # because they already contain the full GOCART2G chemistry state, including
+  # persistent_hno3 and qmsa -- which is exactly what copy_mpas_vars.py's new
+  # fatal "missing in destination" check requires.
+  resource: "GFS.PANDAC"
+
+firstbackground:
+  # This is the default, but it is stated because it is load-bearing for the
+  # test: only the ForecastFromAnalysis resource puts "ColdForecast" into
+  # PrepareFirstBackgroundOuter, and FirstBackground.py adds the new
+  # PrepareEmissions edge only when that substring is present.
+  resource: "ForecastFromAnalysis"
+
+emissions:
+  # THE other half of the new edge's condition: Emissions.ready is None unless
+  # mode is 'workflow', and FirstBackground.py skips the new dependency when it
+  # is None.  With the default 'prebuilt' this PR's graph change is invisible.
+  mode: workflow
+  # Lightest workflow-native product set: mesh caching / SCRIP only, plus a
+  # mirror of the prebuilt inventory.  No CAMS/FINN/GFAS config files, no ESMPy
+  # weight generation -- none of that is needed to emit the PrepareEmissions
+  # task into the graph.
+  prepare: [mesh]
+  seed prebuilt: true
+
+forecast:
+  # The switch that makes bin/Forecast.csh call tools/copy_mpas_vars.py, i.e.
+  # that turns on "carry the GOCART2G chemistry into the next cycle's IC".
+  # Default is False, which would leave the PR's copy_mpas_vars.py changes
+  # completely unexercised.  Visible in flow.cylc as arg 12 of Forecast.csh.
+  updateATMVarsFromCold: True
+  # No verifyobs/verifymodel: verification tasks are pure overhead here and are
+  # untouched by this PR.
+  post: []
+
+variational:
+  # 3dvar is the cheapest DA that still uses config/jedi/applications/3dvar.yaml,
+  # which sets "deallocate non-da fields: true" -- the only setting under which
+  # the keptvars.yaml additions in this PR have any effect.
+  DAType: 3dvar
+  # One inner iteration: the analysis values do not matter, only that the DA
+  # analysis exists as the next cycle's IC.
+  nInnerIterations: [1,]
+  post: []
+
+observations:
+  # Link-only archive resource; no GetObs/ObsToIODA conversion tasks.
+  resource: PANDACArchive
+
+# NOTE: no hpc: block on purpose.  PBS accounts are user-specific and must not
+# be committed; add your own locally (see HOW TO RUN above) before running.
