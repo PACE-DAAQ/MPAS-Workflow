@@ -133,6 +133,7 @@ for v in vars_to_copy:
     print(f"  copying {v} ...")
     dst[v][:] = src[v][:]     # fastest CDF5-safe method
 
+opt_copied = 0
 for v in opt_present:
     if src[v].shape != dst[v].shape:
         print(
@@ -143,9 +144,13 @@ for v in opt_present:
         continue
     print(f"  copying {v} (land) ...")
     dst[v][:] = src[v][:]
+    opt_copied += 1
 
 src.close()
 dst.close()
 
-print(f"Done. {len(vars_to_copy)-len(missing_src)} chemistry + {len(opt_present)} land variables copied.")
+# opt_copied, not len(opt_present): a land field present in both files but with a
+# mismatched shape is deliberately skipped above, and reporting it as copied would
+# contradict the warning that was just printed.
+print(f"Done. {len(vars_to_copy)-len(missing_src)} chemistry + {opt_copied} land variables copied.")
 

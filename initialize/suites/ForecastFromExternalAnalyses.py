@@ -63,7 +63,14 @@ class ForecastFromExternalAnalyses(SuiteBase):
     # has no source for N > 0 and init_atmosphere aborts. Fall back to the
     # components' own default of [0] -- just the analysis time.
     ef = self.c['extendedforecast']
-    icOffsets = ef['extLengths'] if ef['post'] else [0]
+    # 'post' alone is not enough: it defaults NON-empty, while ExtendedForecast
+    # emits verification tasks only when meanTimes (or a usable ensTimes) is set.
+    # Gating on post alone therefore still expanded extLengths -- and recreated the
+    # per-lead conversions that cannot succeed -- for the common case of a scenario
+    # that leaves both defaults alone. Require post AND something actually
+    # scheduled to verify.
+    verifies = bool(ef['post']) and (ef['meanTimes'] is not None or ef['ensTimes'] is not None)
+    icOffsets = ef['extLengths'] if verifies else [0]
 
     for k, c_ in self.c.items():
       if k in ['observations', 'initic', 'externalanalyses']:
