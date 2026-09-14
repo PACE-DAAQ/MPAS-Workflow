@@ -8,9 +8,16 @@ model:
   #   anth emissions: cams | ceds | cams-mix
   #   biob emissions: finn | gfas | gbbepx | qfed
   #   biog emissions: cams
-  # PRM (plume rise model) namelist flags for &plumerisemodel (defaults shown; both off by default):
-  #   do bburn prm: false   # config_do_bburnPRM  (set true to enable biomass-burning plume rise)
-  #   do frp: false         # config_do_FRP
+  # PRM (plume rise model) namelist flags for &plumerisemodel (defaults shown):
+  #   do bburn prm: true    # config_do_bburnPRM  -- ON by default, the shared baseline
+  #   do frp: false         # config_do_FRP       -- OFF; validated with AREA, not FRP
+  #
+  # NOTE on the emission overrides above: 'anth/biob/biog emissions' override the
+  # variant UNCONDITIONALLY (bin/SetStreamsVariant.csh section 2). Setting one of
+  # them as a project-wide default would therefore force every pert01..pert08
+  # member onto the same inventory and silently collapse the emission ensemble.
+  # To change what the deterministic configuration uses, move 'cntl' in the
+  # variant table instead; keep these keys for per-scenario overrides.
   resources:
     #{{mesh}}:
     #  meshRatio: 1 for uniform meshes
