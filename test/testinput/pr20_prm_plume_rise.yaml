@@ -1,0 +1,197 @@
+# ==================================================================================================
+# HOW TO RUN THIS SAFELY  (read before the first command below)
+#
+# Run.py ALWAYS finishes with suite.submit() -> ./submit.csh -> `cylc play`. There is no
+# generate-only mode. initialize/framework/HPC.py defaults CriticalAccount /
+# NonCriticalAccount / SingleProcAccount to NMMM0015, so an unguarded run can submit PBS
+# jobs -- possibly on an allocation that is not yours. "Run it and stop it quickly" races
+# the scheduler and is not safe.
+#
+# Neutralise cylc for the duration instead. submit.csh does `conda activate $CYLC_ENV`,
+# which would otherwise put the real cylc back ahead of the stub, so CYLC_ENV has to point
+# at the stub as well as PATH:
+#
+#   set stub = /glade/derecho/scratch/$USER/cylcstub
+#   mkdir -p $stub/bin
+#   printf '#!/bin/sh\nexit 0\n' > $stub/bin/cylc
+#   chmod +x $stub/bin/cylc
+#   setenv CYLC_ENV "$stub"
+#   setenv PATH "$stub/bin:$PATH"
+#
+# Then run the command in the steps below. Everything this test inspects -- suite.rc /
+# flow.cylc, config/auto/*.csh, the resolved streams and namelist files -- is written
+# BEFORE cylc would have been invoked, so stubbing it costs nothing and no job is ever
+# submitted. No `cylc stop` is needed.
+#
+# Paths below are relative to the root of your MPAS-Workflow checkout; run from there.
+# ==================================================================================================
+# ==================================================================================================
+# TEST SCENARIO FOR PR #20
+#   "Wire the plume-rise model to the current lowbc interface and gate on real fire input"
+#   branch feature/prm-plume-rise, based on feature/emissions-finn
+#
+# WHAT IS UNDER TEST
+#   (a) 'model: do bburn prm: true' is the switch. initialize/data/Model.py exports it to
+#       config/auto/model.csh as doBburnPrm; bin/Forecast.csh substitutes it into PRMbburnFlag of
+#       &plumerisemodel (config_do_bburnPRM) and bin/ExternalAnalysisToMPAS.csh substitutes the same
+#       value into the new PRMinitFlag of config/mpas/initic/namelist.init_atmosphere.gocart2g.
+#   (b) PRM input now arrives through the four prm_lowbc_* streams this PR adds to
+#       config/mpas/forecast/streams.atmosphere and config/mpas/initic/streams.init_atmosphere.gocart2g.
+#       They require firesize_biob_modis_avg/_std and frp_biob_modis_avg/_std -- NOT the older
+#       area_biob_modis / area_biob_modis_std names.
+#   (c) With plume rise on, bin/Forecast.csh gates the run on REAL fire input by calling
+#       tools/mpas_emissions/validate_streams.py --only-prm --require-nonzero. A PRM file with the
+#       legacy names, or with an identically-zero fire size, now fails the task instead of letting
+#       the plume-rise model run as a silent no-op (MPAS_streamAddField ignores fields it cannot
+#       find, so the old behaviour looked like a normal run in the log).
+#   (d) The 14 GOCART2G optics filenames became scenario-settable ('model: optics *') and are
+#       exported as opticsBc / opticsBcRrtmg / ... , replacing the hard-coded config_gocart2G_optics*
+#       values in config/mpas/forecast/namelist.atmosphere (now {{opticsBc}} placeholders).
+#
+# This PR changes SUITE GENERATION and CONFIGURATION, not model physics, so the whole check runs on
+# a derecho LOGIN NODE in about two minutes and SUBMITS NO PBS JOBS. 'extendedforecast: execute:
+# False' removes the forecast task from the cylc graph; the only task that actually runs is
+# LinkExternalAnalysis-60km, which inherits no BATCH family and therefore runs as a cylc background
+# job on the login node. There is deliberately no 'hpc:' block: no account is needed, and accounts
+# are user-specific and must not be committed.
+#
+# --------------------------------------------------------------------------------------------------
+# HOW TO RUN  (from the feature/prm-plume-rise checkout of MPAS-Workflow)
+#
+#   ./Run.py test/testinput/pr20_prm_plume_rise.yaml
+#
+#   Then, with EXP = /glade/derecho/scratch/$USER/pandac/${USER}_test_pr20_prm_plume_rise
+#
+#   [1] the switch and the optics plumbing reached the generated config:
+#         grep -E 'doBburnPrm|doFrp' $EXP/MPAS-Workflow/config/auto/model.csh
+#         grep -F -c '^setenv optics'   $EXP/MPAS-Workflow/config/auto/model.csh
+#         grep -i prmArea            $EXP/MPAS-Workflow/config/auto/build.csh
+#
+#   [2] the prm_lowbc_* wiring and the new gate, replayed exactly as bin/Forecast.csh does it
+#       (nCells 163842 for 60 km; {{prmArea}} <- the resolved 'build: prm area file'). bash shown;
+#       in csh use 'setenv PYTHONPATH ...' instead of the export line.
+#
+#         module load conda/latest ; conda activate npl
+#         cd $EXP/MPAS-Workflow
+#         export PYTHONPATH=$PWD/tools
+#         P=/glade/campaign/ncar/nmmm0081/input/mpas/emissions/PRM
+#         sed -e 's@{{nCells}}@163842@' \
+#             -e 's@{{prmArea}}@FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_daily_oct01-nov30.lowbc.nc@' \
+#             config/mpas/forecast/streams.atmosphere > /tmp/streams.good
+#         sed -e 's@{{nCells}}@163842@' \
+#             -e 's@{{prmArea}}@FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.163842.static_daily_oct01-nov30.nc@' \
+#             config/mpas/forecast/streams.atmosphere > /tmp/streams.legacy
+#         python3 -m mpas_emissions.validate_streams /tmp/streams.good   --directory $P --only-prm \
+#                 --require-nonzero firesize_biob_modis_avg      # expect exit 0
+#         python3 -m mpas_emissions.validate_streams /tmp/streams.legacy --directory $P --only-prm \
+#                 --require-nonzero firesize_biob_modis_avg      # expect exit 1
+#
+#   [3] the two unit tests this PR ships (optional, ~5 s, same shell as [2]):
+#         python3 test/mpas_emissions/test_prm_required_contract.py
+#         python3 test/mpas_emissions/test_review_regressions.py
+#
+# --------------------------------------------------------------------------------------------------
+# WHAT DECIDES PASS / FAIL  (specific lines, not "check it works")
+#
+#   [1] config/auto/model.csh must contain EXACTLY
+#           setenv doBburnPrm "True"
+#           setenv doFrp "False"
+#       and 'grep -c ^setenv optics' must print 14 (opticsBc, opticsBcRrtmg, ... opticsNiRrtmg).
+#       Those 14 variables do not exist before this PR; bin/Forecast.csh now needs every one of them
+#       to resolve the {{opticsBc}}-style placeholders in namelist.atmosphere.
+#       config/auto/build.csh must show
+#           setenv PRMAreaFile "FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.{{nCells}}.static_daily_oct01-nov30.lowbc.nc"
+#       i.e. the '.lowbc.nc' name set below, with the {{nCells}} token still unresolved (it is
+#       resolved per-mesh at task time).
+#
+#   [2] POSITIVE: streams.good must print
+#           validated 4 forecast emissions/PRM streams
+#       (exit status 0). Four streams is the whole point: the PR added prm_lowbc_area_avg,
+#       prm_lowbc_area_std, prm_lowbc_frp_avg and prm_lowbc_frp_std to the forecast template.
+#       NEGATIVE: streams.legacy -- the same template pointed at the file the OLD default named --
+#       must exit non-zero with a RuntimeError listing
+#           prm_lowbc_area_avg: ... lacks variables ['firesize_biob_modis_avg']
+#           ... has firesize_biob_modis_avg identically zero ...
+#       That failure IS the feature: before this PR the same file was accepted and plume rise ran
+#       with zero fire input. If the negative case passes, the gate is not working.
+#
+#   [3] both scripts must print '... test passed' / '... tests passed' and exit 0.
+#
+#   The cylc suite itself should reach LinkExternalAnalysis-60km succeeded and then idle; no job is
+#   ever sent to PBS. Stop it with:  cylc stop MPAS-Workflow/${USER}_test_pr20_prm_plume_rise   # <-- NOT NEEDED with the cylc stub above; left for reference only
+# ==================================================================================================
+
+suite: ForecastFromExternalAnalyses
+
+experiment:
+  # Unique and obviously a test. Run.py / SuiteBase do 'rm -rf <ExperimentDirectory>/MPAS-Workflow'
+  # for whatever name appears here, so this must never collide with a real experiment name.
+  name: 'test_pr20_prm_plume_rise'
+
+members:
+  # plume rise is not a per-member feature; one member keeps suite generation trivial
+  n: 1
+
+model:
+  # 60 km (x1.163842) is REQUIRED here, not merely preferred: the staged PRM fire-statistics files
+  # in /glade/campaign/ncar/nmmm0081/input/mpas/emissions/PRM exist ONLY for x1.163842. On 120 km
+  # {{prmArea}} would resolve to a filename that is not on disk and the new gate could not be
+  # exercised at all.
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+
+  # THE SWITCH UNDER TEST. Exported as doBburnPrm; it drives config_do_bburnPRM in the forecast
+  # namelist, PRMinitFlag in the GOCART2G init namelist, and -- new in this PR -- whether
+  # bin/Forecast.csh runs the validate_streams fire-input gate at all.
+  do bburn prm: true
+
+  # Deliberately false (also the default; stated explicitly because the choice is part of the test).
+  # The gate adds frp_biob_modis_avg to --require-nonzero only when do frp is true, and
+  # frp_biob_modis_avg is identically zero in the only staged lowbc PRM file. Setting this true
+  # would make the gate correctly REJECT the only available input, which is useful to know but
+  # would hide the positive case. See "not covered" in the PR test notes.
+  do frp: false
+
+build:
+  # NON-DEFAULT AND ESSENTIAL TO THE TEST. The committed default
+  #   FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.{{nCells}}.static_daily_oct01-nov30.nc
+  # carries the OLD area_biob_modis / area_biob_modis_std names and no FRP at all, so it does not
+  # satisfy the prm_lowbc_* contract this PR introduces (see PRM_COMPATIBILITY.md). The '.lowbc.nc'
+  # sibling in the same directory is the only staged file that has all four
+  # firesize_biob_modis_avg/_std and frp_biob_modis_avg/_std fields.
+  # 'prm area directory' is left at its default (.../input/mpas/emissions/PRM), which is where both
+  # files live, so it is not repeated here.
+  prm area file: 'FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.{{nCells}}.static_daily_oct01-nov30.lowbc.nc'
+
+externalanalyses:
+  # Pre-staged 60 km MPAS init files, linked rather than converted: this resource's
+  # PrepareExternalAnalysisTasks are LinkExternalAnalysis + ExternalAnalysisReady__, so no ungrib
+  # and no init_atmosphere task is generated and nothing goes to PBS. 2024-10-25 is staged here and
+  # sits inside the PRM file's oct01-nov30 window, so the resolved names are mutually consistent.
+  resource: "GFS.PANDAC"
+
+observations:
+  # Required by the Observations component (no default). Nothing is verified in this test --
+  # 'extendedforecast: post' is empty -- so no observation task ever enters the cylc graph.
+  resource: PANDACArchive
+
+extendedforecast:
+  # one forecast time, so the generated graph is non-empty and cylc validate has something to check
+  meanTimes: T00
+  # shortest sensible forecast; only matters if a reviewer later flips execute to True
+  lengthHR: 6
+  outIntervalHR: 6
+  # no verifyobs / verifymodel: this test inspects generated configuration, not model output
+  post: []
+  # THIS IS WHAT KEEPS THE TEST OFF THE BATCH SYSTEM. The ExtendedMeanFC task is still written into
+  # the suite runtime (so the reviewer can read the generated bin/Forecast.csh arguments) but its
+  # execute family is dropped from the graph, so no forecast job is ever submitted.
+  # To promote this file to a real end-to-end plume-rise forecast test: set execute: True and supply
+  # your own PBS account through a local override (never commit an account).
+  execute: False
+
+workflow:
+  # a single cycle point is enough -- the PRM wiring is per-task configuration, not cycling state
+  first cycle point: 20241025T00
+  final cycle point: 20241025T00
