@@ -1,0 +1,219 @@
+# ==================================================================================================
+# HOW TO RUN THIS SAFELY  (read before the first command below)
+#
+# Run.py ALWAYS finishes with suite.submit() -> ./submit.csh -> `cylc play`. There is no
+# generate-only mode. initialize/framework/HPC.py defaults CriticalAccount /
+# NonCriticalAccount / SingleProcAccount to NMMM0015, so an unguarded run can submit PBS
+# jobs -- possibly on an allocation that is not yours. "Run it and stop it quickly" races
+# the scheduler and is not safe.
+#
+# Neutralise cylc for the duration instead. submit.csh does `conda activate $CYLC_ENV`,
+# which would otherwise put the real cylc back ahead of the stub, so CYLC_ENV has to point
+# at the stub as well as PATH:
+#
+#   set stub = /glade/derecho/scratch/$USER/cylcstub
+#   mkdir -p $stub/bin
+#   printf '#!/bin/sh\nexit 0\n' > $stub/bin/cylc
+#   chmod +x $stub/bin/cylc
+#   setenv CYLC_ENV "$stub"
+#   setenv PATH "$stub/bin:$PATH"
+#
+# Then run the command in the steps below. Everything this test inspects -- suite.rc /
+# flow.cylc, config/auto/*.csh, the resolved streams and namelist files -- is written
+# BEFORE cylc would have been invoked, so stubbing it costs nothing and no job is ever
+# submitted. No `cylc stop` is needed.
+#
+# Paths below are relative to the root of your MPAS-Workflow checkout; run from there.
+# ==================================================================================================
+# =============================================================================
+# PR #19 -- "Add daily FINN emissions and the PRM fire-size product"
+#           branch feature/emissions-finn, based on feature/emissions-static
+#
+# WHAT IS UNDER TEST
+#   * bin/PrepareEmissions.csh: the new FINN branch, including the
+#     "prepareFinnForPrm" path that runs FINN whenever
+#     model:do bburn prm + emissions:prm source=finn, and the new
+#     emissionsFinn* / emissionsPrmSource csh variables from
+#     initialize/data/Emissions.py + scenarios/defaults/emissions.yaml.
+#   * tools/mpas_emissions/finn_cli.py: FINNv2.5.1 NRT each-fire text ->
+#     hourly MPAS emission stream, plus the PRM fire-size product
+#     (firesize_biob_modis_avg/_std, frp_biob_modis_avg/_std).
+#   * The FINNv1 fallback for days FINNv2.5 NRT never published, and the
+#     "force date ranges" override -- i.e. commit a0c133d, which fixed the
+#     Fortran 'D' exponents and the trailing-comma column shift that used to
+#     make the fire-size field silently all zero.
+#
+# WHY THIS DATE WINDOW (the whole point of the test)
+#   /glade/campaign/ncar/nmmm0081/Data/FINNnrt holds FINNv2.5.1 daily files for
+#   2024-10-25..2024-11-30 with a real gap at 2024-11-04..11-09, and the shipped
+#   config/emissions/finn.example.yaml forces the FINNv1 fallback over
+#   2024-11-04..2024-11-10.  A 2024-11-03..2024-11-10 window therefore costs
+#   1 primary day + 7 fallback days and exercises BOTH readers, the gap policy
+#   and the PRM product.  No FINNv1 copy exists on GLADE, so the 7 fallback
+#   days are fetched lazily from ACOM over https (~2.2 MB each) -- run the
+#   preparation on a login node, which has outbound network.
+#
+# HOW TO RUN (no PBS job, no MPAS, no JEDI; ~10 min total)
+#   cd <your checkout of feature/emissions-finn>
+#   source env-setup/machine.csh            # or machine.sh for bash/zsh
+#
+#   # 1. 8-day copy of the shipped FINN config (the only thing that sets the
+#   #    window: finn_cli takes no --start-date/--end-date from the workflow)
+#   sed -e "s|^start_date:.*|start_date: '2024-11-03'|" \
+#       -e "s|^end_date:.*|end_date: '2024-11-10'|" \
+#       config/emissions/finn.example.yaml > config/emissions/finn.pr19test.yaml
+#
+#   # 2. generate + install the suite.  NOTE: Run.py always ends by calling
+#   #    submit.csh, which does "cylc play".  Stop it immediately -- this test
+#   #    needs the generated artifacts, not the cycling suite.
+#   ./Run.py test/testinput/pr19_finn_daily_PRM_OIE120km.yaml
+#   cylc stop --kill MPAS-Workflow/${USER}_test_pr19_finn_daily_PRM_OIE120km   # <-- NOT NEEDED with the cylc stub above; left for reference only
+#
+#   # 3. run the new emission preparation offline, on the login node.
+#   #    bin/PrepareEmissions.csh accepts a cycle point or a bare year exactly
+#   #    for this; it needs no PBS account and no cylc.
+#   setenv EXP /glade/derecho/scratch/${USER}/pandac/${USER}_test_pr19_finn_daily_PRM_OIE120km
+#   cd ${EXP}/MPAS-Workflow && ./bin/PrepareEmissions.csh 2024
+#
+# WHAT TO LOOK AT TO DECIDE PASS/FAIL
+#   A. Suite generation (seconds, before step 3).  In
+#      ${EXP}/MPAS-Workflow/config/auto/emissions.csh:
+#         setenv emissionsPrepareFinn True
+#         setenv emissionsPrmSource finn
+#         setenv emissionsFinnConfig config/emissions/finn.pr19test.yaml
+#         setenv emissionsFinnMaxDistanceFactor 2.5
+#      and ${EXP}/MPAS-Workflow/flow.cylc must contain a [[PrepareEmissions]]
+#      task and the edge "PrepareEmissions => PreForecast__".
+#
+#   B. Day resolution (the FINNv2.5-primary / FINNv1-fallback logic).  Read
+#      ${EXP}/Emissions/120km/FINNv2.5.1_modvrs_nrt_MOZART_2024_x1.40962.static_hourly_netcdf3.nc.provenance.json
+#      PASS = "day_resolution" has exactly 8 entries and reads
+#         2024-11-03  source "primary"          prm_source "dedicated-prm"
+#         2024-11-04 .. 2024-11-10
+#                     source "fallback-forced"  prm_source "fallback-area-forced"
+#      and "accepted_point_records_loaded" == "total_point_records_loaded",
+#      both non-zero, and "prm_fallback_area_days_used": 7.
+#      FAIL = any day with accepted < total (the FINNv1 'D'-exponent / column
+#      -shift bug), or the run exiting with the "none were placed on the mesh"
+#      guard, or a ValueError naming a missing fallback file.
+#
+#   C. The PRM product itself:
+#      ncdump -h ${EXP}/Emissions/120km/FINNv2.5.1_modvrs_nrt_PRM_2024_x1.40962.static_daily_nov03-nov10.TEST.nc
+#      PASS = 8 daily records and all four of firesize_biob_modis_avg/_std,
+#      frp_biob_modis_avg/_std present, firesize_biob_modis_avg units "m2".
+#      Then, the check that a0c133d is actually in:
+#        python3 -c "import netCDF4,numpy as np; \
+#          d=netCDF4.Dataset('<that file>'); a=d['firesize_biob_modis_avg'][:]; \
+#          print(a.shape, [int(np.count_nonzero(a[t])) for t in range(a.shape[0])], float(a.max()))"
+#      PASS = every one of the 8 days has thousands of non-zero cells and the
+#      maximum is <= ~1.0e6 m2 (the MODIS 1 km pixel).  An all-zero FINNv1 day
+#      is exactly the regression this PR fixed, so a 0 in that list is a FAIL.
+#
+# NOT COVERED: see the scenario notes returned with this file.
+#
+# NO PBS ACCOUNT IS SET HERE ON PURPOSE.  The offline path above needs none.
+# Only if you want cylc to run PrepareEmissions as a batch job should you add
+# your own hpc: {CriticalAccount, NonCriticalAccount, SingleProcAccount} in a
+# local, uncommitted override.
+# =============================================================================
+
+suite: Cycle
+
+experiment:
+  # Unique and obviously a test.  Run.py does "rm -rf <ExperimentDirectory>/
+  # MPAS-Workflow" for whatever name is given here, so never reuse a real one.
+  name: 'test_pr19_finn_daily_PRM_OIE120km'
+
+members:
+  # the FINN/PRM products are per-mesh, not per-member; one member is enough
+  n: 1
+
+model:
+  # smallest mesh with an invariant file on disk
+  # (/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/Invariant/x1.40962.invariant.nc);
+  # FINN point assignment is a KD-tree over cell centres, so it is mesh-agnostic
+  outerMesh: 120km
+  innerMesh: 120km
+  ensembleMesh: 120km
+
+  # REQUIRED BY THIS PR: doBburnPrm=True is what makes PrepareEmissions.csh set
+  # prepareFinnForPrm and ask finn_cli for the PRM fire-size product.  With the
+  # default false the new FINN-for-PRM branch is never entered.
+  do bburn prm: true
+
+  # left at the default on purpose: PrepareEmissions.csh then passes
+  # --prm-no-frp, which keeps a missing FRP column warning-only instead of fatal
+  do frp: false
+
+emissions:
+  # default is 'prebuilt', which adds no task at all; 'workflow' is what creates
+  # the PrepareEmissions cylc task in initialize/data/Emissions.py
+  mode: workflow
+
+  # 'finn' is the product this PR adds.  'mesh' is its prerequisite: the
+  # neighbour/KD-tree cache that PrepareEmissions.csh builds before any
+  # workflow-native inventory.
+  prepare: [mesh, finn]
+
+  # The ONLY place the test window is set -- finn_cli takes no date arguments
+  # from the workflow, so this must be the trimmed 8-day copy created by the
+  # sed command in the header, not config/emissions/finn.example.yaml (61 days,
+  # 24 of which would be downloaded one by one).
+  finn config: config/emissions/finn.pr19test.yaml
+
+  # New key in this PR.  'finn' routes PRM fire size through FINN each-fire
+  # AREA statistics; 'prebuilt' would instead only check that a staged file
+  # exists and would exercise none of the new code.
+  prm source: finn
+
+  # Default is true, which symlinks the whole prebuilt EmissionDir/PRMAreaDir
+  # into the work directory first.  Those hold x1.163842 files only, so on this
+  # 120km test they add nothing and just obscure which files the PR produced.
+  seed prebuilt: false
+
+  # Default is true, which short-circuits on an existing output pair.  False so
+  # that a repeat run really re-reads FINN instead of adopting whatever a
+  # previous attempt left behind.
+  reuse existing: false
+
+  # 'finn reject outside', 'finn interior only' and 'finn max distance factor'
+  # are left at their defaults: they only matter for regional meshes, and 120km
+  # is global.
+
+build:
+  # PRMAreaFile is handed to finn_cli as --prm-stats-output-file, so this is the
+  # name of the PRM product written by this test.  The default name claims
+  # 'oct01-nov30'; rename it so an 8-day test file can never be mistaken for the
+  # 61-day production product.  {{year}}/{{nCells}} are resolved by finn_cli.
+  prm area file: 'FINNv2.5.1_modvrs_nrt_PRM_{{year}}_x1.{{nCells}}.static_daily_nov03-nov10.TEST.nc'
+
+# ---------------------------------------------------------------------------
+# Nothing below this line is under test.  The Emissions component only exists
+# in the Cycle suite, so these are the minimum settings that let Cycle be
+# constructed; every task that would cost core-hours is switched off.
+# ---------------------------------------------------------------------------
+externalanalyses:
+  # same resource as test/testinput/3dvar_OIE120km_ColdStart.yaml; only needed
+  # so ExternalAnalyses/InvariantStream can be built
+  resource: "GFS.RDA"
+
+observations:
+  resource: GladeRDAOnline
+
+variational:
+  DAType: 3dvar
+  # no JEDI job: drops the DA execute phase from the cylc graph
+  execute: False
+  post: []
+
+forecast:
+  # no MPAS forecast job.  PrepareEmissions => PreForecast__ is still generated,
+  # which is the graph edge this test inspects.
+  execute: False
+  post: []
+
+workflow:
+  # One cycle point.  Only its 4-digit year (2024) reaches PrepareEmissions;
+  # the FINN window itself comes from the finn config, not from here.
+  first cycle point: 20241103T00
+  final cycle point: 20241103T00

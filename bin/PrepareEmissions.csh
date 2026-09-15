@@ -125,8 +125,12 @@ else
 endif
 
 # Any workflow-native source needs the mesh-derived cache.
+set prepareFinnForPrm = "False"
+if ( "$doBburnPrm" == "True" && "$emissionsPrmSource" == "finn" ) set prepareFinnForPrm = "True"
 
 if ( "$emissionsPrepareMesh" == "True" || \
+     "$emissionsPrepareFinn" == "True" || \
+     "$prepareFinnForPrm" == "True" || \
      "$emissionsPrepareCamsAnth" == "True" || \
      "$emissionsPrepareCamsBiog" == "True" || \
      "$emissionsPrepareCeds" == "True" || \
@@ -173,6 +177,47 @@ if ( "$emissionsPrepareCamsBiog" == "True" ) then
     --chunk-links "$emissionsCamsChunkLinks" --conservation-tolerance "$emissionsCamsConservationTolerance" $biogWeightArg $reuseArg
   if ( $status != 0 ) then
     echo "ERROR PrepareEmissions: CAMS biogenic preparation failed" > ./FAIL
+    exit 1
+  endif
+endif
+
+# FINN point-source + PRM pathway.
+# PRM source is deliberately independent of the selected biomass-emission
+# inventory.  If plume rise is enabled with prm source=finn, prepare FINN AREA
+# statistics even when GFAS/QFED are the only requested biomass emissions.
+set runFinn = "$emissionsPrepareFinn"
+if ( "$prepareFinnForPrm" == "True" ) set runFinn = "True"
+if ( "$runFinn" == "True" ) then
+  if ( "$emissionsPrepareFinn" != "True" && "$prepareFinnForPrm" == "True" ) then
+    echo "PrepareEmissions (INFO): preparing FINN because PRM source=finn; GFAS/QFED biomass emissions may still be selected for Forecast"
+  endif
+  if ( "$emissionsFinnConfig" == "" ) then
+    echo "ERROR PrepareEmissions: finn config is required" > ./FAIL
+    exit 1
+  endif
+  set extra = ""
+  if ( "$emissionsFinnRejectOutside" == "True" ) set extra = "$extra --reject-outside"
+  if ( "$emissionsFinnInteriorOnly" == "True" ) set extra = "$extra --interior-only"
+  if ( "$emissionsReuseExisting" == "True" ) set extra = "$extra --reuse-existing"
+  set prmFrpArg = "--prm-no-frp"
+  if ( "$doFrp" == "True" ) set prmFrpArg = "--prm-use-frp"
+  $py -m mpas_emissions.finn_cli "$emissionsFinnConfig" \
+    --year "$emissionYear" --grid-name "$emissionsGridName" --mesh "$meshFile" --output-dir "$outDir" \
+    --prm-stats-output-file "$PRMAreaFile" \
+    --max-distance-factor "$emissionsFinnMaxDistanceFactor" $prmFrpArg $extra
+  if ( $status != 0 ) then
+    echo "ERROR PrepareEmissions: FINN preparation failed" > ./FAIL
+    exit 1
+  endif
+endif
+
+# With prm source=prebuilt, the workflow does not regenerate fire-size fields.
+# Ensure a staged file exists when PRM is enabled so a missing PRM input fails
+# here rather than much later inside MPAS.
+if ( "$doBburnPrm" == "True" && "$emissionsPrmSource" == "prebuilt" ) then
+  set prmResolved = `echo "$PRMAreaFile" | sed 's@{{nCells}}@'${nCellsOuter}'@' | sed 's@{{year}}@'${emissionYear}'@' | sed 's@{{grid}}@'${emissionsGridName}'@'`
+  if ( ! -e "$outDir/$prmResolved" ) then
+    echo "ERROR PrepareEmissions: prm source=prebuilt but required fire-size file is absent: $outDir/$prmResolved" > ./FAIL
     exit 1
   endif
 endif
