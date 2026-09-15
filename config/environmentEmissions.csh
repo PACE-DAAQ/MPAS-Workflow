@@ -23,4 +23,3 @@ if ( "$NCAR_HOST" == "derecho" ) then
 else
   source config/environmentNPL.csh
 endif
-
