@@ -146,6 +146,6 @@
 &plumerisemodel
     config_do_bburnPRM      = PRMbburnFlag
     config_do_FRP           = PRMfrpFlag
-    config_prm_lbc_interval = 01_00:00:00
+    config_prm_lowbc_interval = 01_00:00:00
     config_prm_interval     = 00_01:00:00
 /
