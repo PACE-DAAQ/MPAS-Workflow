@@ -33,14 +33,22 @@ from netCDF4 import Dataset
 import sys
 
 argv = [a for a in sys.argv[1:]]
+aux_file = None
+if "--aux-source" in argv:
+    i = argv.index("--aux-source")
+    aux_file = argv[i + 1]
+    del argv[i:i + 2]
 include_land = False
+carry_hno3 = "--reset-hno3" not in argv
+if not carry_hno3:
+    argv.remove("--reset-hno3")
 for flag in ("--include-land", "--land"):
     if flag in argv:
         include_land = True
         argv.remove(flag)
 
 if len(argv) != 2:
-    print("Usage: python copy_mpas_vars.py [--include-land] <src_file> <dst_file>")
+    print("Usage: python copy_mpas_vars.py [--include-land] [--reset-hno3] <src_file> <dst_file>")
     sys.exit(1)
 
 src_file, dst_file = argv
@@ -63,6 +71,10 @@ vars_to_copy = [
     "persistent_hno3",
 ]
 
+if not carry_hno3:
+    vars_to_copy.remove("persistent_hno3")
+    print("HNO3 carryover disabled: retaining the target cold-IC persistent_hno3")
+
 # Prognostic land state, carried only with --include-land. Treated as optional:
 # a chemistry-only IC, or a NOAH IC lacking a NOAH-MP field, must not abort the
 # cycle, so anything absent is reported and skipped rather than raised.
@@ -82,17 +94,30 @@ src = Dataset(src_file, "r")
 
 print(f"Opening destination: {dst_file}")
 dst = Dataset(dst_file, "r+")
+# JEDI need not serialize non-analysis state; use the matching member's prior
+# forecast for HNO3/land, without replacing any analyzed aerosol scalar.
+aux = Dataset(aux_file, "r") if aux_file else src
+# These precursors are absent from this workflow's StandardAnalysisVariables.
+# Their existing member values must survive JEDI's selected-state arithmetic.
+nonanalysis_chemistry = ["qso2", "qso2v", "qso4v", "qdms", "qmsa", "qnh3", "qnh4a",
+                        "qsoapa", "qsoapbb", "qsoapbg"]
+aux_vars = nonanalysis_chemistry + (["persistent_hno3"] if carry_hno3 else []) + optional_vars
+aux_chemistry = nonanalysis_chemistry + ["persistent_hno3"]
+if aux_file:
+    missing_aux = [v for v in aux_vars if v not in aux.variables or v not in dst.variables]
+    if missing_aux:
+        raise KeyError(f"Requested carryover unavailable in auxiliary source/target: {missing_aux}")
 
 if include_land:
     print(f"Land cycling ENABLED: will also carry {land_vars}")
 else:
     print("Land cycling disabled (pass --include-land to carry soil/snow state)")
 
-missing_src = [v for v in vars_to_copy if v not in src.variables]
+missing_src = [v for v in vars_to_copy if v not in (aux if v in aux_chemistry else src).variables]
 missing_dst = [v for v in vars_to_copy if v not in dst.variables]
 
 # Optional group: never fatal in either direction.
-opt_present = [v for v in optional_vars if v in src.variables and v in dst.variables]
+opt_present = [v for v in optional_vars if v in aux.variables and v in dst.variables]
 opt_absent = [v for v in optional_vars if v not in opt_present]
 if opt_absent:
     print(
@@ -131,21 +156,23 @@ for v in vars_to_copy:
         print(f"  skipping {v} (absent from source; destination value retained)")
         continue
     print(f"  copying {v} ...")
-    dst[v][:] = src[v][:]     # fastest CDF5-safe method
+    dst[v][:] = (aux if v in aux_chemistry else src)[v][:]
 
 opt_copied = 0
 for v in opt_present:
-    if src[v].shape != dst[v].shape:
+    if aux[v].shape != dst[v].shape:
         print(
-            f"WARNING copy_mpas_vars: {v} shape {src[v].shape} -> {dst[v].shape} "
+            f"WARNING copy_mpas_vars: {v} shape {aux[v].shape} -> {dst[v].shape} "
             "differs; skipping rather than writing a mismatched field",
             file=sys.stderr,
         )
         continue
     print(f"  copying {v} (land) ...")
-    dst[v][:] = src[v][:]
+    dst[v][:] = aux[v][:]
     opt_copied += 1
 
+if aux_file:
+    aux.close()
 src.close()
 dst.close()
 
