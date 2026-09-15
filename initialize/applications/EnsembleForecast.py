@@ -81,6 +81,9 @@ class EnsembleForecast(Component):
     self.NN = self['n']
     self.memFmt = self.fmt if self.NN > 1 else ''
     self.active = (self.NN > 1 and self['execute'])
+    if self.active and model['emission member table']:
+      from tools.emission_members import read_members
+      read_members(model['emission member table'], self.NN)
 
     # Export the ensemble member count under a DISTINCT name.  Component.varToCsh
     # would emit a bare `setenv n` (collides with other csh usage), so follow
@@ -188,6 +191,8 @@ class EnsembleForecast(Component):
           self.workDir+'/{{thisCycleDate}}/'+self.icSubDir+self.memFmt.format(mm),  # IC dir
           self.icPrefix,                                                  # IC prefix
           self['updateATMVarsFromCold'],
+          'none',  # restart interval
+          'ensemble',  # explicit role: the central forecast is also member 1
         ]
         fcArgs = ' '.join(['"'+str(a)+'"' for a in args])
 
@@ -227,10 +232,8 @@ class EnsembleForecast(Component):
       # RecenterEnsemble => EnsembleForecast{mm} is produced automatically by the
       # tf phase graph (Init<base>:succeed-all => <base>Exec).
 
-      # NOTE (see REVIEW.md): member forecasts run bin/Forecast.csh with
-      # updateSea=True; Forecast.py additionally makes them depend on
-      # ea['PrepareSeaSurfaceUpdate'].  The plan §3 dependency list omits it, so it
-      # is omitted here and flagged for human review.
+      if self['updateSea']:
+        self.tf.addDependencies([self.ea['PrepareSeaSurfaceUpdate']])
 
       self._dependencies = self.tf.updateDependencies(self._dependencies)
       self._tasks = self.tf.updateTasks(self._tasks, self._dependencies)

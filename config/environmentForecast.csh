@@ -5,6 +5,15 @@ setenv config_environmentForecast 1
 
 source config/auto/build.csh # for forecastDirectory
 
+# A standalone forecast may use a different compiler/MPI from the JEDI bundle.
+if ( $?forecastEnvironmentScript ) then
+  if ( "$forecastEnvironmentScript" != "" ) then
+    source "$forecastEnvironmentScript"
+    setenv mpiCommand mpiexec
+    exit 0
+  endif
+endif
+
 if ("$forecastDirectory" == "bundle") then
   source config/environmentJEDI.csh
   setenv mpiCommand mpiexec

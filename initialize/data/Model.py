@@ -100,6 +100,14 @@ class Model(Component):
     # The selection is applied in bin/SetStreamsVariant.csh.
     'member variants': [[], list],
 
+    # Opt-in runtime factors require a compatible gocartMPAS executable.
+    'carry persistent hno3': [True, bool],
+    'carry land state': [False, bool],
+    'online emission factors': [False, bool],
+    'dust emission factor': [1.0, float],
+    'seasalt emission factor': [1.0, float],
+    'emission member table': ['', str],
+
     ## GOCART2G aerosol optics files
     # Runtime namelist selections. These override Registry defaults without
     # requiring a gocartMPAS rebuild. Files are expected under OpticsDir.
@@ -201,6 +209,12 @@ class Model(Component):
         self._set('RadiationSW'+Typ, self._conf.getOrDie('resources.'+name+'.RadiationSW'))
         self._set('SfcLayer'+Typ, self._conf.getOrDie('resources.'+name+'.SfcLayer'))
         self._set('LSM'+Typ, self._conf.getOrDie('resources.'+name+'.LSM'))
+
+    from tools.emission_members import factor
+    factor(self['dust emission factor'])
+    factor(self['seasalt emission factor'])
+    if self['emission member table'] and not self['online emission factors']:
+      raise ValueError('emission member table requires online emission factors: true')
 
     self._cshVars = list(self._vtable.keys())
 

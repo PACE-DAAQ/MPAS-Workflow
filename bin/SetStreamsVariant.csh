@@ -80,7 +80,8 @@ if ( "$streamsVariant" == "" ) set streamsVariant = cntl
 # When the scenario sets 'model: member variants: [...]' (exported as the memberVariants array) and
 # this is an ensemble member (ArgMember is set by Forecast.csh), member NN uses memberVariants[NN]
 # instead of the scenario-wide 'streams variant'. Members beyond the list keep streamsVariant.
-if ( $?memberVariants && $?ArgMember ) then
+if ( ! $?ArgEmissionRole ) set ArgEmissionRole = central
+if ( "$ArgEmissionRole" == "ensemble" && $?memberVariants && $?ArgMember ) then
   if ( $#memberVariants > 0 && $ArgMember >= 1 && $ArgMember <= $#memberVariants ) then
     set streamsVariant = "$memberVariants[$ArgMember]"
     echo "SetStreamsVariant.csh (INFO): ensemble member $ArgMember uses streams variant '$streamsVariant'"
