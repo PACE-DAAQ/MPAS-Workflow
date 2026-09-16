@@ -227,8 +227,15 @@ ln -sfv ${EmissionDir}/* .
 ln -sfv ${BackgroundLUTDir}/* . # this may be required for init_atmosphere, not atmosphere
 ln -sfv ${OpticsDir}/* .
 
-# Link PRM (plume rise model) static AREA input (always used by the forecast template)
-ln -sfv ${PRMAreaDir}/* .
+# Link PRM (plume rise model) static AREA input (always used by the forecast template).
+# In workflow-native mode PrepareEmissions has already merged the prebuilt PRM files into
+# the same experiment-local directory as the emissions, and the block above points both
+# EmissionDir and PRMAreaDir at it -- so the emission glob has already linked them and
+# repeating the glob only re-links the same files. Guard rather than drop the line: in
+# prebuilt mode the two remain distinct (Build.EmissionDir vs Build.PRMAreaDir).
+if ( "${PRMAreaDir}" != "${EmissionDir}" ) then
+  ln -sfv ${PRMAreaDir}/* .
+endif
 
 
 ## link stream_list configs
