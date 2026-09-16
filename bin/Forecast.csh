@@ -75,7 +75,6 @@ source config/auto/experiment.csh
 source config/auto/externalanalyses.csh
 source config/auto/members.csh
 source config/auto/model.csh
-if ( -e config/auto/emissions.csh ) source config/auto/emissions.csh
 source config/auto/invariantstream.csh
 source config/auto/workflow.csh
 # Guarded because only suites that construct an Emissions component generate this file;
