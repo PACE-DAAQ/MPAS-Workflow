@@ -15,7 +15,7 @@ source:
 
 time:
   start: "{year}-01-01T00:00:00"
-  end: "{year}-12-01T00:00:00"
+  end: "{year}-12-31T23:59:59"
   target frequency: monthly
   missing: linear
   max interpolation gap hours: 1500
