@@ -92,14 +92,17 @@
 #       reads the same config/auto/*.csh the cylc task would.)
 #      PASS when it ends with "PrepareEmissions complete: ${EXPDIR}/Emissions/120km" and the
 #      mesh step printed:
+#          grid_name=x1.40962
 #          nCells=40962
 #          mesh_type=global
 #          surface_fraction=1.00000...            (invariant file covers the whole sphere)
-#          neighbors=${EXPDIR}/Emissions/cache/120km/mpas_neighbors_x40962_<16 hex chars>.npz
-#          scrip=${EXPDIR}/Emissions/cache/120km/mpas_scrip_x40962_<same 16 hex chars>.nc
+#          neighbors=${EXPDIR}/Emissions/cache/120km/mpas_neighbors_x1.40962.npz
+#          scrip=${EXPDIR}/Emissions/cache/120km/mpas_scrip_x1.40962.nc
 #      and both of those files exist and are non-empty (the SCRIP file should be ~10-15 MB).
-#      FAIL if it prints "scrip=SKIPPED", if ${SCRIPTDIR}/FAIL is created, or if the neighbor
-#      and SCRIP filenames carry different mesh fingerprints.
+#      FAIL if it prints "scrip=SKIPPED" or if ${SCRIPTDIR}/FAIL is created.  The mesh identity
+#      now lives inside the products rather than in their names, so also check that
+#      `ncdump -h .../mpas_scrip_x1.40962.nc | grep mesh_fingerprint` reports the same
+#      16-hex value the mesh step printed as mesh_fingerprint=.
 #      Re-run the same command: with `reuse existing` at its default (true) it must be a no-op
 #      that re-uses both cached files rather than rewriting them.
 #

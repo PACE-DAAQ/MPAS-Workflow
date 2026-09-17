@@ -132,7 +132,7 @@ if ( "$emissionsPrepareMesh" == "True" || \
      "$emissionsPrepareCeds" == "True" || \
      "$emissionsPrepareGfas" == "True" || \
      "$emissionsPrepareQfed" == "True" ) then
-  $py -m mpas_emissions.prepare_mesh --mesh "$meshFile" --cache-dir "$cacheDir"
+  $py -m mpas_emissions.prepare_mesh --mesh "$meshFile" --cache-dir "$cacheDir" --grid-name "$emissionsGridName"
   if ( $status != 0 ) then
     echo "ERROR PrepareEmissions: mesh preparation failed" > ./FAIL
     exit 1
