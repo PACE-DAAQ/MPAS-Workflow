@@ -86,6 +86,80 @@ When setting up symlinks, ensure the run/cylc-run/MPAS-Workflow directory is emp
 `{{scenarioConfig}}` is a yaml-based configuration file, examples of which are given in
 `scenarios/*.yaml` and `test/testinput/*.yaml`
 
+Continuing an experiment at a later date
+----------------------------------------
+
+`restart cycle point` extends an experiment that has already run, without repeating the
+cycles it has already completed. It is optional and defaults to `first cycle point`, in
+which case the experiment is treated as a fresh cold start.
+
+This is **not** a `cylc` restart. Nothing is resumed from cylc's state database: a new
+workflow is generated whose initial cycle point is later, and the continuity comes from
+forecast output left on disk by the previous run. Use it to extend a finished experiment
+further in time, or to pick up after a crash or a wall-clock kill.
+
+### Usage
+
+Keep the same `experiment: name:` -- that is what makes the run reuse the same
+`$SCRATCH/pandac/<name>/` tree -- then set `restart cycle point` and move
+`final cycle point` forward. Leave `first cycle point` at the original start:
+
+```yaml
+experiment:
+  name: 'my_cycling_experiment'    # unchanged from the original run
+
+workflow:
+  first cycle point: 20241025T00   # unchanged: the experiment's original start
+  restart cycle point: 20241028T00 # where this run picks up; must be > first cycle point
+  final cycle point: 20241101T00   # moved forward to cover the new period
+```
+
+Then run as usual:
+
+```shell
+./Run.py {{scenarioConfig}}
+```
+
+### Prerequisite
+
+`CyclingFC` output from the cycle **before** `restart cycle point` must already exist under
+`$SCRATCH/pandac/<name>/CyclingFC/`. That forecast is the initial condition the first
+restarted cycle starts from.
+
+If it is missing, the configuration still generates successfully and the failure appears
+later, inside the first forecast task, as a dangling initial-condition link rather than as
+a clear "nothing to restart from" message. Check that the directory is there before
+submitting.
+
+### What changes in the generated suite
+
+* No cold start. `FirstBackground` emits its `R1` block only when
+  `first cycle point == restart cycle point`, so a restart generates no `ColdForecast`
+  and no first-background seeding.
+* The recurrences start at the restart point rather than one cycling window after it
+  (`initialize/framework/Workflow.py`):
+
+  | | fresh run | restart |
+  |---|---|---|
+  | `AnalysisTimes` | `+PT<window>H/PT<window>H` | `PT<window>H` |
+  | `ForecastTimes` | `+PT<window+DA2FCOffset>H/PT<window>H` | `+PT<DA2FCOffset>H/PT<window>H` |
+
+* `initial cycle point` in `flow.cylc` is set to `restart cycle point`, not to
+  `first cycle point`.
+
+### Re-running the same experiment name
+
+`Experiment` deletes and recreates only `<ExperimentDirectory>/MPAS-Workflow`, the installed
+copy of the scripts and configuration. The sibling data directories -- `CyclingFC`,
+`ExternalAnalyses`, `ChemIC` and the rest -- are left untouched, which is what makes a
+restart possible at all. `submit.csh` stops any running suite of the same name, runs
+`cylc clean`, then reinstalls and plays it, so no manual cleanup is needed between runs.
+
+> **Caution:** that `rm -rf` runs whenever an `Experiment` is constructed, while only
+> `submit.csh` restores the directory afterwards. Tooling that builds a suite without
+> submitting it will therefore delete a live experiment's installation. Use a distinct
+> experiment name when experimenting with configuration generation.
+
 Build
 ------
 At this time the workflow does not build MPAS-Model or JEDI-MPAS.  Users must acquire source
