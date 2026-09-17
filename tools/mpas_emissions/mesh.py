@@ -173,11 +173,15 @@ class MpasMesh:
     @property
     def fingerprint(self) -> str:
         """Short content fingerprint suitable for cached SCRIP/weight filenames."""
-        h = sha256()
         h.update(np.asarray([self.n_cells], dtype=np.int64).tobytes())
-        for arr in (self.lat_cell, self.lon_cell, self.area_cell):
-            h.update(np.ascontiguousarray(arr).view(np.uint8))
-        return h.hexdigest()[:16]
+        h.update(np.asarray([self.sphere_radius_m], dtype=np.float64).tobytes())
+        for arr in (self.lat_cell, self.lon_cell, self.area_cell,
+                    self.n_edges_on_cell, self.cells_on_cell, self.boundary_mask,
+                    self.vertices_on_cell, self.lat_vertex, self.lon_vertex):
+            if arr is None:
+                h.update(b"<none>")
+            else:
+                h.update(np.ascontiguousarray(arr).view(np.uint8))
 
     def neighbor_table(
         self,
