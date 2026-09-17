@@ -12,6 +12,8 @@ emissions:
   #   ceds       - config-driven regular-grid CEDS -> MPAS
   #   gfas       - config-driven regular-grid GFAS -> MPAS
   #   qfed       - config-driven regular-grid QFED -> MPAS
+  #   gbbepx     - config-driven regular-grid GBBEPx -> MPAS
+  # A name not in this list is ignored silently, so check spelling here.
   prepare: [mesh]
 
   # Transitional fallback to the existing project EmissionDir/PRMAreaDir.
@@ -57,6 +59,8 @@ emissions:
   gfas weights file: ''
   qfed config: ''
   qfed weights file: ''
+  gbbepx config: ''
+  gbbepx weights file: ''
   regular chunk links: 2000000
   regular conservation tolerance: 5.0e-5
 

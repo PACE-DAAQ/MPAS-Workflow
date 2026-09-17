@@ -131,7 +131,8 @@ if ( "$emissionsPrepareMesh" == "True" || \
      "$emissionsPrepareCamsBiog" == "True" || \
      "$emissionsPrepareCeds" == "True" || \
      "$emissionsPrepareGfas" == "True" || \
-     "$emissionsPrepareQfed" == "True" ) then
+     "$emissionsPrepareQfed" == "True" || \
+     "$emissionsPrepareGbbepx" == "True" ) then
   $py -m mpas_emissions.prepare_mesh --mesh "$meshFile" --cache-dir "$cacheDir" --grid-name "$emissionsGridName"
   if ( $status != 0 ) then
     echo "ERROR PrepareEmissions: mesh preparation failed" > ./FAIL
@@ -178,10 +179,10 @@ if ( "$emissionsPrepareCamsBiog" == "True" ) then
 endif
 
 
-# Config-driven regular-grid inventories.  CEDS/GFAS/QFED share the same engine;
-# their YAML files define source filenames/variables/units/cadence and the exact
-# MPAS output names expected by SetStreamsVariant.csh.
-foreach inv ( ceds gfas qfed )
+# Config-driven regular-grid inventories.  CEDS/GFAS/QFED/GBBEPx share the same
+# engine; their YAML files define source filenames/variables/units/cadence and the
+# exact MPAS output names expected by SetStreamsVariant.csh.
+foreach inv ( ceds gfas qfed gbbepx )
   set doIt = "False"
   set cfg = ""
   set weights = ""
@@ -197,6 +198,10 @@ foreach inv ( ceds gfas qfed )
     set doIt = "$emissionsPrepareQfed"
     set cfg = "$emissionsQfedConfig"
     set weights = "$emissionsQfedWeightsFile"
+  else if ( "$inv" == "gbbepx" ) then
+    set doIt = "$emissionsPrepareGbbepx"
+    set cfg = "$emissionsGbbepxConfig"
+    set weights = "$emissionsGbbepxWeightsFile"
   endif
   if ( "$doIt" == "True" ) then
     if ( "$cfg" == "" ) then

@@ -19,7 +19,9 @@ def convert(values, *, source_units: str, target_units: str, molecular_weight_g_
     if su == tu or not source_units or not target_units:
         return a
 
-    kg_s = {"kg m^-2 s^-1", "kg m^(-2) s^(-1)", "kg/m2/s", "kg m-2 s-1"}
+    # GBBEPx writes the factors transposed ("kg s-1 m-2"); same quantity.
+    kg_s = {"kg m^-2 s^-1", "kg m^(-2) s^(-1)", "kg/m2/s", "kg m-2 s-1",
+            "kg s^-1 m^-2", "kg/s/m2"}
     kg_day = {"kg m^-2 day^-1", "kg/m2/day", "kg m-2 day-1"}
     molcm = {"molecules cm^-2 s^-1", "molecules/cm2/s", "molecule cm^-2 s^-1"}
 

@@ -1,0 +1,88 @@
+# NOAA GBBEPx v5r0 blended biomass burning -> MPAS, Jul-Sep 2024.
+#
+# Third biomass inventory alongside QFED and GFAS, for ensemble construction:
+# GBBEPx blends VIIRS and MODIS FRP through NOAA's own algorithm, so it is a
+# genuinely independent estimate rather than a reprocessing of the retrievals
+# GFAS already assimilates. That independence is the point -- an ensemble built
+# from inventories that share a retrieval chain understates emission spread.
+#
+# Version: the OSPO archive switches v4r0 -> v5r0 at 2024-05-01/02, so every day
+# of this period is v5r0 and no date carries two versions. Confirmed explicitly
+# because mixed processing versions silently double-counted observations in the
+# PACE AOD collections; the source glob pins v5r0 so a later reprocessing cannot
+# quietly mix in.
+#
+# Grid note: GBBEPx is 1801 x 3600 (node-centred, -90..90 inclusive), whereas
+# GFAS and QFED are 1800 x 3600 (cell-centred). It therefore fingerprints to a
+# different source grid and gets its own conservative weights -- do not seed its
+# cache with the QFED/GFAS weight files.
+#
+# Like QFED, GBBEPx carries no iso/mnt, so those two MPAS species remain FINN
+# fallbacks in SetStreamsVariant.csh. Its MeanFRP field is gridded FRP, not a
+# per-fire mean area, so it cannot supply PRM fire size either: a GBBEPx member
+# still uses `emissions: prm source: finn`.
+inventory: GBBEPx
+year: 2024
+source:
+  files:
+    - /glade/derecho/scratch/syha/pace_cycling_2024/gbbepx/GBBEPx-all01GRID_v5r0_blend_s{year}*.nc
+  time: Time
+  latitude: [Latitude, lat]
+  longitude: [Longitude, lon]
+
+time:
+  # One record per daily file. Time units are "days since <date> 12:00:00", so
+  # each record already sits at 12Z on the day it describes -- the same
+  # convention as QFED and, unlike native GFAS, needing no offset correction.
+  start: "{year}-07-01T00:00:00"
+  end: "{year}-09-30T23:00:00"
+  target frequency: hourly
+  target step hours: 1
+  source temporal semantics: daily_mean
+  missing: linear
+  max interpolation gap days: 3
+  allow extrapolation: false
+
+outputs:
+  - file: GBBEPx_Glb_{year}_MPAS.{grid}.grid.bc.hourly.nc
+    fields:
+      bc_biob_modis:
+        source variable: BC
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 12.011
+  - file: GBBEPx_Glb_{year}_MPAS.{grid}.grid.oc.hourly.nc
+    fields:
+      oc_biob_modis:
+        source variable: OC
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 12.011
+  - file: GBBEPx_Glb_{year}_MPAS.{grid}.grid.nh3.hourly.nc
+    fields:
+      nh3_biob_modis:
+        source variable: NH3
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 17.031
+  - file: GBBEPx_Glb_{year}_MPAS.{grid}.grid.so2.hourly.nc
+    fields:
+      so2_biob_modis:
+        source variable: SO2
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 64.066
+  - file: GBBEPx_Glb_{year}_MPAS.{grid}.grid.co.hourly.nc
+    fields:
+      co_biob_modis:
+        source variable: CO
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 28.0101
+# CO2, NOx and PM2.5 are also present in the source but are not GOCART2G
+# biomass-emission streams, so they are deliberately not written.
+
+scaling:
+  default: 1.0
+  species:
+    nh3: 1.0
