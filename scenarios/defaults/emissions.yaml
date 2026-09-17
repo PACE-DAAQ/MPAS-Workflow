@@ -38,9 +38,11 @@ emissions:
   cams anth config: ''
   cams biog config: ''
 
-  # Optional existing conservative weight file. If empty, a cache filename is
-  # derived from source-grid + MPAS-mesh fingerprints and generated once with
-  # ESMPy/ESMF_RegridWeightGen when missing.
+  # Optional existing conservative weight file. If empty, the cache filename is
+  # derived from the source-grid shape and the MPAS grid label
+  # (weights_1800x3600_to_x1.163842.nc) and generated once with
+  # ESMPy/ESMF_RegridWeightGen when missing. A supplied file is checked against
+  # the source grid and mesh it was built for, and rejected on a mismatch.
   cams anth weights file: ''
   cams biog weights file: ''
   cams chunk links: 2000000
