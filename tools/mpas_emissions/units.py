@@ -5,8 +5,12 @@ import numpy as np
 AVOGADRO = 6.02214076e23
 
 
+import re
+
 def _norm(u: str) -> str:
-    return " ".join(str(u).lower().replace("**", "^").replace("-2", "^-2").replace("-1", "^-1").split())
+    text = str(u).lower().replace("**", "^")
+    text = re.sub(r"(?<!\^)-([12])\b", r"^-\1", text)
+    return " ".join(text.split())
 
 
 def convert(values, *, source_units: str, target_units: str, molecular_weight_g_mol: float | None = None, scale: float = 1.0):
