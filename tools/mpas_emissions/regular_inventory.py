@@ -21,6 +21,10 @@ from .regular_grid import regular_grid_fingerprint, regular_cell_areas_sr, write
 from .scrip import write_mpas_scrip
 from .sparse_weights import SparseWeights
 from .esmf_weights import generate_conservative_weights
+from .cache_paths import (
+    grid_dims_tag, resolve_grid_name, scrip_file, gridspec_file, weights_file,
+    stamp_nc_attrs, cache_is_usable, require_cache_identity,
+)
 from .stream_io import MpasEmissionStreamWriter
 from .time_axis import SourceRecord, TimeBracket, make_schedule, parse_datetime, resolve_brackets, resolve_calendar_day_brackets
 from .units import convert
@@ -198,14 +202,26 @@ class RegularInventoryProcessor:
     def _weights(self, source_file: str, cfg: dict):
         lat, lon, lat_flip = _read_lat_lon(source_file, cfg)
         tag = regular_grid_fingerprint(lat, lon)
+        mesh_tag = self.mesh.fingerprint
+        dims = grid_dims_tag(lat, lon)
+        grid_name = resolve_grid_name(self.grid_name, self.mesh.n_cells)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        src_grid = self.cache_dir / f"regular_gridspec_{lat.size}x{lon.size}_{tag}.nc"
-        dst_grid = self.cache_dir / f"mpas_scrip_x{self.mesh.n_cells}_{self.mesh.fingerprint}.nc"
-        wf = self.cache_dir / f"weights_src_{tag}_to_mpas_{self.mesh.fingerprint}_conserve.nc"
-        if not src_grid.exists(): write_gridspec_from_centers(lat, lon, src_grid)
-        if not dst_grid.exists(): write_mpas_scrip(self.mesh, dst_grid)
-        use = self.provided_weight_file if self.provided_weight_file and self.provided_weight_file.exists() else wf
-        if not use.exists(): generate_conservative_weights(src_grid, dst_grid, use, dst_regional=not self.mesh.is_global)
+        src_grid = gridspec_file(self.cache_dir, dims)
+        dst_grid = scrip_file(self.cache_dir, grid_name)
+        wf = weights_file(self.cache_dir, dims, grid_name)
+        if not cache_is_usable(src_grid, {"grid_fingerprint": tag}, label="cached source gridspec"):
+            write_gridspec_from_centers(lat, lon, src_grid)
+        if not cache_is_usable(dst_grid, {"mesh_fingerprint": mesh_tag}, label="cached SCRIP mesh"):
+            write_mpas_scrip(self.mesh, dst_grid)
+        identity = {"grid_fingerprint": tag, "mesh_fingerprint": mesh_tag}
+        if self.provided_weight_file and self.provided_weight_file.exists():
+            use = self.provided_weight_file
+            require_cache_identity(use, identity, label="weight file")
+        else:
+            use = wf
+            if not cache_is_usable(use, identity, label="cached weight file"):
+                generate_conservative_weights(src_grid, dst_grid, use, dst_regional=not self.mesh.is_global)
+                stamp_nc_attrs(use, **identity)
         w = SparseWeights.open(use, n_dest=self.mesh.n_cells, n_src=lat.size*lon.size,
                                require_full_destination=True, require_full_source=self.mesh.is_global)
         return lat, lon, lat_flip, tag, Path(use), w
@@ -321,7 +337,7 @@ class RegularInventoryProcessor:
                 brackets = resolve_brackets(records, targets, method=str(time_cfg.get("missing", "linear")),
                                             max_gap=max_gap, allow_extrapolation=bool(time_cfg.get("allow extrapolation", False)))
 
-            grid_name = self.grid_name or f"x1.{self.mesh.n_cells}"
+            grid_name = resolve_grid_name(self.grid_name, self.mesh.n_cells)
             out = _output_path(product["file"], output_dir=self.output_dir, year=year, mesh=self.mesh, grid_name=grid_name)
             if out.is_symlink(): out.unlink()
             if reuse_existing and out.exists(): outputs.append(out); continue

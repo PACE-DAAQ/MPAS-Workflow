@@ -22,6 +22,10 @@ from .regular_grid import regular_grid_fingerprint, regular_cell_areas_sr, write
 from .scrip import write_mpas_scrip
 from .sparse_weights import SparseWeights
 from .esmf_weights import generate_conservative_weights
+from .cache_paths import (
+    grid_dims_tag, resolve_grid_name, scrip_file, gridspec_file, weights_file,
+    stamp_nc_attrs, cache_is_usable, require_cache_identity,
+)
 from .io import write_mpas_emissions
 from .scaling import scaling_factor, describe_scaling
 
@@ -108,23 +112,29 @@ class CamsProcessor:
         if lat.ndim != 1 or lon.ndim != 1 or not np.all(np.diff(lat) > 0) or not np.all(np.diff(lon) > 0):
             raise ValueError(f"CAMS source coordinates in {source_file} must be 1-D and increasing")
         source_tag = regular_grid_fingerprint(lat, lon)
+        mesh_tag = self.mesh.fingerprint
+        dims = grid_dims_tag(lat, lon)
+        grid_name = resolve_grid_name(self.grid_name, self.mesh.n_cells)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        src_grid = self.cache_dir / f"cams_gridspec_{lat.size}x{lon.size}_{source_tag}.nc"
-        dst_grid = self.cache_dir / f"mpas_scrip_x{self.mesh.n_cells}_{self.mesh.fingerprint}.nc"
-        weight = self.cache_dir / f"weights_src_{source_tag}_to_mpas_{self.mesh.fingerprint}_conserve.nc"
-        if not src_grid.exists():
+        src_grid = gridspec_file(self.cache_dir, dims)
+        dst_grid = scrip_file(self.cache_dir, grid_name)
+        weight = weights_file(self.cache_dir, dims, grid_name)
+        if not cache_is_usable(src_grid, {"grid_fingerprint": source_tag}, label="cached source gridspec"):
             write_gridspec_from_centers(lat, lon, src_grid)
-        if not dst_grid.exists():
+        if not cache_is_usable(dst_grid, {"mesh_fingerprint": mesh_tag}, label="cached SCRIP mesh"):
             write_mpas_scrip(self.mesh, dst_grid)
 
+        identity = {"grid_fingerprint": source_tag, "mesh_fingerprint": mesh_tag}
         if self.provided_weight_file and self.provided_weight_file.exists():
             use_weight = self.provided_weight_file
+            require_cache_identity(use_weight, identity, label="CAMS weight file")
         else:
             use_weight = weight
-            if not use_weight.exists():
+            if not cache_is_usable(use_weight, identity, label="cached weight file"):
                 generate_conservative_weights(
                     src_grid, dst_grid, use_weight, dst_regional=not self.mesh.is_global
                 )
+                stamp_nc_attrs(use_weight, **identity)
 
         weights = SparseWeights.open(
             use_weight,
@@ -178,7 +188,7 @@ class CamsProcessor:
 
         reference_lat = reference_lon = None
         for long_name, token in mapping.items():
-            grid_name = self.grid_name or f"x1.{self.mesh.n_cells}"
+            grid_name = resolve_grid_name(self.grid_name, self.mesh.n_cells)
             out = _safe_output_file(self.output_dir, self.mesh, year, kind, long_name, grid_name)
             if out.is_symlink():
                 out.unlink()
