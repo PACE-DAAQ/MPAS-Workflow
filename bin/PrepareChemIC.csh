@@ -24,8 +24,43 @@ endif
 
 set WorkDir = ${ExperimentDirectory}/`echo "${initicChemistryWorkDir}" | sed 's@{{thisValidDate}}@'${thisValidDate}'@'`
 mkdir -p ${WorkDir}
+
+# Reuse an already-prepared valid time.
+#
+# The chemistry IC for a given valid time is a pure function of that time and
+# the source config -- it does not depend on the experiment. PREPARE_CHEM_SUCCESS
+# was already written on completion but never read, so every experiment rebuilt
+# every valid time from MERRA2. Two experiments over the same period duplicated
+# the whole set.
+#
+# The marker is touched only after merra_chem exits 0, so an interrupted or
+# failed run leaves no marker and is correctly rebuilt. Require the MERRA2
+# intermediate file as well, so a stray marker beside a deleted or truncated
+# product does not cause a silent skip.
+#
+# Set PREPARE_CHEM_FORCE to rebuild regardless, e.g. after changing the source
+# config or the MERRA2 inputs for a date already prepared.
+set forceChem = 0
+if ( $?PREPARE_CHEM_FORCE ) then
+  set forceChem = 1
+endif
+if ( ${forceChem} == 0 && -e ${WorkDir}/PREPARE_CHEM_SUCCESS ) then
+  set nMerra = `ls ${WorkDir}/MERRA2:* |& grep -vc '^ls:'`
+  if ( ${nMerra} > 0 ) then
+    echo "$0 (INFO): reusing chemistry IC already prepared for ${thisValidDate} in ${WorkDir}"
+    exit 0
+  endif
+  echo "$0 (WARNING): ${WorkDir}/PREPARE_CHEM_SUCCESS exists but no MERRA2 intermediate is present; rebuilding"
+endif
+
 set py = "python3"
-if ( $?emissionsPython ) set py = "${emissionsPython}"
+# tcsh expands the whole line before evaluating the condition, so a same-line
+# "${emissionsPython}" raises "Undefined variable" even when $?emissionsPython
+# is false. Suites without an Emissions component (ForecastFromExternalAnalyses)
+# define no emissions.csh and so hit exactly that. Use a block form.
+if ( $?emissionsPython ) then
+  set py = "${emissionsPython}"
+endif
 # mainScriptDir is the installed experiment copy. Fall back to the tools/
 # directory beside this script so the task can also be run directly from a
 # checkout as a pre-flight check before submitting the suite.
