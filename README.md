@@ -180,6 +180,108 @@ Please contact [JJ Guerrette](mailto:guerrett@ucar.edu?subject=[GitHub]%20MPAS-W
 questions. The MPAS-Worklfow release procedure is subject to change in the future, which will be
 documented here.
 
+Workflow-native emissions: environment and resources
+----------------------------------------------------
+
+With `emissions: mode: workflow`, the `PrepareEmissions` task regrids raw inventories onto
+the active MPAS mesh. The first time a given source-grid / mesh pair is seen it must
+generate ESMF conservative weights, and that step has requirements the rest of the workflow
+does not.
+
+### ESMF must be built with PIO
+
+`tools/mpas_emissions/esmf_weights.py` writes the weight file through `ESMF.Regrid(...,
+filename=...)`, which is implemented with ESMF's parallel I/O layer. **ESMPy being
+importable is not sufficient** -- the underlying ESMF must have been built with PIO, which
+in practice means built against a real MPI rather than the serial `mpiuni` stub. A serial
+build fails partway through the regrid with:
+
+```
+esmpy.util.exceptions.PIOMissing: This function requires ESMF to have been built with PIO.
+```
+
+Check an environment before using it:
+
+```bash
+python -c "import esmpy; from esmpy.api.constants import _ESMF_PIO; \
+           print(esmpy.__version__, 'PIO:', _ESMF_PIO)"
+```
+
+`PIO: True` is required. Some conda ESMF installations also need `ESMFMKFILE` set to the
+`esmf.mk` in that environment before `import esmpy` will work at all; environments that ship
+activation scripts set it for you.
+
+Note that the conda environment used to run `cylc` itself is not necessarily a suitable
+choice: a serial ESMF build satisfies "ESMPy is installed" while failing this requirement.
+
+### Selecting the environment
+
+There are two routes, and they apply to different things. Choose by whether the work runs as
+a cylc task or by hand.
+
+**For a cylc task -- the scenario YAML.** `bin/PrepareEmissions.csh` sources whatever
+`environment script` names and runs whatever `python executable` names, both taken from the
+generated `config/auto/emissions.csh`:
+
+```yaml
+emissions:
+  environment script: config/environmentEmissions.csh   # default
+  python executable: python3                            # default
+```
+
+Point `environment script` at your own script, or `python executable` at a specific
+interpreter, to give the scheduled task a PIO-capable ESMPy. These values travel through the
+generated configuration into the job, so they are the only route that reaches a task.
+
+**For an offline run -- the environment variable.** `config/environmentEmissions.csh`
+activates `$MPAS_EMISSIONS_CONDA_ENV` when it is set, and otherwise falls back to `npl`:
+
+```bash
+export MPAS_EMISSIONS_CONDA_ENV=/path/to/an/esmpy/environment   # must report PIO: True
+```
+
+That variable is read from the task's own environment, so it works when you run
+`bin/PrepareEmissions.csh` yourself and inherit it from your shell. **It does not reach a
+cylc task.** The generated job script exports only `origin` as a user variable and carries no
+`#PBS -V`, so the submitting shell's environment is not passed to the job; a scheduled task
+therefore uses the `npl` fallback no matter what is exported interactively. Setting it before
+`Run.py` configures nothing.
+
+Note also that batch tasks first activate the cylc environment itself in their `init-script`
+(`SuiteBase` uses `$CYLC_ENV` on Derecho), and `config/environmentEmissions.csh` then replaces
+it. If that fallback is ever changed away from an environment with PIO, the task inherits
+whichever ESMF the cylc environment happens to carry.
+
+`ESMF_RegridWeightGen` on `PATH` is supported as an alternative to ESMPy, but note that it is
+only tried when ESMPy cannot be **imported**; an importable-but-PIO-less ESMPy raises before
+the fallback is reached.
+
+### Run it under PBS, not on a login node
+
+Weight generation for a global high-resolution source grid onto a fine MPAS mesh is
+memory- and time-intensive, and will be killed by login-node resource limits. The in-workflow
+task requests `nodes: 1`, `PEPerNode: 8`, `memory: 96GB` and `seconds: 3600` by default (see
+`scenarios/defaults/emissions.yaml`); an offline run needs comparable resources. Submit it
+as a batch job:
+
+```bash
+#!/bin/bash
+#PBS -N PrepareEmissions
+#PBS -A <your account>
+#PBS -q main
+#PBS -l select=1:ncpus=8:mem=96GB
+#PBS -l walltime=03:00:00
+#PBS -j oe
+
+export MPAS_EMISSIONS_CONDA_ENV=/path/to/an/esmpy/environment
+cd <ExperimentDirectory>/MPAS-Workflow
+./bin/PrepareEmissions.csh 2024        # a 4-digit year is enough
+```
+
+Products land in the annual, cycle-independent `work directory: Emissions/{{mesh}}`, so one
+offline run per year and mesh covers every cycle in that year; the in-workflow task then
+finds its outputs already present and is a no-op under `reuse existing`.
+
 Configuration Files
 -------------------
 

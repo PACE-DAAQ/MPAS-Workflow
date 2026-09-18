@@ -1,0 +1,87 @@
+# Native CAMS GFAS v1.2 -> MPAS.
+# For the 2024 experiment, source data are retrieved from the Copernicus
+# Atmosphere Data Store, NOT from the existing MPAS-grid conversion.
+inventory: GFAS
+year: 2024
+source:
+  # First use any native ADS files already cached by the user.  If none exist,
+  # source.fetch downloads monthly native 0.1-degree NetCDF files from ADS.
+  files:
+    - ${GFAS_RAW_DIR}/GFAS_v1.2_native_0.1deg_{year}*.nc
+  time: time
+  latitude: [latitude, lat]
+  longitude: [longitude, lon]
+  fetch:
+    enabled: true
+    provider: cams_ads_gfas
+    cache directory: "{cache_dir}/raw/gfas"
+    overwrite: false
+
+time:
+  # Current PACE experiment source window; expand/change for another case.
+  start: "{year}-10-01T00:00:00"
+  end: "{year}-12-31T23:00:00"
+  target frequency: hourly
+  target step hours: 1
+  # GFAS v1.2 is a daily 00--23 UTC mean. Repeat that mean during the day;
+  # interpolate only if an entire GFAS daily analysis is missing.
+  source temporal semantics: daily_mean
+  missing: linear
+  max interpolation gap days: 3
+  allow extrapolation: false
+
+outputs:
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.bc.hourly.nc
+    fields:
+      bc_biob_modis:
+        source variable aliases: [bcfire, wildfire_flux_of_black_carbon]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 12.011
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.oc.hourly.nc
+    fields:
+      oc_biob_modis:
+        source variable aliases: [ocfire, wildfire_flux_of_organic_carbon]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 12.011
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.nh3.hourly.nc
+    fields:
+      nh3_biob_modis:
+        source variable aliases: [nh3fire, wildfire_flux_of_ammonia]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 17.031
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.so2.hourly.nc
+    fields:
+      so2_biob_modis:
+        source variable aliases: [so2fire, wildfire_flux_of_sulphur_dioxide]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 64.066
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.co.hourly.nc
+    fields:
+      co_biob_modis:
+        source variable aliases: [cofire, wildfire_flux_of_carbon_monoxide]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 28.0101
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.iso.hourly.nc
+    fields:
+      iso_biob_modis:
+        source variable aliases: [c5h8fire, wildfire_flux_of_isoprene]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 68.117
+  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.mnt.hourly.nc
+    fields:
+      mnt_biob_modis:
+        source variable aliases: [terpenesfire, wildfire_flux_of_terpenes]
+        source units: kg m-2 s-1
+        target units: molecules cm-2 s-1
+        molecular weight g mol-1: 136.24
+
+scaling:
+  default: 1.0
+  species:
+    nh3: 1.0

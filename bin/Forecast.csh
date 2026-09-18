@@ -77,6 +77,10 @@ source config/auto/members.csh
 source config/auto/model.csh
 source config/auto/invariantstream.csh
 source config/auto/workflow.csh
+# Guarded because only suites that construct an Emissions component generate this file;
+# without it $?emissionsMode below is always 0 and workflow-mode emissions silently fall
+# back to the prebuilt EmissionDir, i.e. this whole feature is a no-op at runtime.
+if ( -e config/auto/emissions.csh ) source config/auto/emissions.csh
 set yymmdd = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 1-8`
 set hh = `echo ${CYLC_TASK_CYCLE_POINT} | cut -c 10-11`
 set thisCycleDate = ${yymmdd}${hh}
@@ -93,6 +97,17 @@ set self_icStateDir = ${ExperimentDirectory}/`echo "${ArgICStateDir}" \
   `
 
 source ./bin/getCycleVars.csh
+
+# In workflow-native mode, PrepareEmissions has already staged an experiment-local
+# directory for this mesh. Preserve Build.EmissionDir in prebuilt mode.
+if ( $?emissionsMode ) then
+  if ( "$emissionsMode" == "workflow" ) then
+    set EmissionDir = "${ExperimentDirectory}/${EmissionsWorkDir}"
+    # PrepareEmissions stages/generates the four-field PRM fire-statistics file in the same
+    # experiment-local directory, so variable-resolution runs are self-contained.
+    set PRMAreaDir = "${ExperimentDirectory}/${EmissionsWorkDir}"
+  endif
+endif
 
 # nCells
 if ("$ArgMesh" == "$outerMesh") then
@@ -212,8 +227,15 @@ ln -sfv ${EmissionDir}/* .
 ln -sfv ${BackgroundLUTDir}/* . # this may be required for init_atmosphere, not atmosphere
 ln -sfv ${OpticsDir}/* .
 
-# Link PRM (plume rise model) static AREA input (always used by the forecast template)
-ln -sfv ${PRMAreaDir}/* .
+# Link PRM (plume rise model) static AREA input (always used by the forecast template).
+# In workflow-native mode PrepareEmissions has already merged the prebuilt PRM files into
+# the same experiment-local directory as the emissions, and the block above points both
+# EmissionDir and PRMAreaDir at it -- so the emission glob has already linked them and
+# repeating the glob only re-links the same files. Guard rather than drop the line: in
+# prebuilt mode the two remain distinct (Build.EmissionDir vs Build.PRMAreaDir).
+if ( "${PRMAreaDir}" != "${EmissionDir}" ) then
+  ln -sfv ${PRMAreaDir}/* .
+endif
 
 
 ## link stream_list configs

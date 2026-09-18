@@ -87,7 +87,7 @@ class Model(Component):
     # Optional per-dimension overrides of the 'streams variant' inventory combination. When set,
     # each overrides only its own dimension; when empty, the variant's default is used. The
     # inventory-name -> filename tables live in bin/SetStreamsVariant.csh.
-    # OPTIONS: anth emissions: cams|ceds|cams-mix ; biob emissions: finn|gfas|qfed ; biog emissions: cams
+    # OPTIONS: anth emissions: cams|ceds|cams-mix ; biob emissions: finn|gfas|qfed|gbbepx ; biog emissions: cams
     'anth emissions': ['', str],
     'biob emissions': ['', str],
     'biog emissions': ['', str],

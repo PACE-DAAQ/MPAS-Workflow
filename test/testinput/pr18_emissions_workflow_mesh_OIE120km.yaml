@@ -1,0 +1,240 @@
+# ==================================================================================================
+# HOW TO RUN THIS SAFELY  (read before the first command below)
+#
+# Run.py ALWAYS finishes with suite.submit() -> ./submit.csh -> `cylc play`. There is no
+# generate-only mode. initialize/framework/HPC.py defaults CriticalAccount /
+# NonCriticalAccount / SingleProcAccount to NMMM0015, so an unguarded run can submit PBS
+# jobs -- possibly on an allocation that is not yours. "Run it and stop it quickly" races
+# the scheduler and is not safe.
+#
+# Neutralise cylc for the duration instead. submit.csh does `conda activate $CYLC_ENV`,
+# which would otherwise put the real cylc back ahead of the stub, so CYLC_ENV has to point
+# at the stub as well as PATH:
+#
+#   set stub = /glade/derecho/scratch/$USER/cylcstub
+#   mkdir -p $stub/bin
+#   printf '#!/bin/sh\nexit 0\n' > $stub/bin/cylc
+#   chmod +x $stub/bin/cylc
+#   setenv CYLC_ENV "$stub"
+#   setenv PATH "$stub/bin:$PATH"
+#
+# Then run the command in the steps below. Everything this test inspects -- suite.rc /
+# flow.cylc, config/auto/*.csh, the resolved streams and namelist files -- is written
+# BEFORE cylc would have been invoked, so stubbing it costs nothing and no job is ever
+# submitted. No `cylc stop` is needed.
+#
+# Paths below are relative to the root of your MPAS-Workflow checkout; run from there.
+# ==================================================================================================
+# ==================================================================================================
+# PR #18 -- "Add workflow-native static and annual emissions preparation"
+#           branch feature/emissions-static, based on feature/chemistry-ic
+#
+# FEATURE UNDER TEST
+#   The new Emissions component (initialize/data/Emissions.py + scenarios/defaults/emissions.yaml)
+#   and the PrepareEmissions cylc task it injects into the Cycle suite when
+#   `emissions: mode: workflow`.  This scenario exercises the cheapest entry of the new
+#   `prepare` list -- `mesh` -- which derives the MPAS cell-neighbor cache and the SCRIP
+#   destination grid directly from the active mesh file (tools/mpas_emissions/prepare_mesh.py,
+#   mesh.py, scrip.py).  No inventory is downloaded, no ESMF weights are generated, and no PBS
+#   job is submitted, so the whole check runs on a derecho login node in ~2 minutes.
+#
+#   It also pins down the mesh/year generalization the rest of the PR depends on: the emission
+#   grid name must be DERIVED from the active mesh (x1.40962 on the 120 km mesh), not the
+#   x1.163842 string the pre-PR code hard-wired.
+#
+# HOW TO RUN  (derecho login node; no PBS account required, no PBS job submitted)
+#
+#   cd <your checkout of feature/emissions-static>
+#   source env-setup/machine.csh                 # machine.sh for bash/zsh
+#   ./Run.py test/testinput/pr18_emissions_workflow_mesh_OIE120km.yaml
+#
+#   # Run.py always ends by calling submit.csh, which does `cylc play`.  Nothing expensive can
+#   # run (see the execute: False settings below -- only placeholder tasks remain), but stop the
+#   # scheduler anyway so it does not sit there:
+#   cylc stop --now --now MPAS-Workflow/${USER}_test_pr18_emissions_workflow_mesh_OIE120km   # <-- NOT NEEDED with the cylc stub above; left for reference only
+#
+#   setenv EXPDIR /glade/derecho/scratch/${USER}/pandac/${USER}_test_pr18_emissions_workflow_mesh_OIE120km
+#   setenv SCRIPTDIR ${EXPDIR}/MPAS-Workflow
+#
+# WHAT TO LOOK AT -- PASS / FAIL
+#
+#  (1) GENERATED COMPONENT CONFIG:  ${SCRIPTDIR}/config/auto/emissions.csh
+#      This file does not exist at all before this PR.  PASS when it contains:
+#          setenv emissionsMode "workflow"
+#          setenv emissionsGridName "x1.40962"     <-- derived from the 120 km mesh
+#          set emissionsPrepare = (mesh)
+#          setenv emissionsPrepareMesh "True"
+#          setenv emissionsPrepareCamsAnth "False"   (likewise Ceds / Gfas / Qfed = "False")
+#          setenv emissionsSeedPrebuilt "False"
+#          setenv EmissionsWorkDir "Emissions/120km"
+#          setenv EmissionsCacheDir "Emissions/cache/120km"
+#      FAIL if emissionsGridName is "x1.163842" (mesh still hard-wired), if emissionsPrepareMesh
+#      is False, or if the file is missing.
+#
+#  (2) GENERATED SUITE:  grep -n 'PrepareEmissions' ${SCRIPTDIR}/flow.cylc
+#      PASS when BOTH of these appear:
+#        a) a [runtime] section
+#               [[PrepareEmissions]]
+#                 inherit = SingleBatch
+#                 script = $origin/bin/PrepareEmissions.csh
+#        b) a graph edge
+#               PrepareEmissions => PreForecast__
+#           located INSIDE the `+PT6H/PT6H = """ ... """` recurrence block of [[graph]].
+#      FAIL if that edge sits at the top level of [[graph]] instead of inside a recurrence: a
+#      bare `A => B` there is parsed by cylc as a recurrence key and the workflow is rejected
+#      ("Cannot process recurrence PrepareEmissions").  submit.csh already ran
+#      `cylc validate`; its output in the Run.py console log must be clean.
+#
+#  (3) THE TASK ACTUALLY WORKS -- run its script by hand, login node, no PBS:
+#          cd ${SCRIPTDIR}
+#          ./bin/PrepareEmissions.csh 20220201T0600
+#      (bin/PrepareEmissions.csh documents this argument form for exactly this offline use; it
+#       reads the same config/auto/*.csh the cylc task would.)
+#      PASS when it ends with "PrepareEmissions complete: ${EXPDIR}/Emissions/120km" and the
+#      mesh step printed:
+#          grid_name=x1.40962
+#          nCells=40962
+#          mesh_type=global
+#          surface_fraction=1.00000...            (invariant file covers the whole sphere)
+#          neighbors=${EXPDIR}/Emissions/cache/120km/mpas_neighbors_x1.40962.npz
+#          scrip=${EXPDIR}/Emissions/cache/120km/mpas_scrip_x1.40962.nc
+#      and both of those files exist and are non-empty (the SCRIP file should be ~10-15 MB).
+#      FAIL if it prints "scrip=SKIPPED" or if ${SCRIPTDIR}/FAIL is created.  The mesh identity
+#      now lives inside the products rather than in their names, so also check that
+#      `ncdump -h .../mpas_scrip_x1.40962.nc | grep mesh_fingerprint` reports the same
+#      16-hex value the mesh step printed as mesh_fingerprint=.
+#      Re-run the same command: with `reuse existing` at its default (true) it must be a no-op
+#      that re-uses both cached files rather than rewriting them.
+#
+#  (4) PREBUILT MODE IS UNCHANGED (optional, ~30 s, do it LAST -- Run.py rm -rf's ${SCRIPTDIR}):
+#      change `mode: workflow` to `mode: prebuilt` below and rerun Run.py; then
+#          grep -c PrepareEmissions ${SCRIPTDIR}/flow.cylc      -> must print 0
+#      i.e. existing experiments gain no task and no graph edge.
+#
+#   Reviewer note: no PBS account is set in this file on purpose.  If you also want to watch the
+#   real cylc PrepareEmissions task submit (shared/develop queue, 1 node, 8 PEs), add your own
+#   `hpc: {CriticalAccount: <your account>}` locally and do NOT commit it.
+#
+#   NOT COVERED by this scenario -- see the reviewer notes at the bottom of this file.
+# ==================================================================================================
+
+# The Emissions component is constructed only in initialize/suites/Cycle.py, so this scenario must
+# use the Cycle suite (it is also Run.py's default; stated explicitly for clarity).
+suite: Cycle
+
+experiment:
+  # Unique and obviously a test.  Run.py / SuiteBase.submit() does `rm -rf <mainScriptDir>` for
+  # whatever name is given here, so this must never collide with a real experiment name.
+  name: 'test_pr18_emissions_workflow_mesh_OIE120km'
+
+# ---------------------------------------------------------------------------------------------
+# the feature under test
+# ---------------------------------------------------------------------------------------------
+emissions:
+  # 'workflow' is what makes Emissions.ready non-None; that is what adds the [[PrepareEmissions]]
+  # task and the `PrepareEmissions => PreForecast__` edge.  With the default 'prebuilt' the
+  # component emits no task at all and there is nothing new to inspect.
+  mode: workflow
+
+  # Cheapest product in the new prepare list: MPAS neighbours + SCRIP derived from the active
+  # mesh file.  cams-anth / cams-biog / ceds / gfas / qfed each additionally need a raw inventory
+  # staged on disk plus an ESMPy-enabled conda environment for first-time weight generation,
+  # which a reviewer should not have to arrange in order to approve the PR.
+  prepare: [mesh]
+
+  # Default is true, which first symlinks Build.EmissionDir and Build.PRMAreaDir into the work
+  # directory.  Those prebuilt files exist only for the x1.163842 mesh, so on 120 km they are
+  # noise that makes "what did this PR actually generate?" ambiguous, and their absence would
+  # only produce warnings.  false keeps Emissions/120km and Emissions/cache/120km containing
+  # nothing but workflow-native products.
+  seed prebuilt: false
+
+  # environment script / python executable / work directory / cache directory / reuse existing
+  # are all left at scenarios/defaults/emissions.yaml values on purpose: the defaults are part
+  # of what is being reviewed.
+
+# ---------------------------------------------------------------------------------------------
+# smallest configuration that still exercises the feature
+# ---------------------------------------------------------------------------------------------
+model:
+  # 120 km = x1.40962.  The mesh/SCRIP path is not mesh-specific, and this is the smallest mesh
+  # with an invariant file on campaign disk
+  # (/glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/Invariant/x1.40962.invariant.nc,
+  # 242 MB, contains latCell/lonCell/areaCell/cellsOnCell/nEdgesOnCell and the
+  # verticesOnCell/latVertex/lonVertex that the SCRIP writer requires), so prepare_mesh finishes
+  # in seconds.  It is also the clearest grid-name check: "x1.40962" cannot be confused with the
+  # "x1.163842" literal the pre-PR code hard-wired.
+  outerMesh: 120km
+  innerMesh: 120km
+  ensembleMesh: 120km
+
+members:
+  # PrepareEmissions is per-mesh, not per-member (Emissions is built from meshes['Outer'] only).
+  n: 1
+
+workflow:
+  # ForecastTimes is '+PT6H/PT6H' for a fresh start, so the first -- and here only --
+  # PrepareEmissions instance is at first+6h.  Two cycle points is therefore the minimum that
+  # instantiates the task at all.  The dates are copied from the proven 120 km baseline
+  # test/testinput/3dvar_OIE120km_ColdStart.yaml so that everything except the emissions block is
+  # a known-good configuration.
+  first cycle point: 20220201T00
+  final cycle point: 20220201T06
+
+# ---------------------------------------------------------------------------------------------
+# keep everything else from doing real work
+# ---------------------------------------------------------------------------------------------
+# Run.py unconditionally calls submit.csh, which does `cylc play`.  `execute: False` is the
+# documented switch (see scenarios/3denvar_OIE120km_WarmStart_VarBC.yaml): TaskFamily then drops
+# both the Init* and *Exec phases from the dependency graph, leaving only PlaceHolder tasks, so
+# no forecast, DA or verification job can be submitted while the reviewer inspects the artifacts.
+# Forecast.export() adds the `PrepareEmissions => PreForecast__` edge BEFORE updateDependencies()
+# and independently of `execute`, so the edge under test is still generated and still inspectable.
+forecast:
+  execute: False
+  post: []          # no verifymodel/verifyobs tasks
+
+variational:
+  # DA.py asserts that exactly one of variational/enkf is configured, so this block is required
+  # even though it never executes.  3dvar matches the 120 km baseline scenario.
+  DAType: 3dvar
+  execute: False
+  post: []
+
+observations:
+  # Observations declares 'resource' as a required variable, so it must be present for the suite
+  # to be generated.  Same value as the 120 km baseline scenario; nothing is fetched because the
+  # variational family does not execute.
+  resource: GladeRDAOnline
+
+externalanalyses:
+  # Same as the 120 km baseline scenario.  Left at default 'execute' so the graph keeps exactly
+  # the shape a real cycling experiment has; nothing downstream consumes its output here.
+  resource: "GFS.RDA"
+
+# ==================================================================================================
+# WHAT THIS SCENARIO DOES *NOT* EXERCISE (be aware before approving on this test alone):
+#
+#  * The inventory processors.  cams_cli/cams_regrid/cams_source, regular_cli/regular_inventory/
+#    regular_grid, esmf_weights, sparse_weights, scaling, units, time_axis, validate_weights and
+#    the config/emissions/*.yaml files (including the new qfed_2024_pacepax.yaml and the
+#    regular-grid fingerprint quantization fix in commit bd31683) are never invoked, because
+#    `prepare: [mesh]` skips all of them.  They are covered instead by the unit tests added in
+#    this PR -- run them separately and cheaply:
+#        cd <checkout> && setenv PYTHONPATH `pwd`/tools && python -m pytest test/mpas_emissions -q
+#    (test_daily_time_semantics.py, test_end_to_end.py, test_regional_weights.py).
+#  * ESMF/ESMPy weight generation and the conservation-tolerance checks.
+#  * bin/SetStreamsVariant.csh: the mesh/year generalization of the anth/biob/biog filename
+#    tables, the new {{anthNH3}}/{{anthISO}}/{{anthMNT}} substitutions, the {{prmArea}}
+#    resolution, and the four new prm_lowbc_* streams in config/mpas/forecast/streams.atmosphere.
+#    Those are only reached by a real Forecast task (forecast: execute: False here), and they
+#    need a GOCART2G build plus the 60 km emission inventory set.
+#  * bin/ExternalAnalysisToMPAS.csh's new SetStreamsVariant + ./FAIL sentinel block: it is guarded
+#    by `initicChemistryMode != off`, and initic chemistry mode defaults to 'off'.
+#  * bin/Forecast.csh's redirection of EmissionDir/PRMAreaDir to ${EmissionsWorkDir}: generated
+#    into the installed script, but not executed.
+#  * InitIC's `PrepareEmissions => ExternalAnalysisToMPAS-*` edge: only emitted when
+#    initic chemistry mode != 'off' (base branch feature/chemistry-ic territory).
+#  * The `seed prebuilt: true` mirroring path, deliberately disabled above.
+#  * Regional meshes (bdyMaskCell / interior-only neighbour handling): the 120 km mesh is global.
+# ==================================================================================================
