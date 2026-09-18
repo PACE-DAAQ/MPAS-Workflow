@@ -36,7 +36,8 @@ class Emissions(Component):
     # workflow: create an experiment-local emission directory before Forecast
     'mode': ['prebuilt', str, ['prebuilt', 'workflow']],
 
-    # Workflow-native products: mesh, cams-anth, cams-biog, finn, ceds, gfas, qfed.
+    # Workflow-native products: mesh, cams-anth, cams-biog, finn, ceds, gfas, qfed,
+    # gbbepx.  Unlisted names are ignored rather than rejected.
     # The default remains mesh-only and is inactive unless mode=workflow.
     'prepare': [['mesh'], list],
 
@@ -87,13 +88,15 @@ class Emissions(Component):
     'finn max distance factor': [2.5, float],
 
     # Config-driven regular-grid inventories.  Source-specific details are
-    # intentionally kept in YAML; the Python engine is shared by CEDS/GFAS/QFED.
+    # intentionally kept in YAML; the engine is shared by CEDS/GFAS/QFED/GBBEPx.
     'ceds config': ['', str],
     'ceds weights file': ['', str],
     'gfas config': ['', str],
     'gfas weights file': ['', str],
     'qfed config': ['', str],
     'qfed weights file': ['', str],
+    'gbbepx config': ['', str],
+    'gbbepx weights file': ['', str],
     'regular chunk links': [2000000, int],
     'regular conservation tolerance': [5.0e-5, float],
 
@@ -119,6 +122,7 @@ class Emissions(Component):
     self._set('emissionsPrepareCeds', 'ceds' in prepare)
     self._set('emissionsPrepareGfas', 'gfas' in prepare)
     self._set('emissionsPrepareQfed', 'qfed' in prepare)
+    self._set('emissionsPrepareGbbepx', 'gbbepx' in prepare)
     self._set('emissionsCamsAnthConfig', self['cams anth config'])
     self._set('emissionsCamsBiogConfig', self['cams biog config'])
     self._set('emissionsCamsAnthWeightsFile', self['cams anth weights file'])
@@ -137,6 +141,8 @@ class Emissions(Component):
     self._set('emissionsGfasWeightsFile', self['gfas weights file'])
     self._set('emissionsQfedConfig', self['qfed config'])
     self._set('emissionsQfedWeightsFile', self['qfed weights file'])
+    self._set('emissionsGbbepxConfig', self['gbbepx config'])
+    self._set('emissionsGbbepxWeightsFile', self['gbbepx weights file'])
     self._set('emissionsRegularChunkLinks', self['regular chunk links'])
     self._set('emissionsRegularConservationTolerance', self['regular conservation tolerance'])
     self._set('emissionsReuseExisting', self['reuse existing'])

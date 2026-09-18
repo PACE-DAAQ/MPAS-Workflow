@@ -14,7 +14,7 @@
 # Inputs (set externally, e.g. via config/auto/model.csh):
 #   streamsVariant : cntl | pertNN     selects a default (anth/biog/biob) inventory combination
 #   anthEmissions  : '' or cams|ceds|cams-mix   optional per-dimension override from the scenario YAML
-#   biobEmissions  : '' or finn|gfas|qfed       optional per-dimension override from the scenario YAML
+#   biobEmissions  : '' or finn|gfas|qfed|gbbepx  optional per-dimension override from the scenario YAML
 #   biogEmissions  : '' or cams                 optional per-dimension override from the scenario YAML
 #   StreamsFile    : the local streams.atmosphere to modify
 #
@@ -147,7 +147,7 @@ set anthNH3 = "${emissionGrid}-${emissionYear}-anth_ammonia.MPAS.nc"
 set anthISO = "${emissionGrid}-${emissionYear}-anth_isoprene.MPAS.nc"
 set anthMNT = "${emissionGrid}-${emissionYear}-anth_monoterpenes.MPAS.nc"
 
-# (3b) biomass burning (7 species; QFED has no iso/mnt, falls back to FINN)
+# (3b) biomass burning (7 species; QFED and GBBEPx have no iso/mnt, fall back to FINN)
 switch ($vBiob)
   case finn:
     set biobBC = "$FINN" ; set biobOC = "$FINN" ; set biobNH3 = "$FINN" ; set biobSO2 = "$FINN"
@@ -168,6 +168,15 @@ switch ($vBiob)
     set biobNH3 = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.nh3.hourly.nc"
     set biobSO2 = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.so2.hourly.nc"
     set biobCO  = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.co.hourly.nc"
+    set biobISO = "$FINN"
+    set biobMNT = "$FINN"
+    breaksw
+  case gbbepx:
+    set biobBC  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.bc.hourly.nc"
+    set biobOC  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.oc.hourly.nc"
+    set biobNH3 = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.nh3.hourly.nc"
+    set biobSO2 = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.so2.hourly.nc"
+    set biobCO  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.co.hourly.nc"
     set biobISO = "$FINN"
     set biobMNT = "$FINN"
     breaksw
