@@ -1,0 +1,206 @@
+# ==================================================================================================
+# HOW TO RUN THIS SAFELY  (read before the first command below)
+#
+# Run.py ALWAYS finishes with suite.submit() -> ./submit.csh -> `cylc play`. There is no
+# generate-only mode. initialize/framework/HPC.py defaults CriticalAccount /
+# NonCriticalAccount / SingleProcAccount to NMMM0015, so an unguarded run can submit PBS
+# jobs -- possibly on an allocation that is not yours. "Run it and stop it quickly" races
+# the scheduler and is not safe.
+#
+# Neutralise cylc for the duration instead. submit.csh does `conda activate $CYLC_ENV`,
+# which would otherwise put the real cylc back ahead of the stub, so CYLC_ENV has to point
+# at the stub as well as PATH:
+#
+#   set stub = /glade/derecho/scratch/$USER/cylcstub
+#   mkdir -p $stub/bin
+#   printf '#!/bin/sh\nexit 0\n' > $stub/bin/cylc
+#   chmod +x $stub/bin/cylc
+#   setenv CYLC_ENV "$stub"
+#   setenv PATH "$stub/bin:$PATH"
+#
+# Then run the command in the steps below. Everything this test inspects -- suite.rc /
+# flow.cylc, config/auto/*.csh, the resolved streams and namelist files -- is written
+# BEFORE cylc would have been invoked, so stubbing it costs nothing and no job is ever
+# submitted. No `cylc stop` is needed.
+#
+# Paths below are relative to the root of your MPAS-Workflow checkout; run from there.
+# ==================================================================================================
+# ==================================================================================================
+# PR #26 -- "Add a forecast-only cycling suite, and fix what it exposed"
+#            branch feature/forecast-only-cycling
+#
+# This PR changes SUITE GENERATION, not model physics, so this is a generate-and-inspect test:
+# it writes ./flow.cylc and ./config/auto/*.csh on a login node in a few seconds, and you READ
+# them. No PBS job is submitted and cylc is never started.
+#
+# --------------------------------------------------------------------------------------------
+# HOW TO RUN  (derecho login node, ~10 s, no PBS account needed)
+#
+#   cd <your clone of MPAS-Workflow, on feature/forecast-only-cycling>
+#   source env-setup/machine.csh          # or env-setup/machine.sh for bash/zsh
+#
+#   ./Run.py test/testinput/pr26_ForecastOnlyCycle_OIE120km.yaml
+#
+# Use Run.py with the cylc stub above -- NOT a bare SuiteBase.__export() call.
+# SuiteBase fills _queues/_dependencies/_tasks inside submit() and only then calls
+# __export(), so exporting a freshly constructed suite writes flow.cylc with empty
+# [[queues]], [[graph]] and [runtime] sections and every check below would fail for
+# a reason that has nothing to do with this PR.
+#
+# Verified with the stub on this branch: flow.cylc comes out at 304 lines,
+# `grep -cF 'T00!^' flow.cylc` = 1, `grep -cF 'CyclingFC/{{prevCycleDate}}'` = 2,
+# `grep -c 'MeanAnalysis\|CyclingDA'` = 0, and no cylc-run directory is created.
+#
+# That is exactly what ./Run.py does, minus the final './submit.csh' (cylc install/validate/play).
+# Use ./Run.py instead only if you deliberately want the suite started (you then need your own
+# account, see the note under 'experiment' below).
+#
+# It leaves ./flow.cylc and ./config/auto/*.csh in the clone; both are .gitignore'd, so
+# 'git status' stays clean.  Its only other side effect is 'rm -rf' + 'mkdir -p' on
+#   $SCRATCH/pandac/${USER}_test_pr26_ForecastOnlyCycle_OIE120km/MPAS-Workflow
+# which is why 'experiment: name' below is unique and test-prefixed.
+#
+# --------------------------------------------------------------------------------------------
+# CHECK A -- the new ForecastOnlyCycle suite, with this file exactly as it ships.
+#
+#   grep -n '= """' flow.cylc
+#     -> exactly three recurrences, in this order:
+#            R1 = """                 first cycle: ColdForecast (there is no previous forecast)
+#            +PT6H/PT6H = """         the cycling forecast
+#            T00!^ = """              the extended forecast, EXCLUDED at the initial cycle point
+#        The '!^' is the fix: '^' is the initial cycle point (20180415T00 here), which has no
+#        CyclingFC/{{prevCycleDate}} to launch from.  Without it cylc schedules an extended
+#        forecast there anyway and MPI_Aborts on an IC that was never written.
+#
+#   grep -n 'CyclingFC' flow.cylc
+#     [[Forecast1]]       ... bin/Forecast.csh ... "CyclingFC/{{thisCycleDate}}"
+#                                                  "CyclingFC/{{prevCycleDate}}" "mpasout" ...
+#        -> the cycling forecast's IC is the PREVIOUS cycle's own forecast.  That is the whole
+#           point of ForecastOnlyCycle, and it is why bin/Forecast.csh now substitutes
+#           {{prevCycleDate}}, after sourcing getCycleVars.csh.
+#     [[ExtendedMeanFC]]  ... bin/Forecast.csh ... "ExtendedFC/{{thisCycleDate}}/mean"
+#                                                  "CyclingFC/{{prevCycleDate}}" "mpasout" ...
+#        -> the explicit meanIC handed to ExtendedForecast.  Before this PR these two arguments
+#           were "CyclingDA/{{thisCycleDate}}/an/mean" "an", a directory no-DA cycling never
+#           writes.
+#
+#   grep -n '=> PreForecast__' flow.cylc
+#     -> includes   ForecastFinished__[-PT6H] => PreForecast__
+#        i.e. Forecast.export(..., previousStateDependency=...) replaced the dependency on this
+#        cycle's DA with a dependency on the previous cycle's forecast.
+#
+#   grep -c MeanAnalysis flow.cylc                   -> 0
+#        No MeanAnalysis task is scheduled.  At members.n == 1 it used to "succeed" while only
+#        symlinking an analysis that was never written.
+#   grep -cE 'Variational|EnKF|CyclingDA' flow.cylc  -> 0     (no DA anywhere in the suite)
+#   grep -c 12hr flow.cylc                           -> 0
+#        The icOffsets gate ('post' AND something actually scheduled to verify): with nothing to
+#        verify, the per-lead-time '-<N>hr' analysis/obs tasks are not generated.
+#
+#   grep ForecastLookupDir config/auto/build.csh
+#     -> setenv ForecastLookupDir ""
+#        Build.py now always defines it (empty for a bundle build), so bin/Forecast.csh's
+#        'if ( $?ForecastLookupDir )' is a meaningful test.  Before this PR the variable was
+#        never set at all and a separate forecast build's lookup tables were silently not linked.
+#
+# CHECK B -- the restart-run exemption.  Uncomment 'restart cycle point' in the workflow block,
+#   re-run the same command, and compare:
+#     grep -n '= """' flow.cylc
+#       -> only two recurrences, and the extended forecast is now
+#              +PT0H/PT6H = """
+#              T00 = """        <-- NO '!^'
+#          (the R1/ColdForecast block is gone: a restart run requires CyclingFC output from the
+#           cycle before the restart point to exist already, which is exactly why the extended
+#           forecast at '^' is valid there and excluding it would cost the only sample.)
+#     grep -n 'initial cycle point' flow.cylc   -> 20180416T00
+#
+# CHECK C -- Build.py's fail-fast.  Uncomment the 'build:' block at the bottom and re-run.
+#   Expect the command to ABORT with
+#     ValueError: build: 'init directory' is set to /glade/campaign/ncar/nmmm0081/input/mpas but
+#     no init executable was found there; tried ...
+#   raised from initialize/framework/Build.py while the configuration is generated -- before
+#   Experiment is constructed, so nothing is created or deleted.  Before this PR this logged one
+#   line and silently fell back to the mpas-bundle build, and the mistake surfaced much later
+#   inside MPAS as a rejected &preproc_chemistry record.  ('forecast directory' has the symmetric
+#   check; point it at the same directory to see the other message.)
+# ==================================================================================================
+
+# The suite added by this PR (registered in initialize/suites/SuiteBase.py suiteDict).
+# Without this key Run.py defaults to 'Cycle' and none of the above is exercised.
+suite: ForecastOnlyCycle
+
+experiment:
+  # Unique and obviously a test: suite generation does 'rm -rf' on this experiment's
+  # mainScriptDir, so a name that collided with a real experiment would destroy it.
+  name: 'test_pr26_ForecastOnlyCycle_OIE120km'
+
+# There is deliberately no 'hpc:' block: accounts are per-user and must not be committed.
+# Nothing here submits a job, so the built-in defaults are never used.  To actually play the
+# suite, add CriticalAccount / NonCriticalAccount / SingleProcAccount to a local copy.
+
+members:
+  # ForecastOnlyCycle asserts members.n == 1 whenever extendedforecast.meanTimes is set: with one
+  # member the cycled forecast IS the mean, and computing a mean over CyclingFC members is not
+  # implemented.  It is also the cheapest configuration.
+  n: 1
+
+model:
+  # Smallest uniform mesh; nothing in this PR is mesh-specific.
+  outerMesh: 120km
+  # innerMesh and ensembleMesh are meaningless without DA, but FirstBackground.export()
+  # unconditionally reads ea['PrepareExternalAnalysisInner'] and ...['PrepareExternalAnalysis-
+  # Ensemble'], which exist only for meshes declared here.  All three must be set or generation
+  # dies with a KeyError.
+  innerMesh: 120km
+  ensembleMesh: 120km
+
+externalanalyses:
+  # Pre-staged 120 km MPAS init files, link-only: no RDA download, no ungrib, no init_atmosphere.
+  # /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/120kmMeshGFS/MPAS_IC_NEW covers every
+  # cycle used below (verified 20180415T00-20180416T00 present).
+  resource: "GFS.PANDAC"
+
+observations:
+  # Required key with no default.  Verification is off below, so Observations contributes no graph
+  # edges and nothing reads these files; this only has to name a resource that exists.
+  resource: PANDACArchive
+
+forecast:
+  # The defining behaviour of this suite: meteorology is replaced from the cold external analysis
+  # every cycle while the GOCART2G chemistry state is carried forward from the previous cycle's
+  # forecast (bin/Forecast.csh -> tools/copy_mpas_vars.py).  The default False would cycle
+  # meteorology too, making this an ordinary free-running forecast.
+  updateATMVarsFromCold: True
+  # Defaults to ['verifymodel'].  VerifyModelBG compares against a 'diag' product this suite never
+  # writes, so it would fail every cycle and bury real failures -- the ForecastOnlyCycle docstring
+  # says to turn it off.  It also keeps the generated graph small enough to read by eye.
+  post: []
+
+extendedforecast:
+  # meanTimes must be set at all for the first-cycle exclusion under test to be reached.  T00 is
+  # the intended use: one sample per day for a background-error-covariance sample set.
+  meanTimes: T00
+  # Shortest extended forecast that still produces a sample.  Nothing runs here, but these also
+  # bound the job walltime should you decide to play the suite.
+  lengthHR: 12
+  outIntervalHR: 12
+  # Exercises the 'verifies = post AND (meanTimes or ensTimes)' gate added by this PR: with post
+  # empty, icOffsets falls back to [0] and the per-lead-time '-12hr' analysis/obs tasks -- which
+  # could never succeed here -- are not generated.
+  post: []
+
+workflow:
+  # One day of 6-hourly cycling STARTING AT T00, so the initial cycle point is itself an extended
+  # forecast time and 'T00!^' actually drops something: one sample, at 20180416T00.  That is the
+  # documented "an N-day window yields N-1 samples".  Window length does not affect generation
+  # cost -- the graph is recurrence-based, not expanded per cycle point.
+  first cycle point: 20180415T00
+  final cycle point: 20180416T00
+
+  # CHECK B: uncomment to exercise the restart exemption (restart point > first cycle point).
+  #restart cycle point: 20180416T00
+
+# CHECK C: uncomment to exercise Build.py's fail-fast.  A real, read-only campaign data directory
+# that certainly holds no init_atmosphere executable.
+#build:
+#  init directory: /glade/campaign/ncar/nmmm0081/input/mpas

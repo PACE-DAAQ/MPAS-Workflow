@@ -55,9 +55,26 @@ class ForecastFromExternalAnalyses(SuiteBase):
 
     self.c['naming'] = Naming(conf, self.c['experiment'])
 
+    # Per-lead-time external analyses, observations and chemistry ICs exist so
+    # the extended forecast can be verified against analyses/obs valid at each
+    # lead time. With no post-processing requested they are pure overhead, and
+    # the analysis ones cannot succeed: GetGFSAnalysisFromRDA/UngribExternalAnalysis
+    # fetch only the analysis at the cycle time, so ExternalAnalysisToMPAS-<N>hr
+    # has no source for N > 0 and init_atmosphere aborts. Fall back to the
+    # components' own default of [0] -- just the analysis time.
+    ef = self.c['extendedforecast']
+    # 'post' alone is not enough: it defaults NON-empty, while ExtendedForecast
+    # emits verification tasks only when meanTimes (or a usable ensTimes) is set.
+    # Gating on post alone therefore still expanded extLengths -- and recreated the
+    # per-lead conversions that cannot succeed -- for the common case of a scenario
+    # that leaves both defaults alone. Require post AND something actually
+    # scheduled to verify.
+    verifies = bool(ef['post']) and (ef['meanTimes'] is not None or ef['ensTimes'] is not None)
+    icOffsets = ef['extLengths'] if verifies else [0]
+
     for k, c_ in self.c.items():
       if k in ['observations', 'initic', 'externalanalyses']:
-        c_.export(self.c['extendedforecast']['extLengths'])
+        c_.export(icOffsets)
       elif k in ['extendedforecast']:
         c_.export(self.c['externalanalyses']['PrepareExternalAnalysisOuter'])
       elif k in ['forecast']:

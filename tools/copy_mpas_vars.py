@@ -1,21 +1,49 @@
 #!/usr/bin/env python3
 """
-Copy the warm-start GOCART2G chemistry state into a cold MPAS IC.
+Copy warm-start cycling state into a cold MPAS IC.
 
 The cold IC supplies refreshed meteorology and prescribed chemistry
-backgrounds.  The variables below are the prognostic/persistent chemistry
-state that must survive the DA cycle.
+backgrounds.  Two groups of state can be carried across the cycle:
+
+  chemistry (always)  prognostic GOCART2G scalars plus persistent HNO3;
+  land (--include-land)  prognostic soil and snow state.
+
+Land cycling matters when meteorology is re-initialised from analysis every
+cycle: without it the land surface cold-starts from the analysis each time and
+soil moisture/temperature never spin up.  Carrying it is the usual practice in
+MPAS-JEDI weather cycling.
+
+IMPORTANT SCOPE LIMIT.  Only land fields that exist in the IC file can be
+carried, and an init_atmosphere IC contains the NOAH-level fields only
+(verified against x1.163842.init.2024-10-14_00.00.00.nc: smois, tslb, sh2o,
+snow, snowh, snowc are present).  NOAH-MP's additional prognostics -- the
+diag_physics_noahmp *xy fields such as tahxy, tgxy, canliqxy, snicexy,
+snliqxy, tsnoxy, zsnsoxy, zwtxy -- are NOT in the IC file and are rebuilt by
+lsminit at every cold start.  Carrying those requires adding them to the
+init/restart stream, i.e. a Registry/streams change, not a change here.  So
+under sf_noahmp this recovers the soil column but not the canopy/snowpack
+state.
+
+Static and boundary fields (isltyp, ivgtyp, xland, tmn, vegfra, sst, xice,
+seaice, skintemp) are deliberately NOT carried: they belong to the target
+cycle's analysis, and sst/xice in particular are refreshed by updateSea.
 """
 
 from netCDF4 import Dataset
 import sys
 
-if len(sys.argv) != 3:
-    print("Usage: python copy_mpas_vars.py <src_file> <dst_file>")
+argv = [a for a in sys.argv[1:]]
+include_land = False
+for flag in ("--include-land", "--land"):
+    if flag in argv:
+        include_land = True
+        argv.remove(flag)
+
+if len(argv) != 2:
+    print("Usage: python copy_mpas_vars.py [--include-land] <src_file> <dst_file>")
     sys.exit(1)
 
-src_file = sys.argv[1]
-dst_file = sys.argv[2]
+src_file, dst_file = argv
 
 # Prognostic scalar chemistry plus persistent HNO3.
 # Do NOT copy background_hno3 here: it is the prescribed relaxation target
@@ -35,14 +63,43 @@ vars_to_copy = [
     "persistent_hno3",
 ]
 
+# Prognostic land state, carried only with --include-land. Treated as optional:
+# a chemistry-only IC, or a NOAH IC lacking a NOAH-MP field, must not abort the
+# cycle, so anything absent is reported and skipped rather than raised.
+land_vars = [
+    "smois",    # soil moisture (nSoilLevels)
+    "tslb",     # soil temperature (nSoilLevels)
+    "sh2o",     # liquid soil water (nSoilLevels)
+    "snow",     # snow water equivalent
+    "snowh",    # snow depth
+    "snowc",    # snow cover fraction
+]
+
+optional_vars = land_vars if include_land else []
+
 print(f"Opening source: {src_file}")
 src = Dataset(src_file, "r")
 
 print(f"Opening destination: {dst_file}")
 dst = Dataset(dst_file, "r+")
 
+if include_land:
+    print(f"Land cycling ENABLED: will also carry {land_vars}")
+else:
+    print("Land cycling disabled (pass --include-land to carry soil/snow state)")
+
 missing_src = [v for v in vars_to_copy if v not in src.variables]
 missing_dst = [v for v in vars_to_copy if v not in dst.variables]
+
+# Optional group: never fatal in either direction.
+opt_present = [v for v in optional_vars if v in src.variables and v in dst.variables]
+opt_absent = [v for v in optional_vars if v not in opt_present]
+if opt_absent:
+    print(
+        "WARNING copy_mpas_vars: optional land fields not carried (absent from "
+        f"source and/or destination): {opt_absent}",
+        file=sys.stderr,
+    )
 
 # Missing in the destination is fatal: the destination is the freshly built
 # init for this cycle, so an absent field means the init is not chemistry
@@ -76,8 +133,33 @@ for v in vars_to_copy:
     print(f"  copying {v} ...")
     dst[v][:] = src[v][:]     # fastest CDF5-safe method
 
+opt_copied = 0
+for v in opt_present:
+    if src[v].shape != dst[v].shape:
+        print(
+            f"WARNING copy_mpas_vars: {v} shape {src[v].shape} -> {dst[v].shape} "
+            "differs; skipping rather than writing a mismatched field",
+            file=sys.stderr,
+        )
+        continue
+    print(f"  copying {v} (land) ...")
+    dst[v][:] = src[v][:]
+    opt_copied += 1
+
 src.close()
 dst.close()
 
-print("Done. All variables copied successfully.")
+# opt_copied, not len(opt_present): a land field present in both files but with a
+# mismatched shape is deliberately skipped above, and reporting it as copied would
+# contradict the warning that was just printed.
+# Say PARTIAL out loud when chemistry fields were retained from the destination
+# rather than transferred. The counts alone are accurate but easy to skim past,
+# and a partial chemistry transfer otherwise reads in the log exactly like a
+# complete one -- cycling silently carrying less state than intended.
+chem_copied = len(vars_to_copy) - len(missing_src)
+if missing_src:
+    print(f"Done. PARTIAL: {chem_copied} of {len(vars_to_copy)} chemistry variables copied "
+          f"({len(missing_src)} retained from the destination), {opt_copied} land.")
+else:
+    print(f"Done. {chem_copied} chemistry + {opt_copied} land variables copied.")
 
