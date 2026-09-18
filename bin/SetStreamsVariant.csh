@@ -162,21 +162,25 @@ switch ($vBiob)
     set biobISO = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.iso.hourly.nc"
     set biobMNT = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.mnt.hourly.nc"
     breaksw
+  case gbbepx:
+    # NOAA blended VIIRS+MODIS. Like QFED it carries no iso/mnt, so those two fall
+    # back to FINN. Note it is on a DIFFERENT source grid from GFAS/QFED
+    # (1801 x 3600 node-centred vs 1800 x 3600 cell-centred), so it fingerprints
+    # separately and must not reuse their regridding weights.
+    set biobBC  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.bc.hourly.nc"
+    set biobOC  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.oc.hourly.nc"
+    set biobNH3 = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.nh3.hourly.nc"
+    set biobSO2 = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.so2.hourly.nc"
+    set biobCO  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.co.hourly.nc"
+    set biobISO = "$FINN"
+    set biobMNT = "$FINN"
+    breaksw
   case qfed:
     set biobBC  = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.bc.hourly.nc"
     set biobOC  = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.oc.hourly.nc"
     set biobNH3 = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.nh3.hourly.nc"
     set biobSO2 = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.so2.hourly.nc"
     set biobCO  = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.co.hourly.nc"
-    set biobISO = "$FINN"
-    set biobMNT = "$FINN"
-    breaksw
-  case gbbepx:
-    set biobBC  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.bc.hourly.nc"
-    set biobOC  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.oc.hourly.nc"
-    set biobNH3 = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.nh3.hourly.nc"
-    set biobSO2 = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.so2.hourly.nc"
-    set biobCO  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.co.hourly.nc"
     set biobISO = "$FINN"
     set biobMNT = "$FINN"
     breaksw
