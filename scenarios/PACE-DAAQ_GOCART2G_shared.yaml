@@ -1,0 +1,91 @@
+# Shared PACE-DAAQ GOCART2G configuration.
+#
+# The settings every experiment in this campaign must agree on, in one place, so
+# results are comparable. COPY this file and add only what your experiment
+# genuinely changes -- suite, dates, experiment name, ensemble size -- rather than
+# re-deriving these values. Divergence here is the kind that produces a difference
+# in the results that looks physical and is not.
+#
+# There is no scenario include mechanism in MPAS-Workflow: a scenario inherits
+# only from scenarios/defaults/*.yaml plus the class defaults. Anything genuinely
+# universal therefore belongs in those defaults (config_do_bburnPRM now does);
+# anything campaign-specific belongs here, copied.
+#
+# To PROVE two experiments agree rather than assume it, compare the RESOLVED
+# configuration, which is what the tasks actually read:
+#
+#   tools/check_experiment_config.py --record <trustedExpDir> -o pace_daaq.cfg
+#   tools/check_experiment_config.py --check  <yourExpDir>    -r pace_daaq.cfg
+#
+# A scenario can look right and still resolve differently, because values also
+# come from the defaults and from suite-specific code paths.
+
+model:
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+
+  # Emission inventories. 'cntl' is cams/cams/GFAS -- GFAS is this campaign's
+  # biomass inventory, so it is the control combination itself and needs no
+  # override. (FINN still supplies PRM fire size; see 'prm source' below.)
+  #
+  # DO NOT add 'anth/biob/biog emissions' here or in scenarios/defaults unless an
+  # experiment genuinely differs: that override is applied unconditionally in
+  # bin/SetStreamsVariant.csh section (2), so it overrides the variant and would
+  # force pert01..pert08 onto a single inventory, silently collapsing the emission
+  # ensemble that PR #14 recenters on.
+  streams variant: cntl
+
+  # Plume rise. Set HERE rather than as a framework default: the default is global,
+  # so flipping it would switch plume rise on for every existing scenario that
+  # omits the key -- including non-GOCART ones -- and bin/Forecast.csh then runs
+  # PRM validation that requires the four prm_lowbc_* fields with non-zero fire
+  # size. Those runs would fail on staged files that were fine before. Opting in
+  # here gives the campaign one setting without touching anyone else.
+  # 'do frp' stays false: plume rise has been exercised with fire AREA, not FRP.
+  do bburn prm: true
+  do frp: false
+
+emissions:
+  # Emission products are pre-built and staged; experiments read them rather than
+  # regenerating identical files per member per cycle.
+  mode: prebuilt
+  # Fire size for plume rise comes from FINN regardless of which inventory supplies
+  # the burned mass: neither GFAS nor GBBEPx carries the per-fire mean area in m2
+  # that prm_lowbc_area_avg requires -- both give FRP instead.
+  prm source: finn
+
+initic:
+  # Shared MERRA2-GMI chemistry-IC cache. The chemistry IC for a valid time is a
+  # pure function of that time and the source config, so it is shareable by
+  # construction; rebuilding it per experiment wastes the whole MERRA2 pipeline
+  # per member per cycle and risks divergence.
+  #
+  # NOTE for August 2024: there is no 2019-08 OVP monthly mean and one cannot be
+  # built (14 of 31 daily files exist), so August uses the 2019-09 mean. Each
+  # August ChemIC's provenance JSON records the substitution explicitly.
+  chemistry mode: prebuilt
+  chemistry prebuilt directory: /glade/derecho/scratch/syha/pace_cycling_2024/ChemIC/{{thisValidDate}}
+
+build:
+  # The campaign's fire products cover 1 Jul - 30 Sep 2024, and their filenames say
+  # so. Without this, <period> falls back to the bare year and the workflow looks
+  # for GFAS_x1.163842_2024_bc_hourly.nc while the staged file is
+  # GFAS_x1.163842_20240701-20240930_bc_hourly.nc. Annual products (CEDS, CAMS,
+  # MIXv2, AEIM-INDIA) are unaffected -- they always use the year.
+  emission period: '20240701-20240930'
+
+observations:
+  resource: PANDACArchive
+
+hofx:
+  # PACE OCI AOD is carried by every cycling run -- assimilated or monitored -- so
+  # experiments stay comparable. The hofx observer list defaults to conventional
+  # and radiance types with NO aerosol in it, so this must be set explicitly for
+  # any run that is not doing AOD DA. Channel 4 is 550 nm.
+  observers: ['oci_uaa_pace_aod']
+
+# Set alongside the above for a reference (no-DA) cycling run, so the operator
+# actually runs against the background each cycle:
+#   forecast:
+#     post: ['verifyobs']

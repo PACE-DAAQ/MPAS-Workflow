@@ -38,17 +38,37 @@ if ( ! $?thisCycleDate ) then
 endif
 set emissionYear = `echo ${thisCycleDate} | cut -c 1-4`
 
+# Unified emission filename rule (all inventories, all species):
+#
+#     <inventory>_<mesh>_<period>_<species>_<frequency>.nc
+#
+# Fields are separated by '_'; '.' appears only inside the mesh token and the
+# extension, so a name can be split unambiguously. Species are lower case and
+# short (bc, oc, so2, co, nh3, iso, mnt). Creation dates do NOT go in the name --
+# the files carry time_created and the rest of their provenance as attributes,
+# where it cannot drift from the filename.
+#
+# <period> is the 4-digit year for ANNUAL products (anthropogenic, biogenic) and
+# a YYYYMMDD-YYYYMMDD window for products that only cover part of a year -- the
+# fire inventories built for a campaign. Encoding it means the directory no
+# longer has to: a file called ..._2024_... that actually holds 1 July to 30
+# September is exactly the trap this rule removes.
+set emissionPeriod = "${emissionYear}"
+if ( $?EmissionPeriod ) then
+  if ( "$EmissionPeriod" != "" ) set emissionPeriod = "${EmissionPeriod}"
+endif
+
 # PRM fire-statistics file. PRMAreaFile is the legacy workflow variable name.
 # Current PRM-author guidance makes only fire-size average mandatory; the same
 # file may also contain optional AREA std and FRP avg/std. Resolve one filename
 # here so Forecast and GOCART2G init_atmosphere use it consistently.
 if ( $?PRMAreaFile ) then
-  set prmAreaFileResolved = `echo "${PRMAreaFile}" | sed 's@{{nCells}}@'${nCells}'@' | sed 's@{{year}}@'${emissionYear}'@' | sed 's@{{grid}}@'${emissionGrid}'@'`
+  set prmAreaFileResolved = `echo "${PRMAreaFile}" | sed 's@{{nCells}}@'${nCells}'@' | sed 's@{{year}}@'${emissionYear}'@' | sed 's@{{period}}@'${emissionPeriod}'@' | sed 's@{{grid}}@'${emissionGrid}'@'`
   sed -i 's@{{prmArea}}@'${prmAreaFileResolved}'@' ${StreamsFile}
 endif
 
 # shared FINN biomass-burning file (used by the 'finn' inventory and as the QFED iso/mnt fallback)
-set FINN = "FINNv2.5.1_modvrs_nrt_MOZART_${emissionYear}_${emissionGrid}.static_hourly_netcdf3.nc"
+set FINN = "FINN_${emissionGrid}_${emissionPeriod}_biob_hourly.nc"
 
 # an unset or empty variant behaves like the control combination
 if ( ! $?streamsVariant ) set streamsVariant = cntl
@@ -69,12 +89,23 @@ endif
 
 # --------------------------------------------------------------------------------------------------
 # (1) variant -> default (anth / biog / biob) inventory combination          [EDIT HERE to add perts]
+#
+# The nine combinations are a 3 (anth) x 3 (biob) sampling; 'cntl' is whichever
+# corner the campaign treats as the control. It is cams/cams/GFAS because GFAS is
+# this campaign's biomass inventory -- FINN supplies PRM fire size, not burned
+# mass. cntl and pert01 were swapped for that reason; the SET of nine
+# combinations is unchanged, so the emission ensemble PR #14 recenters on is
+# unaffected.
+#
+# Change the control here rather than by defaulting 'biob emissions' in
+# scenarios/defaults: that override is applied unconditionally in section (2) and
+# would force every pert onto one inventory, collapsing the ensemble silently.
 # --------------------------------------------------------------------------------------------------
 switch ($streamsVariant)
   case cntl:
-    set vAnth = cams     ; set vBiog = cams ; set vBiob = finn ; breaksw
-  case pert01:
     set vAnth = cams     ; set vBiog = cams ; set vBiob = gfas ; breaksw
+  case pert01:
+    set vAnth = cams     ; set vBiog = cams ; set vBiob = finn ; breaksw
   case pert02:
     set vAnth = cams     ; set vBiog = cams ; set vBiob = qfed ; breaksw
   case pert03:
@@ -119,23 +150,29 @@ echo "SetStreamsVariant.csh (INFO): emission inventories: anth=$vAnth biog=$vBio
 # spin-up -- so that is a deliberate experiment, not a side effect of a filename change.
 switch ($vAnth)
   case cams:
-    set anthBC  = "${emissionGrid}-${emissionYear}-anth_black-carbon.MPAS.nc"
-    set anthOC  = "${emissionGrid}-${emissionYear}-anth_organic-carbon.MPAS.nc"
-    set anthSO2 = "${emissionGrid}-${emissionYear}-anth_sulfur-dioxide.MPAS.nc"
-    set anthCO  = "${emissionGrid}-${emissionYear}-anth_carbon-monoxide.MPAS.nc"
+    set anthBC  = "CAMS-anth_${emissionGrid}_${emissionYear}_bc_monthly.nc"
+    set anthOC  = "CAMS-anth_${emissionGrid}_${emissionYear}_oc_monthly.nc"
+    set anthSO2 = "CAMS-anth_${emissionGrid}_${emissionYear}_so2_monthly.nc"
+    set anthCO  = "CAMS-anth_${emissionGrid}_${emissionYear}_co_monthly.nc"
     breaksw
   case ceds:
-    set anthBC  = "CEDS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.BC.nc"
-    set anthOC  = "CEDS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.OC.nc"
-    set anthSO2 = "CEDS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.SO2.nc"
-    set anthCO  = "CEDS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.CO.nc"
+    set anthBC  = "CEDS_${emissionGrid}_${emissionYear}_bc_monthly.nc"
+    set anthOC  = "CEDS_${emissionGrid}_${emissionYear}_oc_monthly.nc"
+    set anthSO2 = "CEDS_${emissionGrid}_${emissionYear}_so2_monthly.nc"
+    set anthCO  = "CEDS_${emissionGrid}_${emissionYear}_co_monthly.nc"
+    # config/emissions/ceds.example.yaml DOES build a CEDS ammonia product, under the
+    # same unified rule, so switching NH3 onto the selected inventory later is this one
+    # line -- nothing else has to change, and no file has to be renamed or restaged:
+    #   set anthNH3 = "CEDS_${emissionGrid}_${emissionYear}_nh3_monthly.nc"
+    # It is left inactive deliberately; see the note above the switch.
     breaksw
   case cams-mix:
-    set anthBC  = "${emissionGrid}-${emissionYear}-CAMS_MIX_anth_black-carbon.MPAS.nc"
-    set anthOC  = "${emissionGrid}-${emissionYear}-CAMS_MIX_anth_organic-carbon.MPAS.nc"
-    set anthSO2 = "${emissionGrid}-${emissionYear}-CAMS_MIX_anth_sulfur-dioxide.MPAS.nc"
-    set anthCO  = "${emissionGrid}-${emissionYear}-CAMS_MIX_anth_carbon-monoxide.MPAS.nc"
-    # CAMS regional-mix products in the current ensemble did not define a separate NH3
+    set anthBC  = "CAMS-MIX-anth_${emissionGrid}_${emissionYear}_bc_monthly.nc"
+    set anthOC  = "CAMS-MIX-anth_${emissionGrid}_${emissionYear}_oc_monthly.nc"
+    set anthSO2 = "CAMS-MIX-anth_${emissionGrid}_${emissionYear}_so2_monthly.nc"
+    set anthCO  = "CAMS-MIX-anth_${emissionGrid}_${emissionYear}_co_monthly.nc"
+    # product; NH3 comes from the CAMS global inventory for every variant anyway,
+    # set once after this switch.
     breaksw
   default:
     echo "ERROR in SetStreamsVariant.csh : unknown anth emissions '$vAnth'" > ./FAIL
@@ -143,9 +180,9 @@ switch ($vAnth)
 endsw
 
 # NH3/ISO/MNT remain CAMS for all anthropogenic variants.
-set anthNH3 = "${emissionGrid}-${emissionYear}-anth_ammonia.MPAS.nc"
-set anthISO = "${emissionGrid}-${emissionYear}-anth_isoprene.MPAS.nc"
-set anthMNT = "${emissionGrid}-${emissionYear}-anth_monoterpenes.MPAS.nc"
+set anthNH3 = "CAMS-anth_${emissionGrid}_${emissionYear}_nh3_monthly.nc"
+set anthISO = "CAMS-anth_${emissionGrid}_${emissionYear}_iso_monthly.nc"
+set anthMNT = "CAMS-anth_${emissionGrid}_${emissionYear}_mnt_monthly.nc"
 
 # (3b) biomass burning (7 species; QFED and GBBEPx have no iso/mnt, fall back to FINN)
 switch ($vBiob)
@@ -154,33 +191,33 @@ switch ($vBiob)
     set biobCO = "$FINN" ; set biobISO = "$FINN" ; set biobMNT = "$FINN"
     breaksw
   case gfas:
-    set biobBC  = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.bc.hourly.nc"
-    set biobOC  = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.oc.hourly.nc"
-    set biobNH3 = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.nh3.hourly.nc"
-    set biobSO2 = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.so2.hourly.nc"
-    set biobCO  = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.co.hourly.nc"
-    set biobISO = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.iso.hourly.nc"
-    set biobMNT = "GFAS_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.mnt.hourly.nc"
+    set biobBC  = "GFAS_${emissionGrid}_${emissionPeriod}_bc_hourly.nc"
+    set biobOC  = "GFAS_${emissionGrid}_${emissionPeriod}_oc_hourly.nc"
+    set biobNH3 = "GFAS_${emissionGrid}_${emissionPeriod}_nh3_hourly.nc"
+    set biobSO2 = "GFAS_${emissionGrid}_${emissionPeriod}_so2_hourly.nc"
+    set biobCO  = "GFAS_${emissionGrid}_${emissionPeriod}_co_hourly.nc"
+    set biobISO = "GFAS_${emissionGrid}_${emissionPeriod}_iso_hourly.nc"
+    set biobMNT = "GFAS_${emissionGrid}_${emissionPeriod}_mnt_hourly.nc"
     breaksw
   case gbbepx:
     # NOAA blended VIIRS+MODIS. Like QFED it carries no iso/mnt, so those two fall
     # back to FINN. Note it is on a DIFFERENT source grid from GFAS/QFED
     # (1801 x 3600 node-centred vs 1800 x 3600 cell-centred), so it fingerprints
     # separately and must not reuse their regridding weights.
-    set biobBC  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.bc.hourly.nc"
-    set biobOC  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.oc.hourly.nc"
-    set biobNH3 = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.nh3.hourly.nc"
-    set biobSO2 = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.so2.hourly.nc"
-    set biobCO  = "GBBEPx_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.co.hourly.nc"
+    set biobBC  = "GBBEPx_${emissionGrid}_${emissionPeriod}_bc_hourly.nc"
+    set biobOC  = "GBBEPx_${emissionGrid}_${emissionPeriod}_oc_hourly.nc"
+    set biobNH3 = "GBBEPx_${emissionGrid}_${emissionPeriod}_nh3_hourly.nc"
+    set biobSO2 = "GBBEPx_${emissionGrid}_${emissionPeriod}_so2_hourly.nc"
+    set biobCO  = "GBBEPx_${emissionGrid}_${emissionPeriod}_co_hourly.nc"
     set biobISO = "$FINN"
     set biobMNT = "$FINN"
     breaksw
   case qfed:
-    set biobBC  = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.bc.hourly.nc"
-    set biobOC  = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.oc.hourly.nc"
-    set biobNH3 = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.nh3.hourly.nc"
-    set biobSO2 = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.so2.hourly.nc"
-    set biobCO  = "QFED_Glb_${emissionYear}_MPAS.${emissionGrid}.grid.co.hourly.nc"
+    set biobBC  = "QFED_${emissionGrid}_${emissionPeriod}_bc_hourly.nc"
+    set biobOC  = "QFED_${emissionGrid}_${emissionPeriod}_oc_hourly.nc"
+    set biobNH3 = "QFED_${emissionGrid}_${emissionPeriod}_nh3_hourly.nc"
+    set biobSO2 = "QFED_${emissionGrid}_${emissionPeriod}_so2_hourly.nc"
+    set biobCO  = "QFED_${emissionGrid}_${emissionPeriod}_co_hourly.nc"
     set biobISO = "$FINN"
     set biobMNT = "$FINN"
     breaksw
@@ -192,11 +229,11 @@ endsw
 # (3c) biogenic (5 species; single inventory for now)
 switch ($vBiog)
   case cams:
-    set biogCO   = "${emissionGrid}-${emissionYear}-biog_carbon-monoxide.MPAS.nc"
-    set biogISO  = "${emissionGrid}-${emissionYear}-biog_isoprene.MPAS.nc"
-    set biogMNT  = "${emissionGrid}-${emissionYear}-biog_other-monoterpenes.MPAS.nc"
-    set biogAPIN = "${emissionGrid}-${emissionYear}-biog_alpha-pinene.MPAS.nc"
-    set biogBPIN = "${emissionGrid}-${emissionYear}-biog_beta-pinene.MPAS.nc"
+    set biogCO   = "CAMS-biog_${emissionGrid}_${emissionYear}_co_monthly.nc"
+    set biogISO  = "CAMS-biog_${emissionGrid}_${emissionYear}_iso_monthly.nc"
+    set biogMNT  = "CAMS-biog_${emissionGrid}_${emissionYear}_mnt_monthly.nc"
+    set biogAPIN = "CAMS-biog_${emissionGrid}_${emissionYear}_apin_monthly.nc"
+    set biogBPIN = "CAMS-biog_${emissionGrid}_${emissionYear}_bpin_monthly.nc"
     breaksw
   default:
     echo "ERROR in SetStreamsVariant.csh : unknown biog emissions '$vBiog'" > ./FAIL
@@ -225,3 +262,43 @@ sed -i 's@{{biogISO}}@'"$biogISO"'@'   ${StreamsFile}
 sed -i 's@{{biogMNT}}@'"$biogMNT"'@'   ${StreamsFile}
 sed -i 's@{{biogAPIN}}@'"$biogAPIN"'@' ${StreamsFile}
 sed -i 's@{{biogBPIN}}@'"$biogBPIN"'@' ${StreamsFile}
+
+# --------------------------------------------------------------------------------------------------
+# (5) verify every referenced emission file actually exists
+# --------------------------------------------------------------------------------------------------
+# The names above and the names the emission tools WRITE are two independently
+# maintained lists (bin/SetStreamsVariant.csh here, config/emissions/*.yaml and
+# tools/mpas_emissions/cams_regrid.py there). Nothing couples them, so a rename on
+# one side alone is silent until the model runs -- and MPAS then reports
+# "CRITICAL ERROR: file '...' not in run directory", inside a batch job, after the
+# IC has been read. Check here instead, where the message can name the variant and
+# all the missing files at once.
+## Only meaningful for a GOCART2G run. EmissionDir is set unconditionally by
+## Build.py, so without this a plain meteorological forecast -- which never reads
+## these streams -- would be failed for emission files it does not need.
+## PhysicsSuite is resolved for the mesh in use by bin/Forecast.csh before this
+## file is sourced; doBburnPrm would NOT work as the test, since it is set for
+## every run regardless of whether chemistry is active.
+set gocartOn = 0
+if ( $?PhysicsSuite ) then
+  if ( "$PhysicsSuite" == "MPAS-GOCART2G" ) set gocartOn = 1
+endif
+if ( ${gocartOn} == 1 && $?EmissionDir ) then
+  set missingEmis = ()
+  foreach f ( "$anthBC" "$anthOC" "$anthSO2" "$anthCO" "$anthNH3" "$anthISO" "$anthMNT" \
+              "$biobBC" "$biobOC" "$biobNH3" "$biobSO2" "$biobCO" "$biobISO" "$biobMNT" \
+              "$biogCO" "$biogISO" "$biogMNT" "$biogAPIN" "$biogBPIN" )
+    if ( ! -e "${EmissionDir}/$f" ) set missingEmis = ( $missingEmis "$f" )
+  end
+  if ( $#missingEmis > 0 ) then
+    echo "ERROR in SetStreamsVariant.csh : variant '$streamsVariant' (anth=$vAnth biog=$vBiog biob=$vBiob)" > ./FAIL
+    echo "  references $#missingEmis emission file(s) absent from ${EmissionDir}:" >> ./FAIL
+    foreach f ( $missingEmis )
+      echo "    $f" >> ./FAIL
+    end
+    echo "  Filenames follow <inventory>_<mesh>_<period>_<species>_<frequency>.nc;" >> ./FAIL
+    echo "  a mismatch usually means <period> disagrees (emission period = '$emissionPeriod')." >> ./FAIL
+    cat ./FAIL
+    exit 1
+  endif
+endif

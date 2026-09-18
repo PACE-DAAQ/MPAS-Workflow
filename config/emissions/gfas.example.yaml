@@ -38,49 +38,49 @@ time:
   allow extrapolation: false
 
 outputs:
-  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.bc.hourly.nc
+  - file: GFAS_{grid}_{period}_bc_hourly.nc
     fields:
       bc_biob_modis:
         source variable aliases: [bcfire, wildfire_flux_of_black_carbon]
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 12.011
-  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.oc.hourly.nc
+  - file: GFAS_{grid}_{period}_oc_hourly.nc
     fields:
       oc_biob_modis:
         source variable aliases: [ocfire, wildfire_flux_of_organic_carbon]
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 12.011
-  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.nh3.hourly.nc
+  - file: GFAS_{grid}_{period}_nh3_hourly.nc
     fields:
       nh3_biob_modis:
         source variable aliases: [nh3fire, wildfire_flux_of_ammonia]
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 17.031
-  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.so2.hourly.nc
+  - file: GFAS_{grid}_{period}_so2_hourly.nc
     fields:
       so2_biob_modis:
         source variable aliases: [so2fire, wildfire_flux_of_sulphur_dioxide]
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 64.066
-  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.co.hourly.nc
+  - file: GFAS_{grid}_{period}_co_hourly.nc
     fields:
       co_biob_modis:
         source variable aliases: [cofire, wildfire_flux_of_carbon_monoxide]
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 28.0101
-  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.iso.hourly.nc
+  - file: GFAS_{grid}_{period}_iso_hourly.nc
     fields:
       iso_biob_modis:
         source variable aliases: [c5h8fire, wildfire_flux_of_isoprene]
         source units: kg m-2 s-1
         target units: molecules cm-2 s-1
         molecular weight g mol-1: 68.117
-  - file: GFAS_Glb_{year}_MPAS.{grid}.grid.mnt.hourly.nc
+  - file: GFAS_{grid}_{period}_mnt_hourly.nc
     fields:
       mnt_biob_modis:
         source variable aliases: [terpenesfire, wildfire_flux_of_terpenes]

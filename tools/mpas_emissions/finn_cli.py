@@ -569,10 +569,19 @@ def _format_output(template: str, *, year: int, mesh: MpasMesh, grid_name: str, 
     template = str(template)
     # Accept both Python {year} tokens used by inventory YAML and MPAS-Workflow
     # {{year}}/{{nCells}} tokens exported from Build.py.
-    for key in ("year", "nCells", "grid", "mpas_grid_name", "freq", "start", "end", "start_mon", "start_day", "end_mon", "end_day"):
+    for key in ("year", "nCells", "grid", "mpas_grid_name", "freq", "period", "start", "end", "start_mon", "start_day", "end_mon", "end_day"):
         template = template.replace("{{" + key + "}}", "{" + key + "}")
+    # {period} follows the same rule as _period_token in regular_inventory.py: a
+    # whole calendar year collapses to YYYY, anything else is an explicit window.
+    # Without it the FINN products would be the one inventory still naming itself
+    # differently from every other.
+    whole_year = (start.year == end.year == year
+                  and (start.month, start.day) == (1, 1)
+                  and (end.month, end.day) >= (12, 31))
+    period = str(year) if whole_year else f"{start:%Y%m%d}-{end:%Y%m%d}"
     return template.format(
         year=year,
+        period=period,
         nCells=mesh.n_cells,
         mpas_grid_name=grid_name,
         grid=grid_name,
@@ -677,7 +686,10 @@ def _run_locked(a, cfg):
     outdir.mkdir(parents=True, exist_ok=True)
     year = start.year
     grid_name = a.grid_name or f"x1.{mesh.n_cells}"
-    canonical = outdir / f"FINNv2.5.1_modvrs_nrt_MOZART_{year}_{grid_name}.static_hourly_netcdf3.nc"
+    # Unified emission filename rule; SetStreamsVariant.csh looks for exactly this.
+    canonical = outdir / _format_output("FINN_{grid}_{period}_biob_hourly.nc",
+                                        year=year, mesh=mesh, grid_name=grid_name,
+                                        start=start, end=end, freq="hourly")
     output_template = a.output_file or cfg.get("output_file", cfg.get("output_file_pattern", canonical.name))
     main_out = outdir / _format_output(output_template, year=year, mesh=mesh, grid_name=grid_name, start=start, end=end, freq="hourly")
     prm_template = (
@@ -685,7 +697,7 @@ def _run_locked(a, cfg):
         or a.prm_area_output_file
         or cfg.get("prm_stats_output_file")
         or cfg.get("prm_area_output_file")
-        or "FINNv2.5.1_modvrs_nrt_PRM_{year}_{grid}.static_daily_{start_mon}{start_day}-{end_mon}{end_day}.nc"
+        or "FINN_{grid}_{period}_firesize_daily.nc"
     )
     prm_out = outdir / _format_output(prm_template, year=year, mesh=mesh, grid_name=grid_name, start=start, end=end, freq="daily")
 
