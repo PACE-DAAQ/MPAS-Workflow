@@ -125,6 +125,13 @@ else
    endif
 endif
 
+# Fail before MPI if required radiation tables are missing or empty.
+python "${pyDir}/check_jedi_tables.py" "${appName}.yaml"
+if ( $status != 0 ) then
+  echo "ERROR: JEDI table preflight failed; see stderr" > ./FAIL
+  exit 1
+endif
+
 mpiexec ./${myEXE} ${appName}.yaml ./${appName}.log >& ${appName}.log.all
 
 # Check status
