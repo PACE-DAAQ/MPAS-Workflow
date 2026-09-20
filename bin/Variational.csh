@@ -104,6 +104,13 @@ sed -i 's@{{ObsOutSuffix}}@@' $myYAML
 sed -i '/_obsdataout/a\          write multiple files: true' $myYAML
 
  #106-122
+# Fail before MPI if required radiation tables are missing or empty.
+python "${pyDir}/check_jedi_tables.py" "$myYAML"
+if ( $status != 0 ) then
+  echo "ERROR: JEDI table preflight failed; see stderr" > ./FAIL
+  exit 1
+endif
+
 mpiexec ./${myEXE} $myYAML ./jedi.log >& jedi.log.all
 
 #WITH DEBUGGER
