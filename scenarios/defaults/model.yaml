@@ -6,6 +6,8 @@ model:
   #   streams variant: cntl | pert01..pert08   (default cntl = cams / cams / gfas)
   # Optionally override a single dimension (empty = use the variant's default):
   #   anth emissions: cams | ceds | cams-mix
+  #   anth nh3 emissions: cams | ceds | follow-anth (default cams)
+  #     follow-anth selects CEDS NH3 for CEDS members; CAMS-MIX uses a logged CAMS fallback.
   #   biob emissions: finn | gfas | gbbepx | qfed
   #   biog emissions: cams
   # PRM (plume rise model) namelist flags for &plumerisemodel (defaults shown):
