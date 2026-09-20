@@ -15,6 +15,7 @@ from initialize.applications.Members import Members
 from initialize.config.Config import Config
 
 from initialize.data.ExternalAnalyses import ExternalAnalyses
+from initialize.data.Emissions import Emissions
 from initialize.data.Model import Model
 from initialize.data.Observations import Observations
 from initialize.data.InvariantStream import InvariantStream
@@ -35,17 +36,18 @@ class ForecastFromExternalAnalyses(SuiteBase):
     meshes = self.c['model'].getMeshes()
 
     self.c['build'] = Build(conf, self.c['model'])
+    self.c['emissions'] = Emissions(conf, self.c['hpc'], meshes['Outer'])
     self.c['observations'] = Observations(conf, self.c['hpc'])
     self.c['members'] = Members(conf)
 
     self.c['externalanalyses'] = ExternalAnalyses(conf, self.c['hpc'], meshes, self.c['members'])
-    self.c['initic'] = InitIC(conf, self.c['hpc'], meshes, self.c['externalanalyses'], None,
+    self.c['initic'] = InitIC(conf, self.c['hpc'], meshes, self.c['externalanalyses'], self.c['emissions'],
                 self.c['workflow'])
 
     # Forecast object is only used to initialize parts of ExtendedForecast
     self.c['forecast'] = Forecast(conf, self.c['hpc'], meshes['Outer'], self.c['members'], self.c['model'], self.c['observations'],
                 self.c['workflow'], self.c['externalanalyses'],
-                self.c['externalanalyses'].outputs['state']['Outer'])
+                self.c['externalanalyses'].outputs['state']['Outer'], self.c['emissions'])
     self.c['extendedforecast'] = ExtendedForecast(conf, self.c['hpc'], self.c['members'], self.c['forecast'],
                 self.c['externalanalyses'], self.c['observations'],
                 self.c['externalanalyses'].outputs['state']['Outer'], 'external')
@@ -76,6 +78,10 @@ class ForecastFromExternalAnalyses(SuiteBase):
       if k in ['observations', 'initic', 'externalanalyses']:
         c_.export(icOffsets)
       elif k in ['extendedforecast']:
+        # Forecast.export is skipped in this suite. Gate extended forecasts
+        # directly, including runs with chemistry initialization disabled.
+        if self.c['emissions'].ready is not None:
+          c_.tf.addDependencies([self.c['emissions'].ready])
         c_.export(self.c['externalanalyses']['PrepareExternalAnalysisOuter'])
       elif k in ['forecast']:
         continue
@@ -104,3 +110,6 @@ class ForecastFromExternalAnalyses(SuiteBase):
       'initic',
       'observations',
     ]
+
+    if self.c['emissions'].ready is not None:
+      self.taskComponents.append('emissions')
