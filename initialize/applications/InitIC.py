@@ -47,6 +47,13 @@ class InitIC(Component):
     assert chemistryMode in ('off', 'prebuilt', 'workflow'), (
       "initic 'chemistry mode' must be one of off/prebuilt/workflow, not "
       +repr(self['chemistry mode'])+" (quote the value in the scenario YAML)")
+    # Suites that do not pass their workflow (GenerateExternalAnalyses,
+    # CloudDirectInsertion) add no PrepareChemIC/PrepareEmissions edges, so the
+    # in-workflow chemistry tasks would never be connected to ExternalAnalysisToMPAS.
+    if chemistryMode == 'workflow' and workflow is None:
+      raise ValueError("initic chemistry mode 'workflow' is not supported by this suite; "
+                       "use 'prebuilt' or a suite with chemistry scheduling (Cycle, "
+                       "ForecastFromExternalAnalyses or ForecastOnlyCycle).")
     self._set('chemistry mode', chemistryMode)
     self._set('initicChemistryMode', chemistryMode)
     self._set('initicChemistrySourceConfig', self['chemistry source config'])

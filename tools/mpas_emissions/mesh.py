@@ -175,8 +175,15 @@ class MpasMesh:
         """Short content fingerprint suitable for cached SCRIP/weight filenames."""
         h = sha256()
         h.update(np.asarray([self.n_cells], dtype=np.int64).tobytes())
-        for arr in (self.lat_cell, self.lon_cell, self.area_cell):
+        h.update(np.asarray([self.sphere_radius_m], dtype=np.float64).tobytes())
+        for arr in (self.lat_cell, self.lon_cell, self.area_cell, self.n_edges_on_cell):
             h.update(np.ascontiguousarray(arr).view(np.uint8))
+        # write_mpas_scrip builds the cell polygons from these, so two meshes that
+        # share centers and areas but differ in polygons must not share a SCRIP or
+        # weight cache entry.
+        for arr in (self.vertices_on_cell, self.lat_vertex, self.lon_vertex):
+            if arr is not None:
+                h.update(np.ascontiguousarray(arr).view(np.uint8))
         return h.hexdigest()[:16]
 
     def neighbor_table(

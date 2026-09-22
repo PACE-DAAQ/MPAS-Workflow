@@ -17,7 +17,9 @@ def main():
     mesh=MpasMesh.open(a.mesh)
     tag=f'x{mesh.n_cells}_{mesh.fingerprint}'
     neigh=cache/f'mpas_neighbors_{tag}.npz'
-    scrip=cache/f'mpas_scrip_{tag}.nc'
+    # The boundary mask changes grid_imask, so a masked SCRIP gets its own cache
+    # name; the unmasked name stays what the inventory processors look up.
+    scrip=cache/(f'mpas_scrip_{tag}_masked.nc' if a.mask_boundary_cells else f'mpas_scrip_{tag}.nc')
     with file_lock(cache/'mesh_cache.lock'):
         if not neigh.exists(): mesh.save_neighbor_cache(neigh, interior_only=False)
         if mesh.vertices_on_cell is not None and mesh.lat_vertex is not None and mesh.lon_vertex is not None:

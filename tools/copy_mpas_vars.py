@@ -101,10 +101,12 @@ aux = Dataset(aux_file, "r") if aux_file else src
 # Their existing member values must survive JEDI's selected-state arithmetic.
 nonanalysis_chemistry = ["qso2", "qso2v", "qso4v", "qdms", "qmsa", "qnh3", "qnh4a",
                         "qsoapa", "qsoapbb", "qsoapbg"]
-aux_vars = nonanalysis_chemistry + (["persistent_hno3"] if carry_hno3 else []) + optional_vars
+# Only the required chemistry carryover is fatal here; the optional land group
+# is handled by opt_present/opt_absent below and must never abort the cycle.
+aux_required = nonanalysis_chemistry + (["persistent_hno3"] if carry_hno3 else [])
 aux_chemistry = nonanalysis_chemistry + ["persistent_hno3"]
 if aux_file:
-    missing_aux = [v for v in aux_vars if v not in aux.variables or v not in dst.variables]
+    missing_aux = [v for v in aux_required if v not in aux.variables or v not in dst.variables]
     if missing_aux:
         raise KeyError(f"Requested carryover unavailable in auxiliary source/target: {missing_aux}")
 

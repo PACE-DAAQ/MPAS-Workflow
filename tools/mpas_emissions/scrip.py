@@ -85,6 +85,7 @@ def write_mpas_scrip(
             "title": "SCRIP grid generated directly from an MPAS mesh",
             "source_mesh": str(mesh.path),
             "mesh_fingerprint": mesh.fingerprint,
+            "mask_boundary_cells": int(bool(mask_boundary_cells)),
             "attribution": (
                 "Emission regridding methodology follows Duseong Jo's original "
                 "ESMF regridding utilities (2021)."

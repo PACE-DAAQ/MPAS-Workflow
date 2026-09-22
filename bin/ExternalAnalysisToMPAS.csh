@@ -250,6 +250,16 @@ sed -i 's@nCells@'${ArgNCells}'@' $NamelistFileInit
 sed -i 's@{{meshRatio}}@'${ArgRatio}'@' $NamelistFileInit
 sed -i 's@{{UngribPrefix}}@'${externalanalyses__UngribPrefix}'@' $NamelistFileInit
 
+## PRM (plume rise model) init flag -> Fortran logical. Same source as the PRMbburnFlag
+## substitution in bin/Forecast.csh: doBburnPrm from config/auto/model.csh (sourced above).
+## Without this the GOCART2G template's literal PRMinitFlag token reaches init_atmosphere.
+if ( $?doBburnPrm ) then
+  set prmInit = `echo "${doBburnPrm}" | tr '[A-Z]' '[a-z]'`
+else
+  set prmInit = false
+endif
+sed -i 's@PRMinitFlag@'${prmInit}'@' $NamelistFileInit
+
 # Run the executable
 # ==================
 rm ./${InitEXE}

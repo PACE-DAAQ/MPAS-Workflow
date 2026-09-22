@@ -1,12 +1,19 @@
 """Small, explicit unit conversions used by regular-grid inventories."""
 from __future__ import annotations
+import re
 import numpy as np
 
 AVOGADRO = 6.02214076e23
 
 
 def _norm(u: str) -> str:
-    return " ".join(str(u).lower().replace("**", "^").replace("-2", "^-2").replace("-1", "^-1").split())
+    """Canonical spelling: lower case, ``^`` exponents without parentheses,
+    so ``kg m-2 s-1``, ``kg m**-2 s**-1`` and ``kg m^(-2) s^(-1)`` all
+    normalize to ``kg m^-2 s^-1``."""
+    s = str(u).lower().replace("**", "^")
+    s = re.sub(r"\^\(\s*([-+]?\d+)\s*\)", r"^\1", s)   # m^(-2) -> m^-2
+    s = re.sub(r"(?<![\^\d])(-\d)", r"^\1", s)          # m-2 -> m^-2 (but not m^-2)
+    return " ".join(s.split())
 
 
 def convert(values, *, source_units: str, target_units: str, molecular_weight_g_mol: float | None = None, scale: float = 1.0):
