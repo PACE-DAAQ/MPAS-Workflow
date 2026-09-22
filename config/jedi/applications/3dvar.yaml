@@ -47,6 +47,10 @@ cost function:
               variables: [air_horizontal_streamfunction,air_horizontal_velocity_potential,air_temperature,water_vapor_mixing_ratio_wrt_moist_air]
           - model:
               variables: [air_pressure_at_surface]
+          # aerosol control variables: without this grid entry BUMP_NICAS is not applied to them
+          # (Dirac test 2026-09-22 showed a single-cell, i.e. diagonal, aerosol response)
+          - model:
+              variables: [mass_fraction_of_hydrophobic_black_carbon_in_air,mass_fraction_of_hydrophilic_black_carbon_in_air,mass_fraction_of_hydrophobic_brown_carbon_in_air,mass_fraction_of_hydrophilic_brown_carbon_in_air,mass_fraction_of_hydrophobic_organic_carbon_in_air,mass_fraction_of_hydrophilic_organic_carbon_in_air,mass_fraction_of_dust001_in_air,mass_fraction_of_dust002_in_air,mass_fraction_of_dust003_in_air,mass_fraction_of_dust004_in_air,mass_fraction_of_dust005_in_air,mass_fraction_of_sea_salt001_in_air,mass_fraction_of_sea_salt002_in_air,mass_fraction_of_sea_salt003_in_air,mass_fraction_of_sea_salt004_in_air,mass_fraction_of_sea_salt005_in_air,mass_fraction_of_sulfate_in_air,mass_fraction_of_nitrate001_in_air,mass_fraction_of_nitrate002_in_air,mass_fraction_of_nitrate003_in_air]
     saber outer blocks:
     - saber block name: StdDev
       read:
