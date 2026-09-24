@@ -510,7 +510,12 @@ fields:
     mpas identity field: mass_fraction_of_nitrate003_in_air
     mpas io name: qni3
 
-  - field name: particulatematter2p5Surface   # surface PM2.5 diagnostic (openaq_pm25 Identity obs operator)
+  - field name: particulatematter2p5Surface   # surface PM2.5 diagnostic (openaq_sfcpm Identity obs operator)
     mpas template field: u10
     mpas identity field: particulatematter2p5Surface
     mpas io name: totPM25
+
+  - field name: particulatematter10Surface   # surface PM10 diagnostic (openaq_sfcpm Identity obs operator)
+    mpas template field: u10
+    mpas identity field: particulatematter10Surface
+    mpas io name: totPM10

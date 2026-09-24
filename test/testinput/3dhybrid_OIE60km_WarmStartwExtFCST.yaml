@@ -51,14 +51,14 @@ variational:
   sondes,
   modis_aqua_aod,
   viirs_aod_db_npp,
-  openaq_pm25
+  openaq_sfcpm
 ]
   monitors: [
   modis_aqua_aod,
   sfc,
   sondes,
   viirs_aod_db_npp,
-  openaq_pm25
+  openaq_sfcpm
 ]
   radianceThinningDistance: 60.0
   ensemble:
