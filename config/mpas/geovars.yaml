@@ -518,4 +518,4 @@ fields:
   - field name: particulatematter10Surface   # surface PM10 diagnostic (openaq_sfcpm Identity obs operator)
     mpas template field: u10
     mpas identity field: particulatematter10Surface
-    mpas io name: totPM
+    mpas io name: totPM10
