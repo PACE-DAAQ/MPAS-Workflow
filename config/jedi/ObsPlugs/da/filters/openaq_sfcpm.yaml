@@ -1,3 +1,62 @@
-  obs filters: []
-  # observed units is in kg m-3, no scaling needed.
-  # additional QC (Domain Check / Bounds Check / Gaussian Thinning) can be added here as needed
+  obs filters:
+  # 1. keep only the two best OpenAQ quality flags (file carries PreQC 0-4)
+  - filter: PreQC
+    maxvalue: 1
+  # 2. physical bounds (kg m-3): reject negatives and > 1000 ug m-3; stay inside the domain used for AOD
+  - filter: Bounds Check
+    filter variables:
+    - name: particulatematter2p5Surface
+    - name: particulatematter10Surface
+    minvalue: 0.0
+    maxvalue: 1.0e-6
+    action:
+      name: reject
+  - filter: Domain Check
+    where:
+    - variable:
+        name: latitude@MetaData
+      minvalue: -60
+      maxvalue: 60
+  # 3. observation error: the IODA files carry ObsError = 0, so assign sigma = max(2 ug m-3, 30% of the value),
+  #    one ramp per variable keyed on its own value (units kg m-3)
+  - filter: Perform Action
+    filter variables:
+    - name: particulatematter2p5Surface
+    action:
+      name: assign error
+      error function:
+        name: ObsFunction/ObsErrorModelRamp
+        options:
+          xvar:
+            name: ObsValue/particulatematter2p5Surface
+          x0: [6.67e-9]
+          x1: [1.0e-6]
+          err0: [2.0e-9]
+          err1: [3.0e-7]
+  - filter: Perform Action
+    filter variables:
+    - name: particulatematter10Surface
+    action:
+      name: assign error
+      error function:
+        name: ObsFunction/ObsErrorModelRamp
+        options:
+          xvar:
+            name: ObsValue/particulatematter10Surface
+          x0: [1.0e-8]
+          x1: [1.0e-6]
+          err0: [3.0e-9]
+          err1: [3.0e-7]
+  # 4. gross-error check against the background with the assigned error
+  - filter: Background Check
+    filter variables:
+    - name: particulatematter2p5Surface
+    - name: particulatematter10Surface
+    threshold: 4.0
+    action:
+      name: reject
+  # optional: one station per 60-km cell
+  - filter: Gaussian Thinning
+    horizontal_mesh: {{RADTHINDISTANCE}}
+    action:
+      name: reduce obs space
