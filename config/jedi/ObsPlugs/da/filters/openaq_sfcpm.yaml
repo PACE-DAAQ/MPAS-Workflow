@@ -1,3 +1,3 @@
-  obs filters:
+  obs filters: []
   # observed units is in kg m-3, no scaling needed.
   # additional QC (Domain Check / Bounds Check / Gaussian Thinning) can be added here as needed
