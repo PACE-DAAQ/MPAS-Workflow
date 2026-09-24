@@ -11,7 +11,7 @@
     maxvalue: 1.0e-6
     action:
       name: reject
-  # 3. observation error: the IODA files carry ObsError = 0, so assign sigma = max(2 ug m-3, 30% of the value),
+  # 3. observation error: the IODA files carry ObsError = 0, so assign sigma = max(1 ug m-3, 40% of the value) for PM2.5, max(1.5 ug m-3, 40%) for PM10,
   #    one ramp per variable keyed on its own value (units kg m-3)
   - filter: Perform Action
     filter variables:
@@ -23,10 +23,10 @@
         options:
           xvar:
             name: ObsValue/particulatematter2p5Surface
-          x0: [6.67e-9]
+          x0: [2.5e-9]
           x1: [1.0e-6]
-          err0: [2.0e-9]
-          err1: [3.0e-7]
+          err0: [1.0e-9]
+          err1: [4.0e-7]
   - filter: Perform Action
     filter variables:
     - name: particulatematter10Surface
@@ -37,10 +37,10 @@
         options:
           xvar:
             name: ObsValue/particulatematter10Surface
-          x0: [1.0e-8]
+          x0: [3.75e-9]
           x1: [1.0e-6]
-          err0: [3.0e-9]
-          err1: [3.0e-7]
+          err0: [1.5e-9]
+          err1: [4.0e-7]
   # 4. gross-error check: reject where |O-B| > 4 x assigned sigma
   - filter: Background Check
     filter variables:
