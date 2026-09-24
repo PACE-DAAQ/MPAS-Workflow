@@ -1,6 +1,6 @@
 - obs space:
     <<: *ObsSpace
-    name: openaq_sfcpm_particulatematter
+    name: openaq_particulatematterSurface
     obsdatain:
       engine:
         type: H5File
