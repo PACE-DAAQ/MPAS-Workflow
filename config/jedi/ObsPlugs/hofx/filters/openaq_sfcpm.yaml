@@ -1,16 +1,17 @@
   obs filters:
-  # 1. keep only the two best OpenAQ quality flags (file carries PreQC 0-4)
+  # 1. keep only the best OpenAQ quality flags (file carries PreQC 0-4)
   - filter: PreQC
-    maxvalue: 1
+    maxvalue: 0
   # 2. physical bounds (kg m-3): reject negatives and > 1000 ug m-3 (global: no latitude restriction)
-  - filter: Bounds Check
-    filter variables:
-    - name: particulatematter2p5Surface
-    - name: particulatematter10Surface
-    minvalue: 0.0
-    maxvalue: 1.0e-6
-    action:
-      name: reject
+  #    PreQC = 0 only include data where PM2.5 is below 1000 and PM10 is below 6000 ug m-3
+  # - filter: Bounds Check
+  #   filter variables:
+  #   - name: particulatematter2p5Surface
+  #   - name: particulatematter10Surface
+  #   minvalue: 0.0
+  #   maxvalue: 1.0e-6
+  #   action:
+  #     name: reject
   # 3. observation error: the IODA files carry ObsError = 0, so assign sigma = max(1 ug m-3, 40% of the value) for PM2.5, max(1.5 ug m-3, 40%) for PM10,
   #    one ramp per variable keyed on its own value (units kg m-3)
   - filter: Perform Action
