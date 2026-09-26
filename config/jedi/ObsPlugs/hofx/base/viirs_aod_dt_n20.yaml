@@ -4,7 +4,8 @@
     obsdatain:
       engine:
         type: H5File
-        obsfile: {{InDBDir}}/viirs_aod_dt_n20_{{thisValidDate}}.h5
+        obsfile: {{InDBDir}}/viirs_aod_dt_n20_obs_{{thisValidDate}}.h5
+        missing file action: warn
     obsdataout:
       engine:
         type: H5File
@@ -16,7 +17,7 @@
     name: AodCRTM
     Absorbers: [H2O, O3]
     obs options:
-      Sensor_ID: v.viirs-m_npp
+      Sensor_ID: v.viirs-m_j1
       EndianType: little_endian
       CoefficientPath: {{CRTMTABLES}}
       AerosolCoeff_File: AerosolCoeff.GOCART-GEOS5.nc4
