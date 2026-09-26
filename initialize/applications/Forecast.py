@@ -125,6 +125,14 @@ class Forecast(Component):
     ########################
     # job settings
     updateSea = self['updateSea']
+    if not updateSea:
+      import sys
+      msg = ('WARNING [forecast]: updateSea is False -> the cycling forecast will NOT update SST/sea ice. '
+             'The 2024 production design requires the daily surface update (forecast.updateSea: true, surfaceUpdateFile, surfaceInputInterval).')
+      print('\n' + '!'*100 + '\n' + msg + '\n' + '!'*100 + '\n', file=sys.stderr)
+    elif self['surfaceUpdateFile'] is None:
+      import sys
+      print('NOTE [forecast]: updateSea is True without surfaceUpdateFile -> sea surface taken from the external analysis of each cycle', file=sys.stderr)
 
     attr = {
       'retry': {'typ': str},
