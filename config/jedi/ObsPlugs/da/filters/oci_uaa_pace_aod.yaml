@@ -10,7 +10,7 @@
   - filter: Bounds Check
     filter variables:
     - name: aerosolOpticalDepth
-      channels: 1-8
+      channels: 1-9
     minvalue: 0
     maxvalue: 4.9
     action:
@@ -26,9 +26,10 @@
     #select_mean: true
     action:
       name: reduce obs space
+  # Only 550 nm contributes to the analysis; retain other channels for monitoring.
   - filter: Perform Action
     filter variables:
     - name: aerosolOpticalDepth
-      channels: 1-8
+      channels: 1-3,5-9
     action:
       name: passivate

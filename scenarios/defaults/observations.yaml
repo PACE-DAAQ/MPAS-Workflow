@@ -158,16 +158,16 @@ observations:
           modis_aqua_aod:   /glade/campaign/ncar/nmmm0081/input/obs/modis_aqua_aod
           modis_terra_aod:  /glade/campaign/ncar/nmmm0081/input/obs/modis_terra_aod
           viirs_aod_db_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_n20-thinned0p8
-          viirs_aod_dt_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_n20
+          viirs_aod_dt_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_n20-thinned0p8
           viirs_aod_db_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_npp-thinned0p8
-          viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_npp
-          harp2_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/harp2_fmapol_pace_aod
-          spexone_remotap_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod
-          spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod
+          viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_npp-thinned0p8
+          harp2_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/harp2_fmapol_pace_aod_v4
+          spexone_remotap_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod_v4
+          spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod_v4
           aeronet_l15_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l15_aod
 
-          ## surface PM2.5
-          openaq_pm25: /glade/campaign/ncar/nmmm0081/input/obs/openaq_pm25
+          ## surface PM
+          openaq_sfcpm: /glade/campaign/ncar/nmmm0081/input/obs/openaq_sfcpm
 
         hofx:
           ## anchor
@@ -225,16 +225,16 @@ observations:
           modis_aqua_aod:   /glade/campaign/ncar/nmmm0081/input/obs/modis_aqua_aod
           modis_terra_aod:  /glade/campaign/ncar/nmmm0081/input/obs/modis_terra_aod
           viirs_aod_db_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_n20-thinned0p8
-          viirs_aod_dt_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_n20
+          viirs_aod_dt_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_n20-thinned0p8
           viirs_aod_db_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_npp-thinned0p8
-          viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_npp
-          harp2_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/harp2_fmapol_pace_aod
-          spexone_remotap_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod
-          spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod
+          viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_npp-thinned0p8
+          harp2_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/harp2_fmapol_pace_aod_v4
+          spexone_remotap_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod_v4
+          spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod_v4
           aeronet_l15_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l15_aod
 
-          ## surface PM2.5
-          openaq_pm25: /glade/campaign/ncar/nmmm0081/input/obs/openaq_pm25
+          ## surface PM
+          openaq_sfcpm: /glade/campaign/ncar/nmmm0081/input/obs/openaq_sfcpm
 
       IODASuperObGrid:
         abi_g16: 15X15

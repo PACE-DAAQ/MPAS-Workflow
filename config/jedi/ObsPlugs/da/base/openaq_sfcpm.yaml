@@ -1,15 +1,15 @@
 - obs space:
     <<: *ObsSpace
-    name: openaq_pm25_particulatematter2p5Surface
+    name: openaq_particulatematterSurface
     _obsdatain: &ObsDataIn
       engine:
         type: H5File
-        obsfile: {{InDBDir}}/openaq_pm25_obs_{{thisValidDate}}.h5
+        obsfile: {{InDBDir}}/openaq_sfcpm_obs_{{thisValidDate}}.h5
         missing file action: warn
     _obsdataout: &ObsDataOut
       engine:
         type: H5File
-        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_openaq_pm25{{ObsOutSuffix}}.h5
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_openaq_sfcpm{{ObsOutSuffix}}.h5
     obsdatain:
       <<: *{{ObsDataIn}}
     {{ObsDataOut}}
