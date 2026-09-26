@@ -513,7 +513,9 @@ sed -i 's@{{windowBegin}}@'${halfprevISO8601Date}'@' $thisYAML
 # crtm tables
 sed -i 's@{{CRTMTABLES}}@'${CRTMTABLES}'@g' $thisYAML
 
-# aod related parameters
+# aod related parameters (HofX applications do not export these; fall back to the variational defaults)
+if ( ! $?aodChannel ) set aodChannel = 4
+if ( ! $?aodAerosolOption ) set aodAerosolOption = aerosols_gocart2g_mpas
 sed -i 's@{{aodChannel}}@'${aodChannel}'@g' $thisYAML
 sed -i 's@{{aodAerosolOption}}@'${aodAerosolOption}'@g' $thisYAML
 
@@ -698,7 +700,7 @@ EOF
 
   # Hybrid Jb weights
   # =================
-  if ( "$DAType" == "3dhybrid" || "$DAType" == "4dhybrid" ) then
+  if ( "$DAType" == "3dhybrid" || "$DAType" == "3dhybrid-crossed" || "$DAType" == "4dhybrid" ) then
     sed -i 's@{{staticCovarianceWeight}}@'${staticCovarianceWeight}'@' $prevYAML
     sed -i 's@{{ensembleCovarianceWeight}}@'${ensembleCovarianceWeight}'@' $prevYAML
   endif
