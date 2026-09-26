@@ -40,6 +40,10 @@ class Forecast(Component):
     ## updateSea
     # whether to update surface fields before a forecast (e.g., sst, xice)
     'updateSea': [True, bool],
+    ## surfaceUpdateFile / surfaceInputInterval: optional time-varying surface (sst, xice) file read
+    # through the MPAS surface stream every surfaceInputInterval when updateSea is true (same as ExtendedForecast)
+    'surfaceUpdateFile': [None, str],
+    'surfaceInputInterval': ['24:00:00', str],
 
     ## IAU
     # whether to use incremental analysis update
@@ -121,6 +125,14 @@ class Forecast(Component):
     ########################
     # job settings
     updateSea = self['updateSea']
+    if not updateSea:
+      import sys
+      msg = ('WARNING [forecast]: updateSea is False -> the cycling forecast will NOT update SST/sea ice. '
+             'The 2024 production design requires the daily surface update (forecast.updateSea: true, surfaceUpdateFile, surfaceInputInterval).')
+      print('\n' + '!'*100 + '\n' + msg + '\n' + '!'*100 + '\n', file=sys.stderr)
+    elif self['surfaceUpdateFile'] is None:
+      import sys
+      print('NOTE [forecast]: updateSea is True without surfaceUpdateFile -> sea surface taken from the external analysis of each cycle', file=sys.stderr)
 
     attr = {
       'retry': {'typ': str},
@@ -168,6 +180,9 @@ class Forecast(Component):
         warmIC[mm-1].prefix(),
         updateATMVarsFromCold,
         self['restart interval'],
+        'central',  # emission role (14th arg)
+        self['surfaceUpdateFile'] or '',
+        str(self['surfaceInputInterval']),
       ]
       fcArgs = ' '.join(['"'+str(a)+'"' for a in args])
 

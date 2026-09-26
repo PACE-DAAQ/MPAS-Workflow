@@ -99,6 +99,10 @@ observations:
         ahi-clr_himawari8: ahi_himawari8
         viirs_aod_db_npp: viirs_aod_db_npp-thinned0p8 # Thinned
         viirs_aod_db_n20: viirs_aod_db_n20-thinned0p8 # Thinned
+        oci_uaa_pace_aod_multiwl: oci_uaa_pace_aod   # same IODA files as oci_uaa_pace_aod; 354/550/870 nm active
+        harp2_fmapol_pace_aod: harp2_fmapol_pace_aod_v4        # files are <name>_v4_obs_<date>.h5
+        spexone_remotap_pace_aod: spexone_remotap_pace_aod_v4
+        spexone_fmapol_pace_aod: spexone_fmapol_pace_aod_v4
 
       IODADirectory:
         da:
@@ -155,6 +159,8 @@ observations:
 
           ## aod
           oci_uaa_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
+          oci_uaa_pace_aod_multiwl: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
+          oci_uaa_pace_aod_multiwl: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
           modis_aqua_aod:   /glade/campaign/ncar/nmmm0081/input/obs/modis_aqua_aod
           modis_terra_aod:  /glade/campaign/ncar/nmmm0081/input/obs/modis_terra_aod
           viirs_aod_db_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_n20-thinned0p8
