@@ -13,9 +13,9 @@
     obsdatain:
       <<: *{{ObsDataIn}}
     {{ObsDataOut}}
-    simulated variables: [particulatematter2p5Surface]
+    simulated variables: [particulatematter2p5Surface, particulatematter10Surface]
   obs error: *ObsErrorDiagonal
   <<: *horizObsLoc
   obs operator:
     name: Identity
-    variables: [particulatematter2p5Surface]
+    variables: [particulatematter2p5Surface, particulatematter10Surface]
