@@ -40,6 +40,10 @@ class Forecast(Component):
     ## updateSea
     # whether to update surface fields before a forecast (e.g., sst, xice)
     'updateSea': [True, bool],
+    ## surfaceUpdateFile / surfaceInputInterval: optional time-varying surface (sst, xice) file read
+    # through the MPAS surface stream every surfaceInputInterval when updateSea is true (same as ExtendedForecast)
+    'surfaceUpdateFile': [None, str],
+    'surfaceInputInterval': ['24:00:00', str],
 
     ## IAU
     # whether to use incremental analysis update
@@ -168,6 +172,9 @@ class Forecast(Component):
         warmIC[mm-1].prefix(),
         updateATMVarsFromCold,
         self['restart interval'],
+        'central',  # emission role (14th arg)
+        self['surfaceUpdateFile'] or '',
+        str(self['surfaceInputInterval']),
       ]
       fcArgs = ' '.join(['"'+str(a)+'"' for a in args])
 
