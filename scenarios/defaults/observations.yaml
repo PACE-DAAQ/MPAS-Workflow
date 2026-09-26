@@ -160,7 +160,6 @@ observations:
           ## aod
           oci_uaa_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
           oci_uaa_pace_aod_multiwl: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
-          oci_uaa_pace_aod_multiwl: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
           modis_aqua_aod:   /glade/campaign/ncar/nmmm0081/input/obs/modis_aqua_aod
           modis_terra_aod:  /glade/campaign/ncar/nmmm0081/input/obs/modis_terra_aod
           viirs_aod_db_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_n20-thinned0p8
@@ -228,6 +227,7 @@ observations:
 
           ## aod
           oci_uaa_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
+          oci_uaa_pace_aod_multiwl: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
           modis_aqua_aod:   /glade/campaign/ncar/nmmm0081/input/obs/modis_aqua_aod
           modis_terra_aod:  /glade/campaign/ncar/nmmm0081/input/obs/modis_terra_aod
           viirs_aod_db_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_n20-thinned0p8
