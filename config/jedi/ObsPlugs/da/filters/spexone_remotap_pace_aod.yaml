@@ -34,7 +34,7 @@
   - filter: Perform Action
     filter variables:
     - name: aerosolOpticalDepth
-      channels: 4,8,14
+      channels: 4,14   # keep ch8 (550 nm) active; 440/870 nm monitored
     action:
       name: passivate
 
