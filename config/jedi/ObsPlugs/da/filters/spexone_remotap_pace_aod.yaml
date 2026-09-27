@@ -15,12 +15,6 @@
     maxvalue: 4.9
     action:
       name: reject
-#  - filter: Background Check
-#    channels: 8
-#    threshold: 3.0
-#    action:
-#      name: inflate error
-#      inflation factor: 3.0
   # observation error for the 550-nm channel: sigma = 0.045 + 0.2*AOD, floored at 0.05 (same scale as the OCI
   # product error); the file's retrieval uncertainty (~0.008) ignores representativeness on the 60-km mesh.
   - filter: Perform Action
@@ -40,6 +34,15 @@
           err0: [0.05]
           err1: [0.245]
   # gross-error check on the assigned error
+  # 3-sigma background check: inflate the obs error x3 where |O-B| > 3 sigma
+  - filter: Background Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 8
+    threshold: 3.0
+    action:
+      name: inflate error
+      inflation factor: 3.0
   - filter: Background Check
     filter variables:
     - name: aerosolOpticalDepth
