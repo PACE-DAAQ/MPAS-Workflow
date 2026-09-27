@@ -33,6 +33,11 @@
           x1: [1.0]
           err0: [0.05]
           err1: [0.245]
+  - filter: Gaussian Thinning
+    horizontal_mesh: {{RADTHINDISTANCE}}
+    select_mean: true
+    action:
+      name: reduce obs space
   # gross-error check on the assigned error
   # 3-sigma background check: inflate the obs error x3 where |O-B| > 3 sigma
   - filter: Background Check
@@ -50,11 +55,6 @@
     threshold: 4.0
     action:
       name: reject
-  - filter: Gaussian Thinning
-    horizontal_mesh: {{RADTHINDISTANCE}}
-    select_mean: true
-    action:
-      name: reduce obs space
 #  - filter: RejectList
 #    defer to post: true
 #    filter variables:
