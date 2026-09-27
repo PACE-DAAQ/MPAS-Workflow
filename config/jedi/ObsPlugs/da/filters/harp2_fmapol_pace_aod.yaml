@@ -6,7 +6,7 @@
     - variable:
         name: latitude@MetaData
       minvalue: -60
-      maxvalue: 60
+      maxvalue: 70
   - filter: Bounds Check
     filter variables:
     - name: aerosolOpticalDepth
@@ -52,7 +52,7 @@
       name: reject
   - filter: Gaussian Thinning
     horizontal_mesh: {{RADTHINDISTANCE}}
-#    select_mean: true
+    select_mean: true
     action:
       name: reduce obs space
 #  - filter: RejectList
