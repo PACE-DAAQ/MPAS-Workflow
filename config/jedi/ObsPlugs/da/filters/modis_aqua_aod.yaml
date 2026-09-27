@@ -20,6 +20,14 @@
 #    select_mean: true
     action:
       name: reduce obs space
+  # gross-error check against the assigned error, before any inflation
+  - filter: Background Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: *aodChannels
+    threshold: 4.0
+    action:
+      name: reject
 #  - filter: RejectList
 #    defer to post: true
 #    filter variables:

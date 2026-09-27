@@ -20,6 +20,14 @@
     select_mean: true
     action:
       name: reduce obs space
+  # gross-error check against the assigned error, before any inflation
+  - filter: Background Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 1,4,6
+    threshold: 4.0
+    action:
+      name: reject
   # 3-sigma background check: inflate the obs error x3 where |O-B| > 3 sigma
   - filter: Background Check
     filter variables:
