@@ -33,6 +33,7 @@
       error function:
         name: ObsFunction/ObsErrorModelRamp
         options:
+          channels: 1,4,6
           xvar:
             name: ObsValue/aerosolOpticalDepth
             channels: 1,4,6
@@ -53,6 +54,7 @@
       error function:
         name: ObsFunction/ObsErrorModelRamp
         options:
+          channels: 1,4,6
           xvar:
             name: ObsValue/aerosolOpticalDepth
             channels: 1,4,6
