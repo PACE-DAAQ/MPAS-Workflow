@@ -1,0 +1,24 @@
+- obs space:
+    <<: *ObsSpace
+    name: AodCRTM
+    _obsdatain: &ObsDataIn
+      engine:
+        type: H5File
+        obsfile: {{InDBDir}}/harp2_fmapol_pace_aod_bc_obs_{{thisValidDate}}.h5
+        missing file action: warn
+    _obsdataout: &ObsDataOut
+      engine:
+        type: H5File
+        obsfile: {{OutDBDir}}/{{obsPrefix}}_harp2_fmapol_pace_aod.h5
+    obsdatain:
+      <<: *{{ObsDataIn}}
+    {{ObsDataOut}}
+    simulated variables: [aerosolOpticalDepth]
+    channels: 1-4 # 550 nm among 4 channels
+  obs error: *ObsErrorDiagonal
+  <<: *horizObsLoc
+  obs operator:
+    <<: *aodCRTMObsOperator
+    obs options:
+      <<: *AODCRTMObsOptions
+      Sensor_ID: v.harp2_fmapol
