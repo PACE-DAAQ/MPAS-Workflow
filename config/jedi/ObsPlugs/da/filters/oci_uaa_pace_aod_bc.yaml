@@ -16,7 +16,7 @@
     action:
       name: reject
   # ROUND TWO (2026-09-28): ObsValue ch4 is already bias-corrected in the IODA file
-  #   land : corrected = OCI - (-0.0298 + 0.5572*OCI);  ocean: corrected = OCI - (+0.0154 + 0.3510*OCI)
+  #   land : corrected = OCI - (-0.0298 + 0.5572*OCI);  ocean: NOT corrected (island-site fit contradicted by MODIS over open ocean)
   #   from 358k land / 55k ocean OCI-AERONET(550 via Angstrom) pairs, Jul 21 - Sep 15 2024 (docs/oci_bias_fit_fullperiod.md).
   # Observation error = robust OCI-AERONET scatter after bias removal, expressed in corrected AOD, floor 0.03:
   #   land : sigma = max(0.03, 0.02 + 0.53*AOD)   ocean: sigma = max(0.03, 0.01 + 0.26*AOD)
