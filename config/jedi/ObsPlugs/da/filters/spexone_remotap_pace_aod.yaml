@@ -38,6 +38,16 @@
     select_mean: true
     action:
       name: reduce obs space
+  # superobbing (select_mean) can leave missing values in the reduced obs space;
+  # flag them before any Background Check, whose applyFilter asserts on missing obs.
+  - filter: Bounds Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 8
+    minvalue: 0
+    maxvalue: 4.9
+    action:
+      name: reject
   - filter: Background Check
     filter variables:
     - name: aerosolOpticalDepth
