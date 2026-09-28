@@ -35,7 +35,7 @@
           err1: [0.245]
   - filter: Gaussian Thinning
     horizontal_mesh: {{RADTHINDISTANCE}}
-    select_mean: true
+    # select_mean (superobbing) OFF: it rejected 100% of superobs, 0 obs assimilated (2026-09-28)
     action:
       name: reduce obs space
   # superobbing (select_mean) can leave missing values in the reduced obs space;
