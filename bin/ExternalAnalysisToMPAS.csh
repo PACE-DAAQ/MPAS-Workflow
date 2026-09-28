@@ -228,6 +228,8 @@ if ( "${initicChemistryMode}" != "off" ) then
   # SetStreamsVariant.csh templates every emission filename.
   set nCells = ${ArgNCells}
   set meshRatio = ${ArgRatio}
+  # Clear a prior attempt marker before checking this attempt.
+  rm -f ./FAIL
   source ${mainScriptDir}/bin/SetStreamsVariant.csh
   set variantStatus = $status
   setenv StreamsFile "${saveStreamsFile}"

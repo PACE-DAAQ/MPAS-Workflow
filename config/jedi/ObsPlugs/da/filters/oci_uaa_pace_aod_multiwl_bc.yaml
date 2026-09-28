@@ -32,6 +32,7 @@
       name: assign error
       error function:
         name: ObsFunction/ObsErrorModelRamp
+        channels: 1,4,6
         options:
           channels: 1,4,6
           xvar:
@@ -53,6 +54,7 @@
       name: assign error
       error function:
         name: ObsFunction/ObsErrorModelRamp
+        channels: 1,4,6
         options:
           channels: 1,4,6
           xvar:

@@ -60,6 +60,13 @@ class ExtendedForecast(Component):
     # whether to update surface fields before a forecast (e.g., sst, xice)
     'updateSea': [False, bool],
 
+    ## surfaceUpdateFile / surfaceInputInterval (ported 2026-09-23 from the static-B stream checkout)
+    # optional time-varying surface (sst, xice) file for the whole forecast, read through
+    # the surface stream every surfaceInputInterval (MPAS input_interval syntax). Only used
+    # when updateSea is True; None keeps the single read of the cycle's external analysis.
+    'surfaceUpdateFile': [None, str],
+    'surfaceInputInterval': ['24:00:00', str],
+
     ## updateATMVarsFromCold
     # whether to update the IC atmospheric variables from the cold-start IC
     # (mirrors forecast: updateATMVarsFromCold; passed to bin/Forecast.csh as the 12th arg)
@@ -107,6 +114,11 @@ class ExtendedForecast(Component):
     lengthHR = self['lengthHR']
     outIntervalHR = self['outIntervalHR']
     self.updateATMVarsFromCold = self['updateATMVarsFromCold']
+    # YAML reads an unquoted 24:00:00 as the integer 86400 (sexagesimal); accept both forms
+    si = str(self['surfaceInputInterval'])
+    if si.isdigit():
+      si = int(si); si = f'{si//3600:02d}:{(si%3600)//60:02d}:{si%60:02d}'
+    self._set('surfaceInputInterval', str(si))
     extLengths = range(0, lengthHR+outIntervalHR, outIntervalHR)
     self._set('extLengths', extLengths)
     self.ensVerifyMembers = range(1, self.NN+1, 1)
@@ -157,6 +169,9 @@ class ExtendedForecast(Component):
       states[0].prefix(),
       self.updateATMVarsFromCold,
       self['restart interval'],
+'central',  # emission role (14th arg)
+self['surfaceUpdateFile'] or '',
+self['surfaceInputInterval'],
     ]
     self.meanAnaArgs = ' '.join(['"'+str(a)+'"' for a in args])
 
@@ -178,6 +193,9 @@ class ExtendedForecast(Component):
           states[mm-1].prefix(),
           self.updateATMVarsFromCold,
           self['restart interval'],
+'central',  # emission role (14th arg)
+self['surfaceUpdateFile'] or '',
+self['surfaceInputInterval'],
         ]
         self.ensAnaArgs[str(mm)] = ' '.join(['"'+str(a)+'"' for a in args])
       else:
@@ -248,6 +266,9 @@ class ExtendedForecast(Component):
       meanInternalAnaIC.prefix(),
       self.updateATMVarsFromCold,
       self['restart interval'],
+'central',  # emission role (14th arg)
+self['surfaceUpdateFile'] or '',
+self['surfaceInputInterval'],
     ]
     self.meanAnaArgs = ' '.join(['"'+str(a)+'"' for a in args])
 
@@ -268,6 +289,9 @@ class ExtendedForecast(Component):
         states[mm-1].prefix(),
         self.updateATMVarsFromCold,
         self['restart interval'],
+'central',  # emission role (14th arg)
+self['surfaceUpdateFile'] or '',
+self['surfaceInputInterval'],
       ]
       self.ensAnaArgs[str(mm)] = ' '.join(['"'+str(a)+'"' for a in args])
 
