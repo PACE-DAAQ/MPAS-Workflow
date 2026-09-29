@@ -4,7 +4,7 @@
     _obsdatain: &ObsDataIn
       engine:
         type: H5File
-        obsfile: {{InDBDir}}/oci_uaa_pace_aod_multiwl_obs_{{thisValidDate}}.h5
+        obsfile: {{InDBDir}}/oci_uaa_pace_aod_multiwl_bc_obs_{{thisValidDate}}.h5
         missing file action: warn
     _obsdataout: &ObsDataOut
       engine:
