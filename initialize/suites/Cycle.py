@@ -88,9 +88,19 @@ class Cycle(SuiteBase):
 
     self.c['naming'] = Naming(conf, self.c['experiment'], self.c['benchmark'])
 
+    # Per-lead external analyses/obs/chem ICs exist only so the extended forecast
+    # can be verified at each lead. With nothing scheduled to verify they are pure
+    # overhead AND cannot succeed: GetGFSAnalysisFromRDA/UngribExternalAnalysis fetch
+    # only the analysis at the cycle time, so ExternalAnalysisToMPAS-<N>hr has no
+    # source for N > 0 and init_atmosphere aborts, stalling the cycle. Same guard as
+    # ForecastOnlyCycle/ForecastFromExternalAnalyses.
+    ef = self.c['extendedforecast']
+    verifies = bool(ef['post']) and (ef['meanTimes'] is not None or ef['ensTimes'] is not None)
+    icOffsets = ef['extLengths'] if verifies else [0]
+
     for k, c_ in self.c.items():
       if k in ['observations', 'initic', 'externalanalyses']:
-        c_.export(self.c['extendedforecast']['extLengths'])
+        c_.export(icOffsets)
       elif k in ['forecast']:
         # TODO: Forecast.export should take DA.output['state']['members] as input arg
         c_.export(self.c['da'].tf.finished, self.c['da'].meanBGDir)

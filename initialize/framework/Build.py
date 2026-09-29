@@ -114,7 +114,7 @@ class Build(Component):
         #self.variablesWithDefaults['mpas bundle'] = \
         #  ['/glade/derecho/scratch/jwittig/repos-s/mpas-bundle-cron/build-gnu-1p_latest', str] ## develop
         self.variablesWithDefaults['mpas bundle'] = \
-          ['/glade/campaign/ncar/nmmm0081/default_mpas_bundle/build', str]
+          ['/glade/work/syha/mpas-jedi-install/current', str]
 
       self.variablesWithDefaults['bundle compiler used'] = ['gnu-cray', str,
         ['gnu-cray', 'intel-cray', 'gnu-openmpi']]

@@ -108,8 +108,12 @@ if ( "$NCARHOST" == "derecho" ) then
     echo $0  cylc validate ${workflow_dir}/${SuiteName}
   endif
   cylc validate ${workflow_dir}/${SuiteName}
+  if ( $?NO_PLAY ) then
+    echo "$0 (INFO): NO_PLAY set: installed and validated, not started"
+    exit 0
+  endif
   if ( $CYLC_DEBUG > 1) then
-    echo $0 cylc play ${workflow_dir}/${SuiteName}
+      echo $0 cylc play ${workflow_dir}/${SuiteName}
   endif
   cylc play ${workflow_dir}/${SuiteName}
 else if ( "$NCARHOST" == "cheyenne" ) then

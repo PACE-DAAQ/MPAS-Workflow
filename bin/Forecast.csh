@@ -58,6 +58,13 @@ if ( "$ArgRestartInterval" == "" ) set ArgRestartInterval = none
 # Explicit role protects central member 1 from ensemble-only inventory routing.
 set ArgEmissionRole = "$14"
 if ( "$ArgEmissionRole" == "" ) set ArgEmissionRole = central
+# ArgSurfaceUpdateFile: str, optional time-varying surface (sst, xice) file, read through
+# the surface stream every ArgSurfaceInputInterval when ArgUpdateSea is True. Empty keeps
+# the single read of the cycle's external analysis at the initial time.
+set ArgSurfaceUpdateFile = "$15"
+# ArgSurfaceInputInterval: str, MPAS input_interval for ArgSurfaceUpdateFile
+set ArgSurfaceInputInterval = "$16"
+if ( "$ArgSurfaceInputInterval" == "" ) set ArgSurfaceInputInterval = 24:00:00
 if ( "$ArgEmissionRole" != "central" && "$ArgEmissionRole" != "ensemble" ) then
   echo "ERROR: invalid emission role $ArgEmissionRole"
   exit 1
@@ -351,7 +358,7 @@ rm -f ./FAIL
 if ( $?onlineEmissionFactors ) then
   if ( "$onlineEmissionFactors" == "True" ) then
     if ( ! $?nEnsFCMembers ) set nEnsFCMembers = 0
-    python3 ${mainScriptDir}/tools/emission_members.py --table "$emissionMemberTable" --count $nEnsFCMembers --role $ArgEmissionRole --member $ArgMember --dust $dustEmissionFactor --seasalt $seasaltEmissionFactor --csh emission_member.csh
+    /glade/u/apps/opt/conda/envs/npl/bin/python -I ${mainScriptDir}/tools/emission_members.py --table "$emissionMemberTable" --count $nEnsFCMembers --role $ArgEmissionRole --member $ArgMember --dust $dustEmissionFactor --seasalt $seasaltEmissionFactor --csh emission_member.csh
     if ( $status != 0 ) then
       echo "ERROR: invalid emission member configuration" > ./FAIL
       exit 1
@@ -371,6 +378,15 @@ set localSeaUpdateFile = x${meshRatio}.${nCells}.sfc_update.nc
 sed -i 's@{{surfaceUpdateFile}}@'${localSeaUpdateFile}'@' ${StreamsFile}
 
 if ("${ArgUpdateSea}" == True) then
+  if ( "${ArgSurfaceUpdateFile}" != "" ) then
+    ## time-varying surface file (e.g. daily sst/xice over the campaign window)
+    if ( ! -e "${ArgSurfaceUpdateFile}" ) then
+      echo "$0 (ERROR): surface update file not found (${ArgSurfaceUpdateFile})" >> ./FAIL
+      exit 1
+    endif
+    ln -sfv ${ArgSurfaceUpdateFile} ./${localSeaUpdateFile}
+    set surfaceInputInterval = ${ArgSurfaceInputInterval}
+  else
   ## sea/ocean surface files
   # TODO: move sea directory configuration to yamls
   setenv seaMaxMembers 20
@@ -448,6 +464,9 @@ if ("${ArgUpdateSea}" == True) then
     endif
   endif
 
+  set surfaceInputInterval = initial_only
+  endif
+
   # determine sea-update precision
   ncdump -h ${localSeaUpdateFile} | grep sst | grep double
   if ($status == 0) then
@@ -462,7 +481,7 @@ if ("${ArgUpdateSea}" == True) then
     endif
   endif
   sed -i 's@{{surfacePrecision}}@'${surfacePrecision}'@' ${StreamsFile}
-  sed -i 's@{{surfaceInputInterval}}@initial_only@' ${StreamsFile}
+  sed -i 's@{{surfaceInputInterval}}@'${surfaceInputInterval}'@' ${StreamsFile}
 else
   sed -i 's@{{surfacePrecision}}@'${model__precision}'@' ${StreamsFile}
   sed -i 's@{{surfaceInputInterval}}@none@' ${StreamsFile}
@@ -473,6 +492,10 @@ if( -e ${NamelistFile}) rm ${NamelistFile}
 cp -v $ModelConfigDir/forecast/$NamelistFile .
 sed -i 's@startTime@'${StartDate}'@' $NamelistFile
 sed -i 's@fcLength@'${self_FCLengthHR}':00:00@' $NamelistFile
+if ( "${ArgSurfaceUpdateFile}" != "" ) then
+  # a time-varying surface file is only read when config_sst_update is true
+  sed -i 's@config_sst_update *= *false@config_sst_update = true@' $NamelistFile
+endif
 sed -i 's@nCells@'${nCells}'@' $NamelistFile
 sed -i 's@{{meshRatio}}@'${meshRatio}'@' $NamelistFile
 sed -i 's@modelDT@'${TimeStep}'@' $NamelistFile
@@ -523,11 +546,27 @@ set prmFRP   = `echo "${doFrp}" | tr '[A-Z]' '[a-z]'`
 sed -i 's@PRMbburnFlag@'${prmBburn}'@' $NamelistFile
 sed -i 's@PRMfrpFlag@'${prmFRP}'@' $NamelistFile
 if ( $?selectedDustFactor ) then
-  python3 ${mainScriptDir}/tools/emission_members.py --dust $selectedDustFactor --seasalt $selectedSeasaltFactor --namelist $NamelistFile
+  /glade/u/apps/opt/conda/envs/npl/bin/python -I ${mainScriptDir}/tools/emission_members.py --dust $selectedDustFactor --seasalt $selectedSeasaltFactor --namelist $NamelistFile
   if ( $status != 0 ) then
     echo "ERROR: emission-factor namelist generation failed" > ./FAIL
     exit 1
   endif
+endif
+
+## Deterministic emission scale factors from the scenario (model: dust/seasalt emission factor).
+## With onlineEmissionFactors False nothing else writes them and the model runs on compiled
+## defaults (Ch_DU 0.65 = dust factor 1.0). Ch_DU = 0.65 x dust factor; seasalt factor as given.
+if ( ! $?selectedDustFactor && $?dustEmissionFactor && $?seasaltEmissionFactor ) then
+  set chdu = `echo "$dustEmissionFactor" | awk '{printf "%.6g", 0.65*$1}'`
+  sed -i -e '/^ *config_gocart2G_Ch_DU *=/d' -e '/^ *config_gocart2G_seasalt_emission_factor *=/d' $NamelistFile
+  sed -i -e "/^ *&chemistry *"'$'"/a\\    config_gocart2G_Ch_DU = ${chdu}" $NamelistFile
+  sed -i -e "/^ *config_gocart2G_Ch_DU *=/a\\    config_gocart2G_seasalt_emission_factor = ${seasaltEmissionFactor}" $NamelistFile
+  grep -q "config_gocart2G_Ch_DU = ${chdu}" $NamelistFile
+  if ( $status != 0 ) then
+    echo "ERROR: could not set config_gocart2G_Ch_DU in $NamelistFile" > ./FAIL
+    exit 1
+  endif
+  echo "Forecast.csh: config_gocart2G_Ch_DU = ${chdu}, config_gocart2G_seasalt_emission_factor = ${seasaltEmissionFactor}"
 endif
 
 
@@ -615,7 +654,7 @@ if ("${updateATMVarsFromCold}" == True) then
       set carryFlags = ($carryFlags --aux-source "${auxDir}/${FCFilePrefix}.${thisMPASFileDate}.nc")
     endif
   endif
-  python3 ${mainScriptDir}/tools/copy_mpas_vars.py $carryFlags ${icFile}_tmp ${icFile}
+  /glade/u/apps/opt/conda/envs/npl/bin/python -I ${mainScriptDir}/tools/copy_mpas_vars.py $carryFlags ${icFile}_tmp ${icFile}
   # copy_mpas_vars.py fails fast when a cycling-state variable is missing. tcsh
   # does not abort on a non-zero child, so without this check the guard becomes a
   # silent no-op and the forecast runs from the untouched cold IC, discarding the
