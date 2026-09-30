@@ -55,6 +55,19 @@ set updateATMVarsFromCold = "$12"
 set ArgRestartInterval = "$13"
 if ( "$ArgRestartInterval" == "" ) set ArgRestartInterval = none
 
+# ArgEmissionRole: str, optional; "central" (default) or "ensemble". Accepted for call
+# compatibility with ExtendedForecast; only "central" behaviour is implemented here.
+set ArgEmissionRole = "$14"
+if ( "$ArgEmissionRole" == "" ) set ArgEmissionRole = central
+
+# ArgSurfaceUpdateFile: str, optional time-varying surface (sst, xice) file, read through
+# the surface stream every ArgSurfaceInputInterval when ArgUpdateSea is True. Empty keeps
+# the per-cycle external-analysis surface fields (initial_only).
+set ArgSurfaceUpdateFile = "$15"
+# ArgSurfaceInputInterval: str, MPAS input_interval for ArgSurfaceUpdateFile
+set ArgSurfaceInputInterval = "$16"
+if ( "$ArgSurfaceInputInterval" == "" ) set ArgSurfaceInputInterval = 24:00:00
+
 ## arg checks
 set test = `echo $ArgMember | grep '^[0-9]*$'`
 set isNotInt = ($status)
@@ -356,6 +369,15 @@ set localSeaUpdateFile = x${meshRatio}.${nCells}.sfc_update.nc
 sed -i 's@{{surfaceUpdateFile}}@'${localSeaUpdateFile}'@' ${StreamsFile}
 
 if ("${ArgUpdateSea}" == True) then
+if ( "${ArgSurfaceUpdateFile}" != "" ) then
+  ## time-varying surface file (e.g. daily sst/xice over the campaign window)
+  if ( ! -e "${ArgSurfaceUpdateFile}" ) then
+    echo "$0 (ERROR): surface update file not found (${ArgSurfaceUpdateFile})" >> ./FAIL
+    exit 1
+  endif
+  ln -sfv ${ArgSurfaceUpdateFile} ./${localSeaUpdateFile}
+  set surfaceInputInterval = ${ArgSurfaceInputInterval}
+else
   ## sea/ocean surface files
   # TODO: move sea directory configuration to yamls
   setenv seaMaxMembers 20
@@ -433,6 +455,8 @@ if ("${ArgUpdateSea}" == True) then
     endif
   endif
 
+  set surfaceInputInterval = initial_only
+endif
   # determine sea-update precision
   ncdump -h ${localSeaUpdateFile} | grep sst | grep double
   if ($status == 0) then
@@ -447,7 +471,7 @@ if ("${ArgUpdateSea}" == True) then
     endif
   endif
   sed -i 's@{{surfacePrecision}}@'${surfacePrecision}'@' ${StreamsFile}
-  sed -i 's@{{surfaceInputInterval}}@initial_only@' ${StreamsFile}
+  sed -i 's@{{surfaceInputInterval}}@'${surfaceInputInterval}'@' ${StreamsFile}
 else
   sed -i 's@{{surfacePrecision}}@'${model__precision}'@' ${StreamsFile}
   sed -i 's@{{surfaceInputInterval}}@none@' ${StreamsFile}
@@ -458,6 +482,10 @@ if( -e ${NamelistFile}) rm ${NamelistFile}
 cp -v $ModelConfigDir/forecast/$NamelistFile .
 sed -i 's@startTime@'${StartDate}'@' $NamelistFile
 sed -i 's@fcLength@'${self_FCLengthHR}':00:00@' $NamelistFile
+if ( "${ArgUpdateSea}" == True && "${ArgSurfaceUpdateFile}" != "" ) then
+  # a time-varying surface file is only read when config_sst_update is true
+  sed -i 's@config_sst_update *= *false@config_sst_update = true@' $NamelistFile
+endif
 sed -i 's@nCells@'${nCells}'@' $NamelistFile
 sed -i 's@{{meshRatio}}@'${meshRatio}'@' $NamelistFile
 sed -i 's@modelDT@'${TimeStep}'@' $NamelistFile

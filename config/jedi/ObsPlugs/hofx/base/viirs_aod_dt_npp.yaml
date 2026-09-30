@@ -4,7 +4,8 @@
     obsdatain:
       engine:
         type: H5File
-        obsfile: {{InDBDir}}/viirs_aod_dt_npp_{{thisValidDate}}.h5
+        obsfile: {{InDBDir}}/viirs_aod_dt_npp_obs_{{thisValidDate}}.h5
+        missing file action: warn
     obsdataout:
       engine:
         type: H5File
