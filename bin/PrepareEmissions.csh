@@ -265,4 +265,19 @@ foreach inv ( ceds gfas qfed gbbepx )
   endif
 end
 
+# Generate separately from emissions, using exactly the staged fire-size sources.
+if ( "$emissionsPrmVegetation" == "True" ) then
+  if ( "$emissionsPrmVegetationManifest" == "" || "$emissionsPrmVegetationFireSize" == "" ) then
+    echo "ERROR: source vegetation requires manifest and fire size file" > ./FAIL
+    exit 1
+  endif
+  $py tools/prm_source_vegetation.py --mesh "$meshFile" \
+    --manifest "$emissionsPrmVegetationManifest" --prm-input "$emissionsPrmVegetationFireSize" \
+    --output "$outDir/$emissionsPrmVegetationFile" --reuse-validated
+  if ( $status != 0 ) then
+    echo "ERROR: PRM source vegetation preparation failed" > ./FAIL
+    exit 1
+  endif
+endif
+
 echo "PrepareEmissions complete: $outDir"

@@ -7,6 +7,7 @@
  which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 '''
 
+from pathlib import Path
 from initialize.config.Component import Component
 from initialize.config.Config import Config
 from initialize.config.Resource import Resource
@@ -81,6 +82,12 @@ class Emissions(Component):
     # FINN/GFAS/QFED members; 'prebuilt' uses Build.PRMAreaDir/File.
     'prm source': ['finn', str, ['finn', 'prebuilt']],
 
+    # Optional gocartMPAS PR #45 input. Explicit manifest preserves fallback provenance.
+    'prm source vegetation': [False, bool],
+    'prm vegetation manifest': ['', str],
+    'prm vegetation fire size file': ['', str],
+    'prm vegetation file': ['prm_source_vegetation.nc', str],
+
     # Regional point assignment.  For regional MPAS meshes, reject fires too far
     # from any valid cell rather than dumping them onto a boundary cell.
     'finn reject outside': [False, bool],
@@ -132,6 +139,14 @@ class Emissions(Component):
     self._set('emissionsMeshFile', self['mesh file'])
     self._set('emissionsFinnConfig', self['finn config'])
     self._set('emissionsPrmSource', self['prm source'])
+    self._set('emissionsPrmVegetation', self['prm source vegetation'])
+    self._set('emissionsPrmVegetationManifest', self['prm vegetation manifest'])
+    self._set('emissionsPrmVegetationFireSize', self['prm vegetation fire size file'])
+    self._set('emissionsPrmVegetationFile', self['prm vegetation file'])
+    if self['prm source vegetation'] and (self['finn reject outside'] or self['finn interior only']):
+      raise ValueError('Source vegetation currently supports global nearest-cell mapping only')
+    if Path(self['prm vegetation file']).name != self['prm vegetation file']:
+      raise ValueError('prm vegetation file must be a basename')
     self._set('emissionsFinnRejectOutside', self['finn reject outside'])
     self._set('emissionsFinnInteriorOnly', self['finn interior only'])
     self._set('emissionsFinnMaxDistanceFactor', self['finn max distance factor'])
