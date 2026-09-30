@@ -7,6 +7,50 @@ existing input file, or supported cell is changed. It requires the optional
 source-vegetation generation/staging interface from MPAS-Workflow PR #45 and a
 model executable supporting `config_prm_source_vegetation` (gocartMPAS PR #45).
 
+## Workflow use: configure, then launch normally
+
+No manual manifest, NetCDF editing, or stream editing is needed. In the case's
+existing `emissions` section enable preparation and point to one support YAML:
+
+```yaml
+emissions:
+  mode: workflow
+  seed prebuilt: true
+  prepare: []                 # keep existing prepared pollutant emissions
+  prm source: prebuilt        # use the existing configured PRMAreaFile
+  prm source vegetation: true
+  prm vegetation config: /absolute/path/to/prm_support.yaml
+```
+
+Copy and edit [prm_support.example.yaml](prm_support.example.yaml). That file
+selects `finn_point` or `footprint_overlap`, the native source root/pattern, and
+optional explicit daily FINN overrides. With overlap mode it also specifies the
+native and staged pollutant product used as the support mask. Source paths use
+strftime tokens (`%Y`, `%m`, `%d`, `%j`); relative source paths are resolved under
+`native root`, itself relative to the YAML file when not absolute. Use an
+absolute `prm vegetation config` path in the scenario.
+
+The existing mesh and resolved fire-size input are inherited from the workflow;
+`prm vegetation fire size file` remains an optional explicit override. Dates are
+inherited from the **full fire-size file coverage**, not just the current cycle,
+to satisfy the existing model input validation. A July–September support file
+therefore requires all of its daily FINN sources. Do not specify dates a second
+time. The chosen FINN records must reproduce every staged daily cell mean;
+there is no silent file-existence fallback. Use `finn.overrides` for documented
+fallback dates. This consistency guard also applies when fire-size preparation
+is enabled separately through the existing FINN workflow.
+
+`PrepareEmissions` creates the manifests internally, builds and validates a
+paired package in `<EmissionsWorkDir>/prm_support`, and records input/output
+hashes. Identical packages are reused; changed sources or edited outputs fail
+with an explicit stale-package error. Choose a new emissions work directory for
+a changed experiment. `Forecast.csh` automatically stages the paired fire-size
+file under the existing stream filename, enables the optional vegetation
+stream/namelist switch, and validates forecast coverage. All source files remain
+read-only. The legacy explicit-manifest interface remains available but cannot
+be combined with the YAML config. With the option disabled, the preparation and
+forecast blocks do not modify model inputs or settings.
+
 ## Why and what it means
 
 Conservative remapping spreads a native raster pixel's emissions across its
@@ -106,9 +150,9 @@ On success it contains `fire_size.nc`, `vegetation.nc`, and `provenance.json` wi
 input/output hashes, per-cell records, native pixel indices, categories, and
 eligible/filled/unfilled counts. Always use the two output NetCDF files together.
 Point a separate experiment's existing fire-size input at `fire_size.nc` and its
-optional source-vegetation setting at `vegetation.nc`. The tool does not change
-suite configuration or enable the model switch. Existing production runs remain
-unchanged until explicitly configured otherwise.
+optional source-vegetation setting at `vegetation.nc`. Standalone invocation does not change suite configuration. The YAML workflow
+path above stages the package and enables the switch only when explicitly
+requested. Existing production runs remain unchanged.
 
 ## Validation and scientific evidence
 

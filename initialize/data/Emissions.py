@@ -84,6 +84,7 @@ class Emissions(Component):
 
     # Optional gocartMPAS PR #45 input. Explicit manifest preserves fallback provenance.
     'prm source vegetation': [False, bool],
+    'prm vegetation config': ['', str],
     'prm vegetation manifest': ['', str],
     'prm vegetation fire size file': ['', str],
     'prm vegetation file': ['prm_source_vegetation.nc', str],
@@ -140,6 +141,11 @@ class Emissions(Component):
     self._set('emissionsFinnConfig', self['finn config'])
     self._set('emissionsPrmSource', self['prm source'])
     self._set('emissionsPrmVegetation', self['prm source vegetation'])
+    self._set('emissionsPrmVegetationConfig', self['prm vegetation config'])
+    if self['prm source vegetation'] and self['prm vegetation config'] and self['mode'] != 'workflow':
+      raise ValueError('Automatic PRM preparation requires emissions mode workflow')
+    if self['prm vegetation config'] and self['prm vegetation manifest']:
+      raise ValueError('Choose PRM YAML config or legacy manifest, not both')
     self._set('emissionsPrmVegetationManifest', self['prm vegetation manifest'])
     self._set('emissionsPrmVegetationFireSize', self['prm vegetation fire size file'])
     self._set('emissionsPrmVegetationFile', self['prm vegetation file'])

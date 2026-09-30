@@ -515,9 +515,21 @@ if ( $?emissionsPrmVegetation ) then
       echo "ERROR: source vegetation requires plume rise" > ./FAIL
       exit 1
     endif
+    set sourceVegetationInput = "${PRMAreaDir}/${emissionsPrmVegetationFile}"
+    if ( $?emissionsPrmVegetationConfig ) then
+      if ( "$emissionsPrmVegetationConfig" != "" ) then
+        set sourceVegetationInput = "${PRMAreaDir}/prm_support/vegetation.nc"
+        if ( ! -f "${PRMAreaDir}/prm_support/validated.json" || ! -f "${PRMAreaDir}/prm_support/fire_size.nc" ) then
+          echo "ERROR: prepared PRM support package is missing" > ./FAIL
+          exit 1
+        endif
+        ln -sf "${PRMAreaDir}/prm_support/fire_size.nc" "$prmAreaFile"
+        if ( $status != 0 ) exit 1
+      endif
+    endif
     ( source ${mainScriptDir}/config/environmentEmissions.csh >& /dev/null ; \
       python3 ${mainScriptDir}/tools/configure_prm_source_vegetation.py \
-      --input "${PRMAreaDir}/${emissionsPrmVegetationFile}" --fire-size "$prmAreaFile" \
+      --input "$sourceVegetationInput" --fire-size "$prmAreaFile" \
       --namelist "$NamelistFile" --streams "$StreamsFile" --ncells "$nCells" --mesh "$localInvariantFieldsFile" \
       --start "$StartDate" --hours "$self_FCLengthHR" )
     if ( $status != 0 ) then
