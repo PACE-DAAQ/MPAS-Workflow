@@ -10,31 +10,26 @@
   - filter: Bounds Check
     filter variables:
     - name: aerosolOpticalDepth
-      channels: 4,8,14
+      channels: 1-9
     minvalue: 0
     maxvalue: 4.9
     action:
       name: reject
 #  - filter: Background Check
-#    channels: 8
+#    channels: 4
 #    threshold: 3.0
 #    action:
 #      name: inflate error
 #      inflation factor: 3.0
   - filter: Gaussian Thinning
     horizontal_mesh: {{RADTHINDISTANCE}}
-#    select_mean: true
+    #select_mean: true
     action:
       name: reduce obs space
-#  - filter: RejectList
-#    defer to post: true
-#    filter variables:
-#    - name: aerosolOpticalDepth
-#      channels: 1-18
+  # Multi-wavelength: 354 (ch1), 550 (ch4) and 870 nm (ch6) contribute to the analysis; the others are monitored.
   - filter: Perform Action
     filter variables:
     - name: aerosolOpticalDepth
-      channels: 4,14   # keep ch8 (550 nm) active; 440/870 nm monitored
+      channels: 2,3,5,7,8,9
     action:
       name: passivate
-

@@ -13,6 +13,7 @@
 #
 # Inputs (set externally, e.g. via config/auto/model.csh):
 #   streamsVariant : cntl | pertNN     selects a default (anth/biog/biob) inventory combination
+#   anthNh3Emissions : cams|ceds|follow-anth (default cams; independent NH3 choice)
 #   anthEmissions  : '' or cams|ceds|cams-mix   optional per-dimension override from the scenario YAML
 #   biobEmissions  : '' or finn|gfas|qfed|gbbepx  optional per-dimension override from the scenario YAML
 #   biogEmissions  : '' or cams                 optional per-dimension override from the scenario YAML
@@ -144,10 +145,7 @@ echo "SetStreamsVariant.csh (INFO): emission inventories: anth=$vAnth biog=$vBio
 # (3) inventory -> per-species filenames                                  [EDIT HERE to add inventories]
 # --------------------------------------------------------------------------------------------------
 # (3a) anthropogenic. BC/OC/SO2/CO follow the selected anthropogenic inventory.
-# NH3/ISO/MNT stay CAMS for every variant, as they always have. CEDS does supply an NH3
-# product, but tying NH3 to the anth selection changes which ammonia the whole ensemble
-# burns, and nitrate is one of the species furthest from equilibrium in the current
-# spin-up -- so that is a deliberate experiment, not a side effect of a filename change.
+# NH3 is selected separately below; ISO/MNT remain CAMS.
 switch ($vAnth)
   case cams:
     set anthBC  = "CAMS-anth_${emissionGrid}_${emissionYear}_bc_monthly.nc"
@@ -160,27 +158,44 @@ switch ($vAnth)
     set anthOC  = "CEDS_${emissionGrid}_${emissionYear}_oc_monthly.nc"
     set anthSO2 = "CEDS_${emissionGrid}_${emissionYear}_so2_monthly.nc"
     set anthCO  = "CEDS_${emissionGrid}_${emissionYear}_co_monthly.nc"
-    # config/emissions/ceds.example.yaml DOES build a CEDS ammonia product, under the
-    # same unified rule, so switching NH3 onto the selected inventory later is this one
-    # line -- nothing else has to change, and no file has to be renamed or restaged:
-    #   set anthNH3 = "CEDS_${emissionGrid}_${emissionYear}_nh3_monthly.nc"
-    # It is left inactive deliberately; see the note above the switch.
     breaksw
   case cams-mix:
     set anthBC  = "CAMS-MIX-anth_${emissionGrid}_${emissionYear}_bc_monthly.nc"
     set anthOC  = "CAMS-MIX-anth_${emissionGrid}_${emissionYear}_oc_monthly.nc"
     set anthSO2 = "CAMS-MIX-anth_${emissionGrid}_${emissionYear}_so2_monthly.nc"
     set anthCO  = "CAMS-MIX-anth_${emissionGrid}_${emissionYear}_co_monthly.nc"
-    # product; NH3 comes from the CAMS global inventory for every variant anyway,
-    # set once after this switch.
     breaksw
   default:
     echo "ERROR in SetStreamsVariant.csh : unknown anth emissions '$vAnth'" > ./FAIL
     exit 1
 endsw
 
-# NH3/ISO/MNT remain CAMS for all anthropogenic variants.
-set anthNH3 = "CAMS-anth_${emissionGrid}_${emissionYear}_nh3_monthly.nc"
+# Preserve the legacy CAMS NH3 unless explicitly requested otherwise.
+set vAnthNH3 = cams
+if ( $?anthNh3Emissions ) then
+  if ( "$anthNh3Emissions" != "" ) set vAnthNH3 = "$anthNh3Emissions"
+endif
+if ( "$vAnthNH3" == "follow-anth" ) then
+  set vAnthNH3 = "$vAnth"
+  if ( "$vAnthNH3" == "cams-mix" ) then
+    echo "SetStreamsVariant.csh (INFO): CAMS-MIX NH3 is not supported; using CAMS NH3 fallback"
+    set vAnthNH3 = cams
+  endif
+endif
+switch ($vAnthNH3)
+  case cams:
+    set anthNH3 = "CAMS-anth_${emissionGrid}_${emissionYear}_nh3_monthly.nc"
+    breaksw
+  case ceds:
+    set anthNH3 = "CEDS_${emissionGrid}_${emissionYear}_nh3_monthly.nc"
+    breaksw
+  default:
+    echo "ERROR in SetStreamsVariant.csh : unknown anth nh3 emissions '$vAnthNH3' (use cams, ceds, or follow-anth)" > ./FAIL
+    cat ./FAIL
+    exit 1
+endsw
+echo "SetStreamsVariant.csh (INFO): anthropogenic NH3=$vAnthNH3 file=$anthNH3"
+# ISO/MNT remain CAMS for all anthropogenic variants.
 set anthISO = "CAMS-anth_${emissionGrid}_${emissionYear}_iso_monthly.nc"
 set anthMNT = "CAMS-anth_${emissionGrid}_${emissionYear}_mnt_monthly.nc"
 

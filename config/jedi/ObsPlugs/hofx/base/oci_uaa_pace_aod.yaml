@@ -11,7 +11,7 @@
         type: H5File
         obsfile: {{OutDBDir}}/{{obsPrefix}}_oci_uaa_pace_aod.h5
     simulated variables: [aerosolOpticalDepth]
-    channels: 1,2,3,4,5,6,7,8
+    channels: &aodChannels 1-9
   obs error: *ObsErrorDiagonal
   obs operator:
     name: AodCRTM

@@ -5,10 +5,11 @@
       engine:
         type: H5File
         obsfile: {{InDBDir}}/spexone_remotap_pace_aod_obs_{{thisValidDate}}.h5
+        missing file action: warn
     _obsdataout: &ObsDataOut
       engine:
         type: H5File
-        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_spexone_remotap_pace_aod{{ObsOutSuffix}}.h5
+        obsfile: {{OutDBDir}}/{{obsPrefix}}_spexone_remotap_pace_aod.h5
     obsdatain:
       <<: *{{ObsDataIn}}
     {{ObsDataOut}}

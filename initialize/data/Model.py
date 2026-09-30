@@ -89,6 +89,8 @@ class Model(Component):
     # inventory-name -> filename tables live in bin/SetStreamsVariant.csh.
     # OPTIONS: anth emissions: cams|ceds|cams-mix ; biob emissions: finn|gfas|qfed|gbbepx ; biog emissions: cams
     'anth emissions': ['', str],
+    # Independent NH3 selection: cams (legacy default), ceds, or follow-anth.
+    'anth nh3 emissions': ['cams', str],
     'biob emissions': ['', str],
     'biog emissions': ['', str],
 
