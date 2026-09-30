@@ -508,6 +508,25 @@ set prmFRP   = `echo "${doFrp}" | tr '[A-Z]' '[a-z]'`
 sed -i 's@PRMbburnFlag@'${prmBburn}'@' $NamelistFile
 sed -i 's@PRMfrpFlag@'${prmFRP}'@' $NamelistFile
 
+# Opt-in only: old model executables never see the new namelist key/stream.
+if ( $?emissionsPrmVegetation ) then
+  if ( "$emissionsPrmVegetation" == "True" ) then
+    if ( "$doBburnPrm" != "True" ) then
+      echo "ERROR: source vegetation requires plume rise" > ./FAIL
+      exit 1
+    endif
+    ( source ${mainScriptDir}/config/environmentEmissions.csh >& /dev/null ; \
+      python3 ${mainScriptDir}/tools/configure_prm_source_vegetation.py \
+      --input "${PRMAreaDir}/${emissionsPrmVegetationFile}" --fire-size "$prmAreaFile" \
+      --namelist "$NamelistFile" --streams "$StreamsFile" --ncells "$nCells" --mesh "$localInvariantFieldsFile" \
+      --start "$StartDate" --hours "$self_FCLengthHR" )
+    if ( $status != 0 ) then
+      echo "ERROR: invalid PRM source vegetation input" > ./FAIL
+      exit 1
+    endif
+  endif
+endif
+
 ## When plume rise is enabled, confirm the staged PRM file really provides the four
 ## prm_lowbc_* fields. MPAS_streamAddField ignores variables it cannot find, so a
 ## PRM file carrying the older area_biob_modis names is accepted silently and the
