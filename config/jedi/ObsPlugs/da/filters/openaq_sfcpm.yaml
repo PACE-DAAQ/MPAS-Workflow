@@ -50,8 +50,6 @@
     threshold: 4.0
     action:
       name: reject
-  # optional: one station per 60-km cell
-  - filter: Gaussian Thinning
-    horizontal_mesh: {{RADTHINDISTANCE}}
-    action:
-      name: reduce obs space
+  # No thinning: OpenAQ is a point network and is monitored, not assimilated. The 60-km
+  # Gaussian thinning merged ~10680 stations per cycle down to ~2030 locations, discarding
+  # 80% of the stations whose fit we want to evaluate.

@@ -6,7 +6,7 @@
     - variable:
         name: latitude@MetaData
       minvalue: -60
-      maxvalue: 60
+      maxvalue: 70
   - filter: Bounds Check
     filter variables:
     - name: aerosolOpticalDepth
@@ -15,17 +15,38 @@
     maxvalue: 4.9
     action:
       name: reject
-#  - filter: Background Check
-#    channels: 4
-#    threshold: 3.0
-#    action:
-#      name: inflate error
-#      inflation factor: 3.0
   - filter: Gaussian Thinning
     horizontal_mesh: {{RADTHINDISTANCE}}
-    #select_mean: true
+    select_mean: true
     action:
       name: reduce obs space
+  # superobbing (select_mean) can leave missing values in the reduced obs space;
+  # flag them before any Background Check, whose applyFilter asserts on missing obs.
+  - filter: Bounds Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 1,4,6
+    minvalue: 0
+    maxvalue: 4.9
+    action:
+      name: reject
+  # gross-error check against the assigned error, before any inflation
+  - filter: Background Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 1,4,6
+    threshold: 4.0
+    action:
+      name: reject
+  # 3-sigma background check: inflate the obs error x3 where |O-B| > 3 sigma
+  - filter: Background Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 1,4,6
+    threshold: 3.0
+    action:
+      name: inflate error
+      inflation factor: 3.0
   # Multi-wavelength: 354 (ch1), 550 (ch4) and 870 nm (ch6) contribute to the analysis; the others are monitored.
   - filter: Perform Action
     filter variables:

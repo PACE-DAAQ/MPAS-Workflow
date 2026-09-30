@@ -6,7 +6,7 @@
     - variable:
         name: latitude@MetaData
       minvalue: -60
-      maxvalue: 60
+      maxvalue: 70
   - filter: Bounds Check
     filter variables:
     - name: aerosolOpticalDepth
@@ -15,12 +15,6 @@
     maxvalue: 4.9
     action:
       name: reject
-#  - filter: Background Check
-#    channels: 8
-#    threshold: 3.0
-#    action:
-#      name: inflate error
-#      inflation factor: 3.0
   # observation error for the 550-nm channel: sigma = 0.045 + 0.2*AOD, floored at 0.05 (same scale as the OCI
   # product error); the file's retrieval uncertainty (~0.008) ignores representativeness on the 60-km mesh.
   - filter: Perform Action
@@ -39,7 +33,21 @@
           x1: [1.0]
           err0: [0.05]
           err1: [0.245]
-  # gross-error check on the assigned error
+  - filter: Gaussian Thinning
+    horizontal_mesh: {{RADTHINDISTANCE}}
+    select_mean: true
+    action:
+      name: reduce obs space
+  # superobbing (select_mean) can leave missing values in the reduced obs space;
+  # flag them before any Background Check, whose applyFilter asserts on missing obs.
+  - filter: Bounds Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 22
+    minvalue: 0
+    maxvalue: 4.9
+    action:
+      name: reject
   - filter: Background Check
     filter variables:
     - name: aerosolOpticalDepth
@@ -47,11 +55,16 @@
     threshold: 4.0
     action:
       name: reject
-  - filter: Gaussian Thinning
-    horizontal_mesh: {{RADTHINDISTANCE}}
-#    select_mean: true
+  # gross-error check on the assigned error
+  # 3-sigma background check: inflate the obs error x3 where |O-B| > 3 sigma
+  - filter: Background Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 22
+    threshold: 3.0
     action:
-      name: reduce obs space
+      name: inflate error
+      inflation factor: 3.0
 #  - filter: RejectList
 #    defer to post: true
 #    filter variables:
