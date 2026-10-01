@@ -1,0 +1,19 @@
+# Configure emissions.prm vegetation config with this file's ABSOLUTE path.
+# This config is inactive unless emissions.prm source vegetation: true.
+method: finn_point  # or footprint_overlap
+native root: /glade/campaign/ncar/nmmm0081/input/Emissions/orig
+finn:
+  # strftime pattern, applied to every date in the staged daily fire-size file.
+  # Use the source series that actually generated that file.
+  pattern: FINNv1/GLOB_MOZ4_%Y%j.txt.gz
+  overrides: {}  # e.g. '2024-09-10': FINNv1/GLOB_MOZ4_2024254.txt.gz
+
+# For method: footprint_overlap, uncomment and supply the matching target product.
+# footprint:
+#   native pattern: QFED/qfed2.emis_oc.061.%Y%m%d.nc4
+#   variable: biomass
+#   target: /absolute/path/to/staged/QFED_oc_hourly.nc
+#   target variable: oc_biob_modis
+#   target scrip: /absolute/path/to/original/destination_scrip.nc # legacy mesh hashes
+#   cells: [15754, 46475, 118941] # optional zero-based scope; omit for all cells
+#   min overlap m2: 1.0
