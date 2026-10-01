@@ -181,6 +181,7 @@ The reusable generator was subsequently run on Casper for the same September
 13–14 inputs and three audited cells. It reproduced all four mean-area/category
 assignments exactly and left the unsupported September 13 cell unchanged. This
 check used the original QFED SCRIP destination grid to validate the legacy mesh
-fingerprint. The complete PRM test suite passed 30 tests (11 new tests plus 19
-existing regressions). This validates input construction; it is not another
+fingerprint. The complete PRM test suite passed 37 tests (18 new tests: 11
+footprint geometry/package tests and 7 YAML preparation tests, plus 19 existing
+regressions). This validates input construction; it is not another
 forecast or an end-to-end Cylc test.
