@@ -155,8 +155,8 @@ def apply_diurnal_profile(
         raise ValueError("profile must have exactly 24 hourly factors")
     if values.shape != offsets.shape:
         raise ValueError("daily_cell_values and local_hour_offset must have same shape")
-    if not np.isfinite(profile).all() or profile.sum() <= 0:
-        raise ValueError("profile must contain finite positive total weight")
+    if not np.isfinite(profile).all() or np.any(profile < 0) or profile.sum() <= 0:
+        raise ValueError("profile must contain finite nonnegative weights with positive total")
 
     normalized = profile / profile.sum() * 24.0
     # shifted[hour, cell] = profile in local time, shifted to UTC for each cell.
