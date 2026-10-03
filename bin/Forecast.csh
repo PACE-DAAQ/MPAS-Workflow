@@ -603,17 +603,27 @@ if ("${updateATMVarsFromCold}" == True) then
   if ( $?carryPersistentHno3 ) then
     if ( "$carryPersistentHno3" == "False" ) set carryFlags = ($carryFlags --reset-hno3)
   endif
-  # Persistent HNO3 and land are not analysis variables. Carry them from
-  # the matching prior forecast even if JEDI omits them from its output.
-  if ( "$ArgDACycling" == "True" && $?carryLandState && $?carryPersistentHno3 ) then
-    if ( "$ArgDACycling" == "True" ) then
-      if ( "$ArgEmissionRole" == "ensemble" ) then
-        set auxDir = "$prevCyclingEnsFCDirs[$ArgMember]"
-      else
-        set auxDir = "$prevCyclingFCDirs[$ArgMember]"
-      endif
-      set carryFlags = ($carryFlags --aux-source "${auxDir}/${FCFilePrefix}.${thisMPASFileDate}.nc")
+  # Persistent HNO3 and land are not analysis variables. Carry requested
+  # fields from the matching prior forecast even if JEDI omits them from its
+  # output. The auxiliary file contains GOCART cycling fields, so never apply
+  # this path to a non-GOCART physics suite merely because the model defaults
+  # define the carry switches.
+  set useAuxCarry = False
+  if ( "$PhysicsSuite" == "MPAS-GOCART2G" && "$ArgDACycling" == "True" ) then
+    if ( $?carryLandState ) then
+      if ( "$carryLandState" == "True" ) set useAuxCarry = True
     endif
+    if ( $?carryPersistentHno3 ) then
+      if ( "$carryPersistentHno3" == "True" ) set useAuxCarry = True
+    endif
+  endif
+  if ( "$useAuxCarry" == "True" ) then
+    if ( "$ArgEmissionRole" == "ensemble" ) then
+      set auxDir = "$prevCyclingEnsFCDirs[$ArgMember]"
+    else
+      set auxDir = "$prevCyclingFCDirs[$ArgMember]"
+    endif
+    set carryFlags = ($carryFlags --aux-source "${auxDir}/${FCFilePrefix}.${thisMPASFileDate}.nc")
   endif
   python3 ${mainScriptDir}/tools/copy_mpas_vars.py $carryFlags ${icFile}_tmp ${icFile}
   # copy_mpas_vars.py fails fast when a cycling-state variable is missing. tcsh
