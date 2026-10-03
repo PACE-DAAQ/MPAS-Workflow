@@ -78,6 +78,17 @@ build:
 observations:
   resource: PANDACArchive
 
+externalanalyses:
+  # The complete 2024 GFS data have already been converted to MPAS initial
+  # conditions. Select the link-only PANDAC resource so cycling experiments do
+  # not download, ungrib, or rerun init_atmosphere for identical inputs.
+  resource: GFS.PANDAC
+  resources:
+    GFS:
+      PANDAC:
+        60km:
+          directory: /glade/derecho/scratch/syha/ExternalAnalyses_shared/60km
+
 hofx:
   # PACE OCI AOD is carried by every cycling run -- assimilated or monitored -- so
   # experiments stay comparable. The hofx observer list defaults to conventional
