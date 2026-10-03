@@ -30,6 +30,6 @@ recentered output:
   stream name: analysis
 
 # raw (pre-recentering) ensemble mean, written for diagnostics
-ensemble meanoutput:
+ensemble mean output:
   filename: {{icStateDir}}/mean/{{icStatePrefix}}.$Y-$M-$D_$h.$m.$s.nc
   stream name: analysis
