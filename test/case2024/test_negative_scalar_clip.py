@@ -14,12 +14,13 @@ script = root / 'tools/copy_mpas_vars.py'
 assignments = {}
 for node in ast.parse(script.read_text()).body:
     is_assign = isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)
-    if is_assign and node.targets[0].id in ['vars_to_copy', 'hydrometeor_vars']:
+    if is_assign and node.targets[0].id in ['vars_to_copy', 'hydrometeor_vars', 'number_concentration_vars', 'background_chemistry_vars']:
         assignments[node.targets[0].id] = ast.literal_eval(node.value)
 
 aerosols = assignments['vars_to_copy']
-hydrometeors = assignments['hydrometeor_vars']
-clipped_names = ['qv'] + hydrometeors + aerosols
+hydrometeors = sorted(set(assignments['hydrometeor_vars'] + assignments['number_concentration_vars']))
+backgrounds = assignments['background_chemistry_vars']
+clipped_names = ['qv'] + hydrometeors + aerosols + backgrounds
 untouched_name = 'theta'
 
 
@@ -38,6 +39,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # carries a negative qv and a negative theta that must NOT be clipped.
     source_values = {name: -3.0 for name in aerosols + hydrometeors}
     cold_values = {name: 2.0 for name in aerosols + hydrometeors}
+    cold_values.update({name: -1.0 for name in backgrounds})
     cold_values['qv'] = -0.25
     cold_values[untouched_name] = -7.0
     write_file(tmp / 'source.nc', source_values)
@@ -52,6 +54,8 @@ with tempfile.TemporaryDirectory() as tmp:
             values = dataset[name][:]
             assert values.min() >= 0, f'{name} still negative: {values}'
         assert dataset['qv'][0, 0] == 0.0 and dataset['qv'][0, 1] == 5.0
+        for name in backgrounds:
+            assert dataset[name][0, 0] == 0.0, name
         for name in aerosols:
             if name == 'persistent_hno3':
                 continue
@@ -62,7 +66,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
     # Clean input: nothing to clip, and the log says so.
     write_file(tmp / 'clean_source.nc', {name: 4.0 for name in aerosols + hydrometeors})
-    write_file(tmp / 'clean_cold.nc', {**{name: 2.0 for name in aerosols + hydrometeors}, 'qv': 0.01})
+    write_file(tmp / 'clean_cold.nc', {**{name: 2.0 for name in aerosols + hydrometeors + backgrounds}, 'qv': 0.01})
     clean_destination = tmp / 'clean_out.nc'
     clean_destination.write_bytes((tmp / 'clean_cold.nc').read_bytes())
     clean = subprocess.run(
