@@ -25,12 +25,21 @@ init/restart stream, i.e. a Registry/streams change, not a change here.  So
 under sf_noahmp this recovers the soil column but not the canopy/snowpack
 state.
 
+Non-negativity (always on).  After the carry, every water-vapour,
+hydrometeor and chemistry/aerosol scalar in the destination IC is clipped at
+zero.  Interpolated external analyses and JEDI analyses both produce small
+negative mixing ratios, and a negative scalar entering the model physics can
+crash atmosphere_model (SIGSEGV in the first few time steps).  Clipped counts
+and the most negative value per variable are printed so the clipping is never
+silent.
+
 Static and boundary fields (isltyp, ivgtyp, xland, tmn, vegfra, sst, xice,
 seaice, skintemp) are deliberately NOT carried: they belong to the target
 cycle's analysis, and sst/xice in particular are refreshed by updateSea.
 """
 
 from netCDF4 import Dataset
+import numpy as np
 import sys
 
 argv = [a for a in sys.argv[1:]]
@@ -103,6 +112,30 @@ if include_land:
     optional_vars += land_vars
 if include_hydrometeors:
     optional_vars += hydrometeor_vars
+
+# Scalars that must never be negative: water vapour, the hydrometeors, and all
+# prognostic chemistry/aerosol tracers (persistent_hno3 is a tracer too).
+# Fields absent from the destination are skipped.
+water_vapour_vars = ["qv"]
+nonnegative_vars = water_vapour_vars + hydrometeor_vars + vars_to_copy
+
+
+def clip_negative_scalars(dataset, names):
+    """Clip the named variables at zero in place; return {name: (count, most_negative)}."""
+    clipped = {}
+    for name in names:
+        if name not in dataset.variables:
+            continue
+        variable = dataset.variables[name]
+        values = variable[:]
+        negative = values < 0
+        count = int(np.ma.sum(negative))
+        if count == 0:
+            continue
+        clipped[name] = (count, float(np.ma.min(values)))
+        variable[:] = np.ma.maximum(values, 0)
+    return clipped
+
 
 print(f"Opening source: {src_file}")
 src = Dataset(src_file, "r")
@@ -215,6 +248,15 @@ for v in opt_present:
     dst[v][:] = aux[v][:]
     opt_copied += 1
 
+clipped_scalars = clip_negative_scalars(dst, nonnegative_vars)
+if clipped_scalars:
+    total_clipped = sum(count for count, _ in clipped_scalars.values())
+    print(f"Non-negativity clip: set {total_clipped} negative values to zero in "
+          f"{len(clipped_scalars)} variables:")
+    for name, (count, most_negative) in clipped_scalars.items():
+        print(f"  clipped {name}: {count} values, most negative {most_negative:.4g}")
+else:
+    print("Non-negativity clip: no negative scalar values found")
 if aux_file:
     aux.close()
 src.close()
