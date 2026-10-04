@@ -105,6 +105,7 @@ class Model(Component):
     # compatible gocartMPAS executable.
     'carry persistent hno3': [True, bool],
     'carry land state': [True, bool],
+    'carry hydrometeors': [True, bool],
     'online emission factors': [False, bool],
     'dust emission factor': [1.0, float],
     'seasalt emission factor': [1.0, float],
