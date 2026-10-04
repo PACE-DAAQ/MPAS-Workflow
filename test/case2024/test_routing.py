@@ -45,6 +45,7 @@ class Routing(unittest.TestCase):
 
         self.assertEqual(Model.variablesWithDefaults['carry persistent hno3'], [True, bool])
         self.assertEqual(Model.variablesWithDefaults['carry land state'], [True, bool])
+        self.assertEqual(Model.variablesWithDefaults['carry hydrometeors'], [True, bool])
 
         forecast = (ROOT / 'bin/Forecast.csh').read_text()
         self.assertIn(
@@ -52,6 +53,8 @@ class Routing(unittest.TestCase):
             forecast,
         )
         self.assertIn('if ( "$useAuxCarry" == "True" ) then', forecast)
+        self.assertIn('--include-hydrometeors', forecast)
+        self.assertIn('source config/environmentNPL.csh; python3 tools/copy_mpas_vars.py', forecast)
 
     def test_central_and_all_members(self):
         with tempfile.TemporaryDirectory() as d:

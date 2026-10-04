@@ -10,18 +10,22 @@ root=Path(__file__).resolve().parents[2]
 script=root/'tools/copy_mpas_vars.py'
 assignments={}
 for node in ast.parse(script.read_text()).body:
-    if isinstance(node,ast.Assign) and isinstance(node.targets[0],ast.Name) and node.targets[0].id in ['vars_to_copy','land_vars']:
+    if isinstance(node,ast.Assign) and isinstance(node.targets[0],ast.Name) and node.targets[0].id in ['vars_to_copy','land_vars','hydrometeor_vars']:
         assignments[node.targets[0].id]=ast.literal_eval(node.value)
-variables=assignments['vars_to_copy']+assignments['land_vars']+['background_hno3']
+variables=assignments['vars_to_copy']+assignments['land_vars']+assignments['hydrometeor_vars']+['background_hno3']
 with tempfile.TemporaryDirectory() as tmp:
     tmp=Path(tmp)
     for filename,value in [('source.nc',7),('cold.nc',2)]:
         with Dataset(tmp/filename,'w',format='NETCDF3_64BIT_DATA') as ds:
             ds.createDimension('Time',1);ds.createDimension('nCells',2)
-            for name in variables: ds.createVariable(name,'f4',('Time','nCells'))[:]=value
+            for name in variables:
+                # Match production GFS ICs: qc/qr exist, while qi/qs/qg must be
+                # added from the prior forecast by copy_mpas_vars.py.
+                if filename=='cold.nc' and name in ['qi','qs','qg']: continue
+                ds.createVariable(name,'f4',('Time','nCells'))[:]=value
     for mode in ['carry','reset']:
         dest=tmp/f'{mode}.nc';shutil.copyfile(tmp/'cold.nc',dest)
-        flags=['--include-land']+(['--reset-hno3'] if mode=='reset' else [])
+        flags=['--include-land','--include-hydrometeors']+(['--reset-hno3'] if mode=='reset' else [])
         subprocess.run([sys.executable,str(script),*flags,str(tmp/'source.nc'),str(dest)],check=True,stdout=subprocess.DEVNULL)
     with Dataset(tmp/'carry.nc') as carry,Dataset(tmp/'reset.nc') as reset:
         for name in variables:
@@ -42,11 +46,12 @@ with tempfile.TemporaryDirectory() as tmp:
             for name in variables: ds.createVariable(name,'f4',('Time','nCells'))[:]=value
     for mode in ['carry','reset']:
         dest=tmp/f'{mode}.nc';shutil.copyfile(tmp/'cold.nc',dest)
-        flags=['--include-land','--aux-source',str(tmp/'prior.nc')]+(['--reset-hno3'] if mode=='reset' else [])
+        flags=['--include-land','--include-hydrometeors','--aux-source',str(tmp/'prior.nc')]+(['--reset-hno3'] if mode=='reset' else [])
         subprocess.run([sys.executable,str(script),*flags,str(tmp/'analysis.nc'),str(dest)],check=True,stdout=subprocess.DEVNULL)
         with Dataset(dest) as ds:
             assert np.all(ds['qdust1'][:]==7)
             assert np.all(ds['qso2'][:]==11)
             assert np.all(ds['persistent_hno3'][:]==(11 if mode=='carry' else 2))
             for name in assignments['land_vars']: assert np.all(ds[name][:]==11),name
+            for name in assignments['hydrometeor_vars']: assert np.all(ds[name][:]==11),name
 print('PASS: auxiliary carry source preserves each member while analyzed dust comes from JEDI')

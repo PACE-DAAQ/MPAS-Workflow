@@ -6,7 +6,8 @@ The cold IC supplies refreshed meteorology and prescribed chemistry
 backgrounds.  Two groups of state can be carried across the cycle:
 
   chemistry (always)  prognostic GOCART2G scalars plus persistent HNO3;
-  land (--include-land)  prognostic soil and snow state.
+  land (--include-land)  prognostic soil and snow state;
+  hydrometeors (--include-hydrometeors) cloud, rain, ice, snow and graupel.
 
 Land cycling matters when meteorology is re-initialised from analysis every
 cycle: without it the land surface cold-starts from the analysis each time and
@@ -39,6 +40,7 @@ if "--aux-source" in argv:
     aux_file = argv[i + 1]
     del argv[i:i + 2]
 include_land = False
+include_hydrometeors = False
 carry_hno3 = "--reset-hno3" not in argv
 if not carry_hno3:
     argv.remove("--reset-hno3")
@@ -46,9 +48,13 @@ for flag in ("--include-land", "--land"):
     if flag in argv:
         include_land = True
         argv.remove(flag)
+if "--include-hydrometeors" in argv:
+    include_hydrometeors = True
+    argv.remove("--include-hydrometeors")
 
 if len(argv) != 2:
-    print("Usage: python copy_mpas_vars.py [--include-land] [--reset-hno3] <src_file> <dst_file>")
+    print("Usage: python copy_mpas_vars.py [--include-land] [--include-hydrometeors] "
+          "[--reset-hno3] <src_file> <dst_file>")
     sys.exit(1)
 
 src_file, dst_file = argv
@@ -87,7 +93,16 @@ land_vars = [
     "snowc",    # snow cover fraction
 ]
 
-optional_vars = land_vars if include_land else []
+# Thompson microphysics prognostic condensates. Water vapour is refreshed with
+# the meteorological analysis; these five hydrometeor species are carried to
+# avoid cold-starting cloud condensate at every six-hour cycle.
+hydrometeor_vars = ["qc", "qr", "qi", "qs", "qg"]
+
+optional_vars = []
+if include_land:
+    optional_vars += land_vars
+if include_hydrometeors:
+    optional_vars += hydrometeor_vars
 
 print(f"Opening source: {src_file}")
 src = Dataset(src_file, "r")
@@ -114,16 +129,43 @@ if include_land:
     print(f"Land cycling ENABLED: will also carry {land_vars}")
 else:
     print("Land cycling disabled (pass --include-land to carry soil/snow state)")
+if include_hydrometeors:
+    print(f"Hydrometeor cycling ENABLED: will also carry {hydrometeor_vars}")
+    # The staged GFS init files contain qc/qr but not always qi/qs/qg. These
+    # fields are registered MPAS scalars and are present in the prior forecast,
+    # so add missing variables to the cold IC before copying them. Merely
+    # treating them as optional would silently defeat "carry all hydrometeors".
+    for name in hydrometeor_vars:
+        if name in dst.variables or name not in aux.variables:
+            continue
+        source_var = aux[name]
+        missing_dims = [dim for dim in source_var.dimensions if dim not in dst.dimensions]
+        if missing_dims:
+            raise KeyError(
+                f"Cannot add hydrometeor {name}: destination lacks dimensions {missing_dims}"
+            )
+        fill_value = getattr(source_var, "_FillValue", None)
+        kwargs = {"fill_value": fill_value} if fill_value is not None else {}
+        target_var = dst.createVariable(name, source_var.datatype, source_var.dimensions, **kwargs)
+        target_var.setncatts({
+            attr: source_var.getncattr(attr)
+            for attr in source_var.ncattrs()
+            if attr != "_FillValue"
+        })
+        print(f"  added missing hydrometeor variable {name} to destination IC")
+else:
+    print("Hydrometeor cycling disabled (pass --include-hydrometeors to carry condensate)")
 
 missing_src = [v for v in vars_to_copy if v not in (aux if v in aux_chemistry else src).variables]
 missing_dst = [v for v in vars_to_copy if v not in dst.variables]
 
-# Optional group: never fatal in either direction.
+# Optional group: land fields remain non-fatal; requested hydrometeors are
+# created above when possible and any source-side absence is reported here.
 opt_present = [v for v in optional_vars if v in aux.variables and v in dst.variables]
 opt_absent = [v for v in optional_vars if v not in opt_present]
 if opt_absent:
     print(
-        "WARNING copy_mpas_vars: optional land fields not carried (absent from "
+        "WARNING copy_mpas_vars: optional land/hydrometeor fields not carried (absent from "
         f"source and/or destination): {opt_absent}",
         file=sys.stderr,
     )
@@ -188,7 +230,6 @@ dst.close()
 chem_copied = len(vars_to_copy) - len(missing_src)
 if missing_src:
     print(f"Done. PARTIAL: {chem_copied} of {len(vars_to_copy)} chemistry variables copied "
-          f"({len(missing_src)} retained from the destination), {opt_copied} land.")
+          f"({len(missing_src)} retained from the destination), {opt_copied} optional state fields.")
 else:
-    print(f"Done. {chem_copied} chemistry + {opt_copied} land variables copied.")
-
+    print(f"Done. {chem_copied} chemistry + {opt_copied} optional state fields copied.")

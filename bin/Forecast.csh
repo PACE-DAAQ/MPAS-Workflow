@@ -661,6 +661,9 @@ if ("${updateATMVarsFromCold}" == True) then
   if ( $?carryLandState ) then
     if ( "$carryLandState" == "True" ) set carryFlags = ($carryFlags --include-land)
   endif
+  if ( $?carryHydrometeors ) then
+    if ( "$carryHydrometeors" == "True" ) set carryFlags = ($carryFlags --include-hydrometeors)
+  endif
   if ( $?carryPersistentHno3 ) then
     if ( "$carryPersistentHno3" == "False" ) set carryFlags = ($carryFlags --reset-hno3)
   endif
@@ -677,6 +680,9 @@ if ("${updateATMVarsFromCold}" == True) then
     if ( $?carryPersistentHno3 ) then
       if ( "$carryPersistentHno3" == "True" ) set useAuxCarry = True
     endif
+    if ( $?carryHydrometeors ) then
+      if ( "$carryHydrometeors" == "True" ) set useAuxCarry = True
+    endif
   endif
   if ( "$useAuxCarry" == "True" ) then
     if ( "$ArgEmissionRole" == "ensemble" ) then
@@ -686,7 +692,11 @@ if ("${updateATMVarsFromCold}" == True) then
     endif
     set carryFlags = ($carryFlags --aux-source "${auxDir}/${FCFilePrefix}.${thisMPASFileDate}.nc")
   endif
-  python3 ${mainScriptDir}/tools/copy_mpas_vars.py $carryFlags ${icFile}_tmp ${icFile}
+  # Run the NetCDF state transfer in its own process/environment. The compiled
+  # forecast environment intentionally has no Python netCDF4 package, while
+  # environmentNPL.csh supplies the supported NumPy/netCDF4 stack. A child csh
+  # prevents the conda modules and libraries from leaking into atmosphere_model.
+  csh -f -c "cd ${mainScriptDir}; source config/environmentNPL.csh; python3 tools/copy_mpas_vars.py $carryFlags ${icFile}_tmp ${icFile}"
   # copy_mpas_vars.py fails fast when a cycling-state variable is missing. tcsh
   # does not abort on a non-zero child, so without this check the guard becomes a
   # silent no-op and the forecast runs from the untouched cold IC, discarding the
