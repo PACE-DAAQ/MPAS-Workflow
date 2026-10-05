@@ -55,3 +55,28 @@ with tempfile.TemporaryDirectory() as tmp:
             for name in assignments['land_vars']: assert np.all(ds[name][:]==11),name
             for name in assignments['hydrometeor_vars']: assert np.all(ds[name][:]==11),name
 print('PASS: auxiliary carry source preserves each member while analyzed dust comes from JEDI')
+
+# A requested hydrometeor missing from the source must be fatal and must leave
+# the destination untouched, rather than carrying only some of the five species.
+with tempfile.TemporaryDirectory() as tmp:
+    tmp = Path(tmp)
+    for filename, omitted in [('source_no_qg.nc', 'qg'), ('cold.nc', None)]:
+        with Dataset(tmp/filename, 'w', format='NETCDF3_64BIT_DATA') as ds:
+            ds.createDimension('Time', 1)
+            ds.createDimension('nCells', 2)
+            for name in variables:
+                if name == omitted:
+                    continue
+                if filename == 'cold.nc' and name in ['qi', 'qs', 'qg']:
+                    continue
+                ds.createVariable(name, 'f4', ('Time', 'nCells'))[:] = 7
+    dest = tmp/'out.nc'
+    shutil.copyfile(tmp/'cold.nc', dest)
+    result = subprocess.run(
+        [sys.executable, str(script), '--include-hydrometeors', str(tmp/'source_no_qg.nc'), str(dest)],
+        capture_output=True, text=True)
+    assert result.returncode != 0, 'a missing source hydrometeor must abort the transfer'
+    assert 'qg' in result.stderr, result.stderr
+    with Dataset(dest) as ds:
+        assert 'qi' not in ds.variables, 'destination must not be modified before the check fails'
+print('PASS: a hydrometeor missing from the source aborts the transfer before any write')
