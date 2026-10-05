@@ -100,9 +100,12 @@ class Model(Component):
     # The selection is applied in bin/SetStreamsVariant.csh.
     'member variants': [[], list],
 
-    # Opt-in runtime factors require a compatible gocartMPAS executable.
+    # Cycling-state carryover defaults on for the persistent HNO3 reservoir
+    # and land state. Runtime emission factors remain opt-in and require a
+    # compatible gocartMPAS executable.
     'carry persistent hno3': [True, bool],
-    'carry land state': [False, bool],
+    'carry land state': [True, bool],
+    'carry hydrometeors': [True, bool],
     'online emission factors': [False, bool],
     'dust emission factor': [1.0, float],
     'seasalt emission factor': [1.0, float],

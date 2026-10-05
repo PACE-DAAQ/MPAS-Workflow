@@ -58,6 +58,11 @@ if ( "$ArgRestartInterval" == "" ) set ArgRestartInterval = none
 # Explicit role protects central member 1 from ensemble-only inventory routing.
 set ArgEmissionRole = "$14"
 if ( "$ArgEmissionRole" == "" ) set ArgEmissionRole = central
+# Optional time-varying SST/xice file and its MPAS stream interval. An empty
+# file preserves the legacy per-cycle external-analysis update.
+set ArgSurfaceUpdateFile = "$15"
+set ArgSurfaceInputInterval = "$16"
+if ( "$ArgSurfaceInputInterval" == "" ) set ArgSurfaceInputInterval = 24:00:00
 if ( "$ArgEmissionRole" != "central" && "$ArgEmissionRole" != "ensemble" ) then
   echo "ERROR: invalid emission role $ArgEmissionRole"
   exit 1
@@ -371,7 +376,18 @@ set localSeaUpdateFile = x${meshRatio}.${nCells}.sfc_update.nc
 sed -i 's@{{surfaceUpdateFile}}@'${localSeaUpdateFile}'@' ${StreamsFile}
 
 if ("${ArgUpdateSea}" == True) then
-  ## sea/ocean surface files
+  # Prefer the explicit time-varying surface file. This is the production path
+  # for the Jul-Aug 2024 cycling experiments and allows MPAS to read daily SST
+  # and sea ice during forecasts longer than one input interval.
+  if ( "${ArgSurfaceUpdateFile}" != "" ) then
+    if ( ! -e "${ArgSurfaceUpdateFile}" ) then
+      echo "$0 (ERROR): surface update file not found (${ArgSurfaceUpdateFile})" > ./FAIL
+      exit 1
+    endif
+    ln -sfv ${ArgSurfaceUpdateFile} ./${localSeaUpdateFile}
+    set surfaceInputInterval = ${ArgSurfaceInputInterval}
+  else
+  ## Legacy per-cycle sea/ocean surface file from the external analysis.
   # TODO: move sea directory configuration to yamls
   setenv seaMaxMembers 20
   set EADir = ${ExperimentDirectory}/`echo "${ExternalAnalysesDirOuter}" \
@@ -447,6 +463,8 @@ if ("${ArgUpdateSea}" == True) then
       exit 1
     endif
   endif
+  set surfaceInputInterval = initial_only
+  endif
 
   # determine sea-update precision
   ncdump -h ${localSeaUpdateFile} | grep sst | grep double
@@ -462,7 +480,7 @@ if ("${ArgUpdateSea}" == True) then
     endif
   endif
   sed -i 's@{{surfacePrecision}}@'${surfacePrecision}'@' ${StreamsFile}
-  sed -i 's@{{surfaceInputInterval}}@initial_only@' ${StreamsFile}
+  sed -i 's@{{surfaceInputInterval}}@'${surfaceInputInterval}'@' ${StreamsFile}
 else
   sed -i 's@{{surfacePrecision}}@'${model__precision}'@' ${StreamsFile}
   sed -i 's@{{surfaceInputInterval}}@none@' ${StreamsFile}
@@ -600,22 +618,42 @@ if ("${updateATMVarsFromCold}" == True) then
   if ( $?carryLandState ) then
     if ( "$carryLandState" == "True" ) set carryFlags = ($carryFlags --include-land)
   endif
+  if ( $?carryHydrometeors ) then
+    if ( "$carryHydrometeors" == "True" ) set carryFlags = ($carryFlags --include-hydrometeors)
+  endif
   if ( $?carryPersistentHno3 ) then
     if ( "$carryPersistentHno3" == "False" ) set carryFlags = ($carryFlags --reset-hno3)
   endif
-  # Persistent HNO3 and land are not analysis variables. Carry them from
-  # the matching prior forecast even if JEDI omits them from its output.
-  if ( "$ArgDACycling" == "True" && $?carryLandState && $?carryPersistentHno3 ) then
-    if ( "$ArgDACycling" == "True" ) then
-      if ( "$ArgEmissionRole" == "ensemble" ) then
-        set auxDir = "$prevCyclingEnsFCDirs[$ArgMember]"
-      else
-        set auxDir = "$prevCyclingFCDirs[$ArgMember]"
-      endif
-      set carryFlags = ($carryFlags --aux-source "${auxDir}/${FCFilePrefix}.${thisMPASFileDate}.nc")
+  # Persistent HNO3 and land are not analysis variables. Carry requested
+  # fields from the matching prior forecast even if JEDI omits them from its
+  # output. The auxiliary file contains GOCART cycling fields, so never apply
+  # this path to a non-GOCART physics suite merely because the model defaults
+  # define the carry switches.
+  set useAuxCarry = False
+  if ( "$PhysicsSuite" == "MPAS-GOCART2G" && "$ArgDACycling" == "True" ) then
+    if ( $?carryLandState ) then
+      if ( "$carryLandState" == "True" ) set useAuxCarry = True
+    endif
+    if ( $?carryPersistentHno3 ) then
+      if ( "$carryPersistentHno3" == "True" ) set useAuxCarry = True
+    endif
+    if ( $?carryHydrometeors ) then
+      if ( "$carryHydrometeors" == "True" ) set useAuxCarry = True
     endif
   endif
-  python3 ${mainScriptDir}/tools/copy_mpas_vars.py $carryFlags ${icFile}_tmp ${icFile}
+  if ( "$useAuxCarry" == "True" ) then
+    if ( "$ArgEmissionRole" == "ensemble" ) then
+      set auxDir = "$prevCyclingEnsFCDirs[$ArgMember]"
+    else
+      set auxDir = "$prevCyclingFCDirs[$ArgMember]"
+    endif
+    set carryFlags = ($carryFlags --aux-source "${auxDir}/${FCFilePrefix}.${thisMPASFileDate}.nc")
+  endif
+  # Run the NetCDF state transfer in its own process/environment. The compiled
+  # forecast environment intentionally has no Python netCDF4 package, while
+  # environmentNPL.csh supplies the supported NumPy/netCDF4 stack. A child csh
+  # prevents the conda modules and libraries from leaking into atmosphere_model.
+  csh -f -c "cd ${mainScriptDir}; source config/environmentNPL.csh; python3 tools/copy_mpas_vars.py $carryFlags ${icFile}_tmp ${icFile}"
   # copy_mpas_vars.py fails fast when a cycling-state variable is missing. tcsh
   # does not abort on a non-zero child, so without this check the guard becomes a
   # silent no-op and the forecast runs from the untouched cold IC, discarding the
