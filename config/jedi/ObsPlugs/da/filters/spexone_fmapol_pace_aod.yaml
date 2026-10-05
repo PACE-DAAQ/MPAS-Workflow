@@ -5,7 +5,7 @@
     where:
     - variable:
         name: latitude@MetaData
-      minvalue: -60
+      minvalue: -70
       maxvalue: 70
   - filter: Bounds Check
     filter variables:
