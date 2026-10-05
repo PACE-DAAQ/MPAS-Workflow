@@ -20,6 +20,7 @@ for node in ast.parse(script.read_text()).body:
 aerosols = assignments['vars_to_copy']
 hydrometeors = sorted(set(assignments['hydrometeor_vars'] + assignments['number_concentration_vars']))
 backgrounds = assignments['background_chemistry_vars']
+numbers = assignments['number_concentration_vars']
 clipped_names = ['qv'] + hydrometeors + aerosols + backgrounds
 untouched_name = 'theta'
 
@@ -39,6 +40,9 @@ with tempfile.TemporaryDirectory() as tmp:
     # carries a negative qv and a negative theta that must NOT be clipped.
     source_values = {name: -3.0 for name in aerosols + hydrometeors}
     cold_values = {name: 2.0 for name in aerosols + hydrometeors}
+    # The number concentrations are never copied from the source, so the cold IC
+    # must hold the negative values for the clip to be exercised.
+    cold_values.update({name: -2.0 for name in numbers})
     cold_values.update({name: -1.0 for name in backgrounds})
     cold_values['qv'] = -0.25
     cold_values[untouched_name] = -7.0
@@ -56,6 +60,8 @@ with tempfile.TemporaryDirectory() as tmp:
         assert dataset['qv'][0, 0] == 0.0 and dataset['qv'][0, 1] == 5.0
         for name in backgrounds:
             assert dataset[name][0, 0] == 0.0, name
+        for name in numbers:
+            assert dataset[name][0, 0] == 0.0 and dataset[name][0, 1] == 5.0, name
         for name in aerosols:
             if name == 'persistent_hno3':
                 continue
@@ -73,5 +79,20 @@ with tempfile.TemporaryDirectory() as tmp:
         [sys.executable, str(script), '--include-hydrometeors', str(tmp / 'clean_source.nc'), str(clean_destination)],
         check=True, capture_output=True, text=True)
     assert 'no negative scalar values found' in clean.stdout, clean.stdout
+
+    # Reset mode: persistent_hno3 is not carried, so the cold IC's negative value
+    # would reach the forecast unless it is clipped independently.
+    reset_cold_values = {name: 2.0 for name in aerosols + hydrometeors + backgrounds}
+    reset_cold_values.update({'qv': 0.01, 'persistent_hno3': -1.0})
+    write_file(tmp / 'reset_cold.nc', reset_cold_values)
+    reset_destination = tmp / 'reset_out.nc'
+    reset_destination.write_bytes((tmp / 'reset_cold.nc').read_bytes())
+    reset = subprocess.run(
+        [sys.executable, str(script), '--include-hydrometeors', '--reset-hno3',
+         str(tmp / 'source.nc'), str(reset_destination)],
+        check=True, capture_output=True, text=True)
+    with Dataset(reset_destination) as dataset:
+        assert dataset['persistent_hno3'][0, 0] == 0.0 and dataset['persistent_hno3'][0, 1] == 5.0
+    assert 'clipped persistent_hno3: 1 values' in reset.stdout, reset.stdout
 
 print('PASS: negative qv, hydrometeors and all aerosol scalars are clipped at zero; other fields untouched')

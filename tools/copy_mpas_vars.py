@@ -116,13 +116,15 @@ if include_hydrometeors:
 # Scalars that must never be negative: water vapour, the hydrometeors, the
 # microphysics number concentrations, all prognostic chemistry/aerosol tracers
 # (persistent_hno3 is a tracer too) and the prescribed chemistry backgrounds.
+# persistent_hno3 is listed explicitly because --reset-hno3 removes it from
+# vars_to_copy, yet the cold IC's own value must still be clipped.
 # Fields absent from the destination are skipped.
 water_vapour_vars = ["qv"]
 number_concentration_vars = ["ni", "nr", "nc"]
 background_chemistry_vars = ["background_h2o2", "background_oh", "background_no3", "background_hno3"]
 nonnegative_vars = list(dict.fromkeys(
     water_vapour_vars + hydrometeor_vars + number_concentration_vars
-    + vars_to_copy + background_chemistry_vars))
+    + vars_to_copy + ["persistent_hno3"] + background_chemistry_vars))
 
 
 def clip_negative_scalars(dataset, names):
