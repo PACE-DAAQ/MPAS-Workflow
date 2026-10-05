@@ -170,7 +170,7 @@ observations:
           spexone_remotap_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod_v4
           spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod_v4
           aeronet_l15_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l15_aod
-          aeronet_l20_aod: /glade/derecho/scratch/syha/pace_cycling_2024/obs_l20/aeronet_l20_aod   # AERONET Level 2.0, monitoring only
+          aeronet_l20_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l20_aod   # AERONET Level 2.0, monitoring only
 
           ## surface PM
           openaq_sfcpm: /glade/campaign/ncar/nmmm0081/input/obs/openaq_sfcpm
@@ -239,7 +239,6 @@ observations:
           spexone_remotap_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod_v4
           spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod_v4
           aeronet_l15_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l15_aod
-          aeronet_l20_aod: /glade/derecho/scratch/syha/pace_cycling_2024/obs_l20/aeronet_l20_aod   # AERONET Level 2.0, monitoring only
 
           ## surface PM
           openaq_sfcpm: /glade/campaign/ncar/nmmm0081/input/obs/openaq_sfcpm
