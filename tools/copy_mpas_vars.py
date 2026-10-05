@@ -171,10 +171,18 @@ if include_hydrometeors:
     print(f"Hydrometeor cycling ENABLED: will also carry {hydrometeor_vars}")
     # The staged GFS init files contain qc/qr but not always qi/qs/qg. These
     # fields are registered MPAS scalars and are present in the prior forecast,
-    # so add missing variables to the cold IC before copying them. Merely
-    # treating them as optional would silently defeat "carry all hydrometeors".
+    # so add missing variables to the cold IC before copying them. Every species
+    # must exist in the source: carrying only some of them would silently defeat
+    # "carry all hydrometeors", so a gap is fatal and is checked before the
+    # destination is modified.
+    missing_hydrometeors = [name for name in hydrometeor_vars if name not in aux.variables]
+    if missing_hydrometeors:
+        raise KeyError(
+            "Requested hydrometeor carryover unavailable in "
+            f"{aux_file or src_file}: {missing_hydrometeors}"
+        )
     for name in hydrometeor_vars:
-        if name in dst.variables or name not in aux.variables:
+        if name in dst.variables:
             continue
         source_var = aux[name]
         missing_dims = [dim for dim in source_var.dimensions if dim not in dst.dimensions]
@@ -197,8 +205,8 @@ else:
 missing_src = [v for v in vars_to_copy if v not in (aux if v in aux_chemistry else src).variables]
 missing_dst = [v for v in vars_to_copy if v not in dst.variables]
 
-# Optional group: land fields remain non-fatal; requested hydrometeors are
-# created above when possible and any source-side absence is reported here.
+# Optional group: land fields remain non-fatal. Requested hydrometeors were
+# verified and, where needed, created above, so only land fields can be absent.
 opt_present = [v for v in optional_vars if v in aux.variables and v in dst.variables]
 opt_absent = [v for v in optional_vars if v not in opt_present]
 if opt_absent:
@@ -243,6 +251,10 @@ for v in vars_to_copy:
 opt_copied = 0
 for v in opt_present:
     if aux[v].shape != dst[v].shape:
+        if v in hydrometeor_vars:
+            raise ValueError(
+                f"Requested hydrometeor {v} shape {aux[v].shape} -> {dst[v].shape} differs"
+            )
         print(
             f"WARNING copy_mpas_vars: {v} shape {aux[v].shape} -> {dst[v].shape} "
             "differs; skipping rather than writing a mismatched field",
