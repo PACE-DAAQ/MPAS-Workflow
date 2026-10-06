@@ -5,7 +5,7 @@ Usage:
   python compare_runs.py EXP1 EXP2 [EXP3 ...] [--labels A,B,...] [--root DIR] [--out DIR] [--cycles c0-c1]
 
 Runs diag_cycles.cycle() on each run and prints one table per observer/quantity with one column per run
-(O-B rms / O-A rms, n assimilated), a DA-cost table, and an increment table; plus <out>/compare_<...>.png
+(O-B rms / O-A rms, n valid O-B departures), a DA-cost table, and an increment table; plus <out>/compare_<...>.png
 with O-B and O-A RMS of every AOD observer per run. Use it e.g. for exp1 vs exp1-QFED-B, or exp1 vs polar vs VIIRS.
 """
 import argparse, glob, os, sys, numpy as np
@@ -20,6 +20,10 @@ def main():
     ap.add_argument('--cycles', default=None); ap.add_argument('--all', action='store_true', help='all cycles, not only common ones')
     a = ap.parse_args()
     labels = a.labels.split(',') if a.labels else a.exps
+    if len(labels) != len(a.exps):
+        sys.exit(f'got {len(labels)} labels for {len(a.exps)} experiments; give one label per experiment')
+    if len(set(labels)) != len(labels):
+        sys.exit('labels must be unique')
     R = {}
     for e, l in zip(a.exps, labels):
         cds = sorted(glob.glob(f'{a.root}/{e}/CyclingDA/20*'))
@@ -33,7 +37,7 @@ def main():
     out.append('## DA minutes\n| cycle | ' + ' | '.join(labels) + ' |\n|---|' + '---|' * len(labels))
     for c in cycles: out.append(f'| {c} | ' + ' | '.join(f"{R[l].get(c, {}).get('min', np.nan):.1f}" for l in labels) + ' |')
     for k in keys:
-        out.append(f'\n## {k}: O-B rms / O-A rms (n assim)\n| cycle | ' + ' | '.join(labels) + ' |\n|---|' + '---|' * len(labels))
+        out.append(f'\n## {k}: O-B rms / O-A rms (n valid O-B)\n| cycle | ' + ' | '.join(labels) + ' |\n|---|' + '---|' * len(labels))
         for c in cycles:
             cells = []
             for l in labels:
@@ -49,6 +53,9 @@ def main():
     open(f'{a.out}/compare_{tag}.md', 'w').write(txt); print(txt)
     import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
     aodk = [k for k in keys if 'nm' in k]
+    if not aodk:
+        print('no AOD observers in these runs; skipping the plot')
+        return
     fig, ax = plt.subplots(len(aodk), 1, figsize=(11, 3 * len(aodk)), sharex=True, squeeze=False); t = np.arange(len(cycles))
     for i, k in enumerate(aodk):
         for l in labels:

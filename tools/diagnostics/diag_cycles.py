@@ -9,7 +9,7 @@ Writes <out>/<EXP>_cycles.md (tables), <out>/<EXP>_cycles.json and <out>/<EXP>_c
 
 What it reports per cycle:
   - Variational runtime (min), total memory, final/initial J
-  - for every dbOut/obsout_da_*.h5: n assimilated / n in file, O-B and O-A RMS and mean,
+  - for every dbOut/obsout_da_*.h5: n valid O-B departures / n in file, O-B and O-A RMS and mean,
     Jo/n (from EffectiveError0) for assimilated obs; passive observers (monitoring only,
     O-A == O-B) are listed under "passive"
   - AOD observers: 550 nm channel (or nearest); AERONET: 500 nm channel; PM in ug/m3
@@ -105,7 +105,8 @@ def cycle(cdir):
             if mm: J.append(float(mm.group(1)))
         if J: r['J0'] = J[0]; r['J1'] = J[-1]
     obs = {}
-    for fn in sorted(glob.glob(f'{cdir}/dbOut/obsout_da_*.h5')) + sorted(glob.glob(f'{cdir}/dbOut/obsout_hofx_*.h5')):
+    # HofX files first so the richer DA results (O-A, QC <= 1 counts) overwrite them when both exist
+    for fn in sorted(glob.glob(f'{cdir}/dbOut/obsout_hofx_*.h5')) + sorted(glob.glob(f'{cdir}/dbOut/obsout_da_*.h5')):
         inst = os.path.basename(fn).split('_', 2)[2][:-3]
         try:
             f = h5py.File(fn)
@@ -200,7 +201,7 @@ def main():
         monitors |= monitored_observers(cdir)
 
     def is_passive(key):
-        observer_name = key.split('@')[0]
+        observer_name = key.split('@')[0].split(':')[0]
         if observer_name in monitors:
             return True
         return all(r['obs'].get(key, {}).get('passive', True) for r in rows.values())
@@ -213,7 +214,7 @@ def main():
         out.append(f"| {c} | {r.get('min', np.nan):.1f} | {r.get('GB', np.nan):.0f} | {r.get('J1', np.nan) / r.get('J0', np.nan):.2f} |")
     for title, ks in [('assimilated', assim), ('passive (monitor only)', passive)]:
         for k in ks:
-            out.append(f'\n## {k} ({title})\n| cycle | n assim / n file | O-B rms / mean | O-A rms / mean | mean sq. norm. departure B -> A |\n|---|---|---|---|---|')
+            out.append(f'\n## {k} ({title})\n| cycle | n valid O-B / n file | O-B rms / mean | O-A rms / mean | mean sq. norm. departure B -> A |\n|---|---|---|---|---|')
             for c, r in rows.items():
                 s = r['obs'].get(k)
                 if not s: out.append(f'| {c} | - | - | - | - |'); continue
