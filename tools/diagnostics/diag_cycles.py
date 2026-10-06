@@ -79,7 +79,7 @@ def stats(f, var, ch=None, scale=1.0):
     if ob.ndim == 2:
         ob, oa, q0, q1 = ob[:, ch], oa[:, ch], q0[:, ch], q1[:, ch]
         e0 = e0[:, ch] if e0 is not None else None
-    m0 = ok(ob) & (q0 == 0); m1 = ok(oa) & (q1 == 0)
+    m0 = ok(ob) & (q0 <= 1); m1 = ok(oa) & (q1 <= 1)   # flag 1 = passive (monitor-only obs such as AERONET) is valid for departures
     r['n_file'] = int(ok(ob).sum()); r['n'] = int(m0.sum())
     if m0.any():
         r['OmB_rms'] = float(np.sqrt(np.mean(ob[m0] ** 2))) * scale; r['OmB_mean'] = float(ob[m0].mean()) * scale
