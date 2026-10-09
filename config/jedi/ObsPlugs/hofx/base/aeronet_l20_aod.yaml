@@ -1,0 +1,34 @@
+# AERONET Level 2.0 as a held-out reference in the HofX (extended-forecast) stream.
+# Channels 1-8 are the AERONET wavelengths; the Level 2.0 files store them in the correct order
+# (channel 4 = 500 nm, channel 5 = 675 nm), unlike the Level 1.5 converter.
+# No anchor is defined for the channel list: hofx base plugs are concatenated, and a second
+# &aodChannels definition would silently rebind the alias used by the other aod filters.
+- obs space:
+    <<: *ObsSpace
+    name: AodCRTM
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: {{InDBDir}}/aeronet_l20_aod_obs_{{thisValidDate}}.h5
+        missing file action: warn
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: {{OutDBDir}}/{{obsPrefix}}_aeronet_l20_aod.h5
+    simulated variables: [aerosolOpticalDepth]
+    channels: 1-8
+  obs error: *ObsErrorDiagonal
+  obs operator:
+    name: AodCRTM
+    Absorbers: [H2O, O3]
+    obs options:
+      Sensor_ID: v.aeronet
+      EndianType: little_endian
+      CoefficientPath: {{CRTMTABLES}}
+      AerosolCoeff_File: AerosolCoeff.GOCART-GEOS5.nc4
+      Aerosol_Model: GOCART-GEOS5
+      AerosolCoeff_Format: netCDF
+      AerosolOption: {{aodAerosolOption}}
+      SpcCoeff_Format: netCDF
+      TauCoeff_Format: netCDF
+      model units coeff: 1e9

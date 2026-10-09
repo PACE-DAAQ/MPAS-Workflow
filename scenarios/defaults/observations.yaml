@@ -99,12 +99,17 @@ observations:
         ahi-clr_himawari8: ahi_himawari8
         viirs_aod_db_npp: viirs_aod_db_npp-thinned0p8 # Thinned
         viirs_aod_db_n20: viirs_aod_db_n20-thinned0p8 # Thinned
+        viirs_aod_db_n20_r4: viirs_aod_db_n20-thinned0p8   # round four: same thinned VIIRS files, looser background check
+        oci_uaa_pace_aod_raw_r4: oci_uaa_pace_aod   # round four: raw (uncorrected) OCI files, stepwise obs error on raw AOD
         oci_uaa_pace_aod_multiwl: oci_uaa_pace_aod   # same IODA files as oci_uaa_pace_aod; 354/550/870 nm active
+        oci_uaa_pace_aod_multiwl_raw_r4: oci_uaa_pace_aod   # round four multiwl: same raw OCI files, channels 1,4,6 active
         harp2_fmapol_pace_aod: harp2_fmapol_pace_aod_v4        # files are <name>_v4_obs_<date>.h5
+        harp2_fmapol_pace_aod_r4: harp2_fmapol_pace_aod_v4   # round four polar: raw v4 files, 550 nm active
         harp2_fmapol_pace_aod_bc_r4: harp2_fmapol_pace_aod_bc_r4   # polar_new: AERONET L2.0 bias-corrected copies (obs_bc/)
         spexone_remotap_pace_aod: spexone_remotap_pace_aod_v4
         spexone_remotap_pace_aod_r4: spexone_remotap_pace_aod_v4   # polar_new: raw v4 RemoTAP, 20-km thinning, 550 nm (ch8) active
         spexone_fmapol_pace_aod: spexone_fmapol_pace_aod_v4
+        spexone_fmapol_pace_aod_r4: spexone_fmapol_pace_aod_v4   # round four polar: raw v4 files, 548 nm active
 
       IODADirectory:
         da:
@@ -161,19 +166,25 @@ observations:
 
           ## aod
           oci_uaa_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
+          oci_uaa_pace_aod_raw_r4: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
           oci_uaa_pace_aod_multiwl: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
+          oci_uaa_pace_aod_multiwl_raw_r4: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
           modis_aqua_aod:   /glade/campaign/ncar/nmmm0081/input/obs/modis_aqua_aod
           modis_terra_aod:  /glade/campaign/ncar/nmmm0081/input/obs/modis_terra_aod
           viirs_aod_db_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_n20-thinned0p8
+          viirs_aod_db_n20_r4: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_n20-thinned0p8
           viirs_aod_dt_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_n20-thinned0p8
           viirs_aod_db_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_npp-thinned0p8
           viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_npp-thinned0p8
           harp2_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/harp2_fmapol_pace_aod_v4
+          harp2_fmapol_pace_aod_r4: /glade/campaign/ncar/nmmm0081/input/obs/harp2_fmapol_pace_aod_v4
           harp2_fmapol_pace_aod_bc_r4: /glade/derecho/scratch/syha/pace_cycling_2024/obs_bc/harp2_fmapol_pace_aod_bc_r4
           spexone_remotap_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod_v4
           spexone_remotap_pace_aod_r4: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod_v4
           spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod_v4
+          spexone_fmapol_pace_aod_r4: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod_v4
           aeronet_l15_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l15_aod
+          aeronet_l20_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l20_aod   # AERONET Level 2.0, monitoring only; correct channel order
 
           ## surface PM
           openaq_sfcpm: /glade/campaign/ncar/nmmm0081/input/obs/openaq_sfcpm
@@ -231,19 +242,25 @@ observations:
 
           ## aod
           oci_uaa_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
+          oci_uaa_pace_aod_raw_r4: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
           oci_uaa_pace_aod_multiwl: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
+          oci_uaa_pace_aod_multiwl_raw_r4: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
           modis_aqua_aod:   /glade/campaign/ncar/nmmm0081/input/obs/modis_aqua_aod
           modis_terra_aod:  /glade/campaign/ncar/nmmm0081/input/obs/modis_terra_aod
           viirs_aod_db_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_n20-thinned0p8
+          viirs_aod_db_n20_r4: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_n20-thinned0p8
           viirs_aod_dt_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_n20-thinned0p8
           viirs_aod_db_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_npp-thinned0p8
           viirs_aod_dt_npp: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_dt_npp-thinned0p8
           harp2_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/harp2_fmapol_pace_aod_v4
+          harp2_fmapol_pace_aod_r4: /glade/campaign/ncar/nmmm0081/input/obs/harp2_fmapol_pace_aod_v4
           harp2_fmapol_pace_aod_bc_r4: /glade/derecho/scratch/syha/pace_cycling_2024/obs_bc/harp2_fmapol_pace_aod_bc_r4
           spexone_remotap_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod_v4
           spexone_remotap_pace_aod_r4: /glade/campaign/ncar/nmmm0081/input/obs/spexone_remotap_pace_aod_v4
           spexone_fmapol_pace_aod: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod_v4
+          spexone_fmapol_pace_aod_r4: /glade/campaign/ncar/nmmm0081/input/obs/spexone_fmapol_pace_aod_v4
           aeronet_l15_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l15_aod
+          aeronet_l20_aod: /glade/campaign/ncar/nmmm0081/input/obs/aeronet_l20_aod   # AERONET Level 2.0, monitoring only; correct channel order
 
           ## surface PM
           openaq_sfcpm: /glade/campaign/ncar/nmmm0081/input/obs/openaq_sfcpm
