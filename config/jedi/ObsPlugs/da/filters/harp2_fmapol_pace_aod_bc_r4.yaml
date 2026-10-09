@@ -1,6 +1,7 @@
-# Round four polar_new: HARP2 549 nm assimilated RAW, with a retuned per-surface observation
-# error. The shared polarimeter ramp understated the land error by about a factor two and
-# could not represent the different land and ocean shapes.
+# Round four polar_new: HARP2 549 nm assimilated from the AERONET Level 2.0 BIAS-CORRECTED
+# files (obs_bc/harp2_fmapol_pace_aod_bc_r4/), with a per-surface observation error refit on the
+# corrected residual. The shared polarimeter ramp understated the land error by about a factor
+# two and could not represent the different land and ocean shapes.
   obs filters:
   - filter: PreQC
     maxvalue: 0
@@ -18,10 +19,11 @@
     maxvalue: 4.9
     action:
       name: reject
-  # observation error for the 550-nm channel: sigma = 0.045 + 0.2*AOD, floored at 0.05 (same scale as the OCI
-  # product error); the file's retrieval uncertainty (~0.008) ignores representativeness on the 60-km mesh.
-  # land: residual error after the AERONET Level 2.0 bias correction (PreQC = 0 fit), with
-  # 0.03 representativeness added in quadrature. Measured 2026-10-09.
+  # observation error for the 549-nm channel: a per-surface stepwise curve fitted to the residual
+  # that REMAINS AFTER the AERONET Level 2.0 bias correction (PreQC = 0 collocations), with 0.03
+  # representativeness added in quadrature. The file's retrieval uncertainty (~0.008) ignores
+  # representativeness on the 60-km mesh entirely. Measured 2026-10-09; land and ocean differ in
+  # both level and shape, so one ramp cannot serve both.
   - filter: Perform Action
     filter variables:
     - name: aerosolOpticalDepth

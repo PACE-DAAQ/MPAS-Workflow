@@ -4,7 +4,7 @@
 Why this exists
 ---------------
 A suite is normally generated from a scenario yaml. When one is instead created by COPYING another
-suite's tree and hand-editing the generated files, three faults slip through silently, and all three
+suite's tree and hand-editing the generated files, four faults slip through silently, and all four
 happened on 2026-10-09 while staging syha_r4_qfed_polar_new:
 
   1. `origin` in flow.cylc still named the source suite. It is the directory every task cds into, so
@@ -21,19 +21,34 @@ happened on 2026-10-09 while staging syha_r4_qfed_polar_new:
 check_experiment_config.py compares the science configuration of two experiments. This is the
 complementary check: that ONE suite is internally consistent and references nothing outside itself.
 
+Every check FAILS when the thing it is supposed to compare is absent, not just when it disagrees.
+A silent skip is how all four faults above survived the staging in the first place.
+
 Usage
   check_suite_independence.py <experimentDir> [--scenario <scenario.yaml>]
 
 <experimentDir> holds MPAS-Workflow/, e.g. /glade/derecho/scratch/$USER/pandac/<SuiteName>.
 The scenario is read from config/auto/scenario.csh when not given.
 
-Exit status is 0 when every check passes and 1 otherwise, so it can gate `cylc install`.
+Exit status
+  0  every check passed
+  1  the suite is faulty -- do not install it
+  2  the check could NOT be run (no config/auto, no yaml module). Not a verdict on the suite.
+
+submit.csh gates `cylc install` on this and aborts on 1 only, so a missing dependency cannot block
+an otherwise sound suite. Set skipSuiteIndependenceCheck to bypass the gate deliberately.
 """
 import argparse
 import os
 import re
 import sys
 from pathlib import Path
+
+try:
+    import yaml
+except ImportError:                     # exit 2: cannot check, which is not a verdict on the suite
+    sys.stderr.write('check_suite_independence: no yaml module available, cannot check\n')
+    sys.exit(2)
 
 SETENV = re.compile(r'^\s*setenv\s+(\S+)\s+(.*?)\s*$')
 SETVAR = re.compile(r'^\s*set\s+(\S+)\s*=\s*(.*?)\s*$')
@@ -67,35 +82,47 @@ def read_csh(path):
     return values
 
 
-def scenario_observers(scenario_path):
-    """The assimilated observers and monitors, read without a yaml parser.
+def load_scenario(scenario_path):
+    """Parse the scenario with the same yaml loader the workflow itself uses.
 
-    Only the FIRST block of each is taken: a scenario also carries an `hofx:` section with its own
-    observers list, and merging the two would report a mismatch against config/auto that is not real.
+    initialize/config/Config.py reads these files with yaml, so anything it accepts must be
+    accepted here: block sequences, flow-style lists (`observers: ['a', 'b']`) and bracketed
+    multiline lists all have to parse. A hand-rolled line reader only handled the dash form and
+    returned an empty list for the others, which silently skipped the agreement check.
     """
-    observers, monitors, section = [], [], None
-    for raw in Path(scenario_path).read_text().splitlines():
-        stripped = raw.strip()
-        if stripped.startswith('observers:') and not observers:
-            section = observers
-            continue
-        if stripped.startswith('monitors:') and not monitors:
-            section = monitors
-            continue
-        if stripped.startswith('- ') and section is not None:
-            section.append(stripped[2:].split('#')[0].strip())
-            continue
-        if stripped and not stripped.startswith('-') and not stripped.startswith('#'):
-            section = None
-    return observers, monitors
+    with open(scenario_path) as handle:
+        return yaml.safe_load(handle)
 
 
-def scenario_value(scenario_path, key):
-    for raw in Path(scenario_path).read_text().splitlines():
-        stripped = raw.strip()
-        if stripped.startswith(f'{key}:'):
-            return stripped.split(':', 1)[1].split('#')[0].strip()
-    return None
+def scenario_lists(scenario):
+    """The ASSIMILATED observers and monitors.
+
+    Taken from the `variational` mapping only. A scenario also carries an `hofx:` section with its
+    own observers list; merging the two would report a mismatch against config/auto that is not
+    real, because config/auto/variational.csh describes the variational stream alone.
+    """
+    variational = (scenario or {}).get('variational') or {}
+    observers = variational.get('observers') or []
+    monitors = variational.get('monitors') or []
+    return [str(o) for o in observers], [str(m) for m in monitors]
+
+
+def workflow_value(scenario, key):
+    workflow = (scenario or {}).get('workflow') or {}
+    value = workflow.get(key)
+    return None if value is None else str(value)
+
+
+def check_cycle_point(label, expected, found, extra=''):
+    """Compare one cycle point. Absence of either side is a failure, not a skip."""
+    if expected is None:
+        return
+    if found is None:
+        fail(label, f'flow.cylc declares no {label}, scenario says {expected}')
+    elif found != expected:
+        fail(label, f'flow.cylc has {found}, scenario says {expected}{extra}')
+    else:
+        print(f'  OK   {label} {found} matches the scenario')
 
 
 def main():
@@ -110,7 +137,8 @@ def main():
         work = exp                      # an installed cylc-run copy has no MPAS-Workflow level
     auto = work / 'config' / 'auto'
     if not auto.is_dir():
-        sys.exit(f'FATAL: no config/auto under {work}')
+        sys.stderr.write(f'FATAL: no config/auto under {work}\n')
+        sys.exit(2)                     # cannot check; see the exit-status convention above
     suite = exp.name
     print(f'suite   {suite}')
     print(f'tree    {work}')
@@ -151,64 +179,94 @@ def main():
         print('  OK   references no other suite')
 
     # ---------------------------------------------------------------- 2. origin
+    # Every generated task runs `cd $origin/` (initialize/suites/SuiteBase.py), so a missing or
+    # malformed origin is as damaging as a wrong one: it must not pass.
     flow = work / 'flow.cylc'
     origin = None
-    if flow.is_file():
+    if not flow.is_file():
+        fail('origin', f'no flow.cylc in {work}')
+    else:
         for line in flow.read_text().splitlines():
             m = re.match(r'\s*origin\s*=\s*(\S+)', line)
             if m:
                 origin = m.group(1)
                 break
-    if origin is None:
-        note('no origin setting found in flow.cylc')
-    elif Path(origin).resolve() != work.resolve():
-        fail('origin', f'flow.cylc origin is {origin}, expected {work}')
-    else:
-        print('  OK   origin points at this suite')
+        if origin is None:
+            fail('origin', 'flow.cylc declares no origin; every task cds into it')
+        elif Path(origin).resolve() != work.resolve():
+            fail('origin', f'flow.cylc origin is {origin}, expected {work}')
+        else:
+            print('  OK   origin points at this suite')
 
     # ---------------------------------------------------------------- 3. work directories
+    # Resolve every *WorkDir and require it to sit under this suite's own root, so a stray path
+    # anywhere on the filesystem is caught -- not only one that happens to contain '/pandac/'.
+    # resolve() also collapses '..', so traversal cannot escape the comparison.
+    roots = {exp.resolve()}
+    if origin:
+        # in installed-copy mode the work directories belong to the source experiment, which is
+        # the parent of origin (<experiment>/MPAS-Workflow); derive it rather than guessing.
+        roots.add(Path(origin).resolve().parent)
     naming = read_csh(auto / 'naming.csh')
-    stray = sorted({v for k, v in naming.items()
-                    if k.endswith('WorkDir') and '/pandac/' in v and f'/pandac/{suite}/' not in v})
-    if stray:
-        fail('work directories', f'point outside this suite: {", ".join(stray[:3])}')
-    elif naming:
-        print(f'  OK   all {sum(1 for k in naming if k.endswith("WorkDir"))} work directories are inside this suite')
+    work_dirs = {k: v for k, v in naming.items() if k.endswith('WorkDir')}
+    stray, unresolved = [], []
+    for key, value in sorted(work_dirs.items()):
+        if '$' in value or not value.startswith('/'):
+            unresolved.append(f'{key}={value}')      # an unexpanded csh variable; cannot compare
+            continue
+        if ALLOWED.search(value):
+            continue
+        resolved = Path(value).resolve()
+        if not any(resolved == root or root in resolved.parents for root in roots):
+            stray.append(f'{key}={value}')
+    if not work_dirs:
+        fail('work directories', f'no *WorkDir settings found in {auto / "naming.csh"}')
+    elif stray:
+        fail('work directories', f'{len(stray)} point outside this suite: {", ".join(stray[:3])}'
+                                 + (f' and {len(stray)-3} more' if len(stray) > 3 else ''))
+    else:
+        print(f'  OK   all {len(work_dirs)} work directories are inside this suite')
+    for text in unresolved:
+        note(f'work directory not expanded, cannot verify: {text}')
 
     # ---------------------------------------------------------------- 4. scenario agreement
-    scenario = args.scenario or read_csh(auto / 'scenario.csh').get('scenarioConfig')
-    if not scenario or not Path(scenario).is_file():
-        fail('scenario', f'scenario file not found: {scenario}')
+    scenario_path = args.scenario or read_csh(auto / 'scenario.csh').get('scenarioConfig')
+    if not scenario_path or not Path(scenario_path).is_file():
+        fail('scenario', f'scenario file not found: {scenario_path}')
     else:
-        print(f'scenario {scenario}')
-        want_obs, want_mon = scenario_observers(scenario)
+        print(f'scenario {scenario_path}')
+        try:
+            scenario = load_scenario(scenario_path)
+        except yaml.YAMLError as error:
+            fail('scenario', f'{scenario_path} does not parse: {error}')
+            scenario = None
+        want_obs, want_mon = scenario_lists(scenario)
         variational = read_csh(auto / 'variational.csh')
         have_obs = variational.get('observers', '').strip('()').split()
         have_mon = variational.get('monitors', '').strip('()').split()
-        if want_obs and have_obs != want_obs:
+        if not want_obs:
+            fail('observers', f'{scenario_path} declares no variational observers')
+        elif have_obs != want_obs:
             fail('observers', f'config/auto has {have_obs}, scenario has {want_obs}')
-        elif want_obs:
+        else:
             print(f'  OK   observers match the scenario: {" ".join(have_obs)}')
         if want_mon and have_mon != want_mon:
             fail('monitors', f'config/auto has {have_mon}, scenario has {want_mon}')
 
-        first = scenario_value(scenario, 'first cycle point')
-        restart = scenario_value(scenario, 'restart cycle point')
-        final = scenario_value(scenario, 'final cycle point')
+        first = workflow_value(scenario, 'first cycle point')
+        restart = workflow_value(scenario, 'restart cycle point')
+        final = workflow_value(scenario, 'final cycle point')
         if flow.is_file():
             text = flow.read_text()
             m_init = re.search(r'initial cycle point\s*=\s*(\S+)', text)
             m_fin = re.search(r'final cycle point\s*=\s*(\S+)', text)
-            flow_init = m_init.group(1) if m_init else None
-            flow_final = m_fin.group(1) if m_fin else None
-            expected = restart or first
-            if expected and flow_init and flow_init != expected:
-                fail('initial cycle', f'flow.cylc starts at {flow_init}, scenario says {expected}'
-                                      + (f' (first cycle point is {first})' if first != expected else ''))
-            elif flow_init:
-                print(f'  OK   initial cycle point {flow_init} matches the scenario')
-            if final and flow_final and flow_final != final:
-                fail('final cycle', f'flow.cylc ends at {flow_final}, scenario says {final}')
+            expected_init = restart or first
+            check_cycle_point(
+                'initial cycle point', expected_init,
+                m_init.group(1) if m_init else None,
+                f' (first cycle point is {first})' if first != expected_init else '')
+            check_cycle_point('final cycle point', final,
+                              m_fin.group(1) if m_fin else None)
 
     # ---------------------------------------------------------------- 5. observer plugs and inputs
     variational = read_csh(auto / 'variational.csh')
@@ -227,11 +285,17 @@ def main():
             fail('registry', f'{observer}: no IODADirectory entry in observations.yaml')
         elif not Path(m.group(1)).is_dir():
             fail('registry', f'{observer}: IODA directory does not exist: {m.group(1)}')
-        # the file name the plug reads must carry the observer name
+        # The file name the plug reads must carry the observer name. A plug with NO obsfile line of
+        # this form is also a failure: PrepJEDI would stage nothing and the obs space would be
+        # empty, which is the quiet way an observer disappears from a run.
         plug = (base / f'{observer}.yaml').read_text()
         m_file = re.search(r'obsfile:\s*\{\{InDBDir\}\}/(\S+?)_obs_', plug)
-        if m_file and m_file.group(1) != observer:
+        if not m_file:
+            fail('file name', f'{observer}: base plug declares no '
+                              '"obsfile: {{InDBDir}}/<name>_obs_..." input')
+        elif m_file.group(1) != observer:
             fail('file name', f'{observer}: base plug reads {m_file.group(1)}_obs_*.h5')
+
     # ---------------------------------------------------------------- 6. superobbing
     # select_mean: true has never worked in this project: it rejects every superob, because the
     # reduced obs space carries missing values that the next Bounds Check flags. A plug copied from
@@ -248,7 +312,9 @@ def main():
             if re.match(r'select_mean:\s*true\b', stripped):
                 fail('superobbing', f'{observer}: select_mean is true; it rejects every superob')
 
-    if observers and not any(f[0] in ('plugs', 'registry', 'file name') for f in failures):
+    if not observers:
+        fail('observers', f'config/auto/variational.csh lists no observers')
+    elif not any(f[0] in ('plugs', 'registry', 'file name') for f in failures):
         print(f'  OK   all {len(observers)} observers have plugs, a registered directory and a matching file name')
 
     # ---------------------------------------------------------------- report

@@ -1,21 +1,24 @@
-# ROUND FOUR, polar_new: identical to r4_qfed_oci (OCI 550 raw, PreQC<=1, 30-km thinning, unchanged
-# stepwise error) plus two polarimeters, both at PreQC=0 and 20-km thinning:
-#   harp2_fmapol_pace_aod_bc_r4  HARP2 549 nm, land and ocean bias-corrected against AERONET Level 2.0
-#                                (land +0.0350 + 0.3820*sat, ocean -0.0428 + 0.3343*sat, PreQC=0 fit),
-#                                observation error refit on the corrected residual, per surface.
-#   spexone_remotap_pace_aod_r4  SPEXone RemoTAP, raw, existing ramp (RMSE 0.083 vs assigned 0.080).
-# Replaces SPEXone FastMAPOL, which has no land retrievals at any quality level and 5.4x fewer
-# PreQC=0 records. Created 2026-10-09; see docs/obs_processing_draft_20261009.md.
-# ROUND FOUR, raw OCI: QFED+DiurnalProfile emissions, r2 QFED ensemble B (0.8/0.2, loc 1200 km/30 km),
-# RAW OCI 550 (no bias correction) with stepwise obs error and loose background check,
-# 30-km thinning, lat 70S-70N, AERONET L2.0 monitor-only. Jul 20 - Aug 15 2024 (Jasper window).
-# exp1 ROUND TWO (OCI 550 nm, bias-corrected obs + refit obs error). Identical to prod_oci550 otherwise.
-# exp1 PRODUCTION (OCI 550 nm): hybrid-3DEnVar, plain Gaussian thinning, AERONET the only in-DA monitor.
-# Superobbing was tried and rejected (2026-09-28): it assimilated 0 obs. All other evaluation is offline.
-# PRODUCTION OCI 550 nm (Soyoung): hybrid-3DEnVar, 6-h cycles 2024-07-21 00 UTC - 2024-09-15 18 UTC.
-# First background: CTL 2024-07-20 18 UTC forecast regenerated with the pm10 executable; 60-member pooled common-B ensemble;
-# static B: Aug1-Sep15 QFED f24-f12 (species-scaled) -- paths below to be set to the campaign copy; localization: DECISION PENDING (Jul 21 tests).
-# Extended forecasts deferred: run after the cycling completes (flip extendedforecast.execute to true, regenerate, reinstall, play).
+# ROUND FOUR, polar_new: r4_qfed_oci plus two polarimeters.
+#
+# Cycling 2024-07-20 18 UTC (seed background, no DA) through 2024-08-31 18 UTC, 6-h hybrid-3DEnVar
+# (0.8 ensemble / 0.2 static, 60-member pooled common-B), QFED + DiurnalProfile emissions, daily SST
+# update, hydrometeors carried between cycles. Domain 70S-70N. Extended forecasts deferred.
+#
+# Assimilated:
+#   oci_uaa_pace_aod_raw_r4      OCI 550 nm, raw (no bias correction), PreQC <= 1, 30-km thinning,
+#                                stepwise observation error. Unchanged from r4_qfed_oci.
+#   harp2_fmapol_pace_aod_bc_r4  HARP2 549 nm, PreQC = 0, 20-km thinning, land and ocean bias-
+#                                corrected against AERONET Level 2.0 (land +0.0350 + 0.3820*sat,
+#                                ocean -0.0428 + 0.3343*sat), observation error refit per surface
+#                                on the corrected residual.
+#   spexone_remotap_pace_aod_r4  SPEXone RemoTAP, PreQC = 0, 20-km thinning, raw, existing ramp
+#                                (RMSE 0.083 vs assigned 0.080).
+# Monitored only: aeronet_l20_aod (AERONET Level 2.0, held out).
+#
+# RemoTAP replaces SPEXone FastMAPOL, which has no land retrievals at any quality level and 5.4x
+# fewer PreQC = 0 records. Created 2026-10-09. Full derivation of the bias models, error curves and
+# the Desroziers audit behind them:
+#   /glade/campaign/mmm/parc/syha/Project/PACE/pandac/docs/obs_processing_draft_20261009.md
 experiment:
   name: r4_qfed_polar_new
 externalanalyses:

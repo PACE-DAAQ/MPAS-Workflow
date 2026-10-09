@@ -33,10 +33,31 @@ if ( $CYLC_DEBUG > 1) then
 endif
 cd ${mainScriptDir}
 
+# Refuse to install a suite that is not self-contained. A suite staged by copying another suite's
+# tree can keep the source suite's origin, cycle points, observers or plugs; every one of those
+# faults runs happily and produces wrong output. Checked here rather than by hand, because the
+# faults are invisible once the suite is playing.
+# Exit 1 means the suite is faulty; exit 2 means the check itself could not run, which is only a
+# warning. Set skipSuiteIndependenceCheck to install anyway.
+if ( ! $?skipSuiteIndependenceCheck ) then
+  if ( $CYLC_DEBUG > 1 ) then
+    echo "$0 (INFO): checking that the staged suite is self-contained"
+  endif
+  python3 ${mainScriptDir}/tools/check_suite_independence.py ${mainScriptDir}/..
+  set checkStatus = $status
+  if ( $checkStatus == 1 ) then
+    echo "$0 (FATAL): the staged suite failed check_suite_independence.py (see above)."
+    echo "$0 (FATAL): not installing. Fix the suite, or set skipSuiteIndependenceCheck to override."
+    exit 1
+  else if ( $checkStatus != 0 ) then
+    echo "$0 (WARNING): check_suite_independence.py could not run (status $checkStatus); continuing."
+  endif
+endif
+
 set NCARHOST=$NCAR_HOST
 if ( "$NCARHOST" == "derecho" ) then
   if ( ! $?CYLC_ENV ) then
-    echo 'CYLC_ENV environment variable is not set, setting it to /glade/work/jwittig/conda-envs/my-cylc8.2')
+    echo 'CYLC_ENV environment variable is not set, setting it to /glade/work/jwittig/conda-envs/my-cylc8.2'
     setenv CYLC_ENV /glade/work/jwittig/conda-envs/my-cylc8.2
   endif
 

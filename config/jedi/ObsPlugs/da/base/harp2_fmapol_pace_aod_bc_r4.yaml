@@ -1,6 +1,6 @@
 # polar_new: HARP2 549 nm, land and ocean bias-corrected against AERONET Level 2.0 using
 # PreQC = 0 collocations, with the observation error refit on the corrected residual.
-# Round four polar plug: raw v4 file (no bias correction), 60-km thinning hard-coded, 550-nm channel active.
+# Reads the bias-corrected copies under obs_bc/; the filter plug thins to 20 km. 550-nm channel active.
 - obs space:
     <<: *ObsSpace
     name: AodCRTM

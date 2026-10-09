@@ -56,7 +56,7 @@
     action:
       name: reject
   # gross-error check on the assigned error
-  # 3-sigma background check: inflate the obs error x3 where |O-B| > 3 sigma
+  # 5-sigma background check: inflate the obs error x2 where |O-B| > 5 sigma
   - filter: Background Check
     filter variables:
     - name: aerosolOpticalDepth
