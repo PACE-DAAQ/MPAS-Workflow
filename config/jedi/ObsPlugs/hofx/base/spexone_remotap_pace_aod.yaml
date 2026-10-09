@@ -1,3 +1,4 @@
+# HofX override of da/base/spexone_remotap_pace_aod.yaml: identical except for the channel list
 - obs space:
     <<: *ObsSpace
     name: AodCRTM
@@ -9,12 +10,12 @@
     _obsdataout: &ObsDataOut
       engine:
         type: H5File
-        obsfile: {{OutDBDir}}/{{obsPrefix}}_spexone_remotap_pace_aod.h5
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_spexone_remotap_pace_aod{{ObsOutSuffix}}.h5
     obsdatain:
       <<: *{{ObsDataIn}}
     {{ObsDataOut}}
     simulated variables: [aerosolOpticalDepth]
-    channels: 1-18 # 550 nm among 18 channels
+    channels: 1-18 # all 18 channels for verification (DA uses 4,8,14)
   obs error: *ObsErrorDiagonal
   <<: *horizObsLoc
   obs operator:

@@ -42,3 +42,13 @@
           x1: [1.0e-6]
           err0: [1.5e-9]
           err1: [4.0e-7]
+  # 4. gross-error check: reject where |O-B| > 4 x assigned sigma
+  - filter: Background Check
+    filter variables:
+    - name: particulatematter2p5Surface
+    - name: particulatematter10Surface
+    threshold: 4.0
+    action:
+      name: reject
+  # no Gaussian Thinning here (unlike da/filters): HofX/verification keeps every
+  # station that passes QC; do not re-sync this block from da/filters

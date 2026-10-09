@@ -9,6 +9,19 @@ from pathlib import Path
 import re
 import sys
 import yaml
+from yaml.events import AliasEvent
+
+
+class _RedefinableAnchorLoader(yaml.SafeLoader):
+    '''SafeLoader that, like eckit and the YAML spec, lets an anchor be redefined
+    (an alias refers to the most recent definition). The workflow's ObsPlugs
+    reuse anchor names such as &ObsDataIn / &aodChannels in every observer.'''
+    def compose_node(self, parent, index):
+        if not self.check_event(AliasEvent):
+            anchor = self.peek_event().anchor
+            if anchor is not None:
+                self.anchors.pop(anchor, None)
+        return super().compose_node(parent, index)
 
 
 def namelists(value):
@@ -30,7 +43,7 @@ def check(config, directory=Path('.')):
         # Legacy workflow templates use an unquoted %member% pattern accepted
         # by eckit; quote that scalar for PyYAML without changing the run file.
         text = re.sub(r"(?m)^(\s*pattern:\s*)(%[A-Za-z0-9_]+%)(\s*)$", r"\1'\2'\3", text)
-        data = yaml.safe_load(text)
+        data = yaml.load(text, Loader=_RedefinableAnchorLoader)
     paths = set(namelists(data))
     if not paths:
         raise ValueError('No geometry nml_file found in JEDI configuration')

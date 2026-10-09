@@ -74,6 +74,11 @@ setenv SPLIThourly "-split"
 # observations as in GSI
 setenv noGSIQCFilters "-noqc"
 
+# prepend the obs2ioda shared library directories so that the libraries
+# under ${mpasBundle}/lib (added to LD_LIBRARY_PATH by environmentJEDI.csh)
+# do not take precedence over the RUNPATH of ${obs2iodaEXE}
+setenv LD_LIBRARY_PATH ${obs2iodaBuildDir}/../obs2ioda-v3:${obs2iodaBuildDir}/../obs2ioda-v3/src/cxx:${LD_LIBRARY_PATH}
+
 foreach gdasfile ( *"gdas."* )
    echo "Running ${obs2iodaEXE} for ${gdasfile}"
    # link SpcCoeff files for converting IR radiances to brightness temperature

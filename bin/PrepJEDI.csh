@@ -366,6 +366,11 @@ foreach instrument ($observers)
     if ( ! -f ${SUBYAML}.yaml && ! -l ${SUBYAML}.yaml ) then
       set SUBYAML=${ConfigDir}/jedi/ObsPlugs/${AppCategory}/${subdir}/${instrument}
     endif
+    # HofX shares the DA plugs unless it has its own (bin/HofX.csh resolves the DA-style
+    # placeholders, and hofx/ObsAnchors.yaml defines the anchors they use)
+    if ( ! -f ${SUBYAML}.yaml && ! -l ${SUBYAML}.yaml ) then
+      set SUBYAML=${ConfigDir}/jedi/ObsPlugs/da/${subdir}/${instrument}
+    endif
     if ( "$instrument" =~ *"sondes"* ) then
       #KLUDGE to handle missing qv for sondes at single time
       if ( ${thisValidDate} == 2018043006 ) then

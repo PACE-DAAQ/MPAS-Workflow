@@ -112,6 +112,11 @@ class HofX(Component):
     ## IR/VIS land surface coefficients classification
     # OPTIONS: USGS, IGBP, NPOESS
     'IRVISlandCoeff': ['IGBP', str],
+
+    # AOD observations
+    'aodChannel':      [4,                          int],
+    'aodAerosolOption':['aerosols_gocart2g_mpas',   str,
+                       ['aerosols_gocart2g_mpas', 'aerosols_gocart_ufs']],
   }
 
   def __init__(self,

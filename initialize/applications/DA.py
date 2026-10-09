@@ -52,6 +52,8 @@ class DA(Component):
 
     self.hpc = hpc
     self.obs = obs
+    self.model = model
+    self.mesh = meshes['Outer']
     self.NN = members.n
     self.memFmt = members.memFmt
     self.workflow = workflow
@@ -194,12 +196,22 @@ class DA(Component):
     if len(self.__da['post']) > 0:
       postconf = {
         'tasks': self.__da['post'],
-        'valid tasks': ['verifyobs'],
+        'valid tasks': ['verifyobs', 'hofx'],
         'verifyobs': {
           'hpc': self.hpc,
           'obs': self.outputs['obs']['members'],
           'sub directory': 'da',
           'dependencies': [self.tf.post],
+        },
+        # HofX of the analysis with the hofx observer list (e.g. offline
+        # verification of an existing experiment's CyclingDA/<cycle>/an)
+        'hofx': {
+          'hpc': self.hpc,
+          'model': self.model,
+          'mesh': self.mesh,
+          'states': self.outputs['state']['members'],
+          'sub directory': 'an',
+          'dependencies': [self.tf.post, self.obs['PrepareObservations']],
         },
       }
 

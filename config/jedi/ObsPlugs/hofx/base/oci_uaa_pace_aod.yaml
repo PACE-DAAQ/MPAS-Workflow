@@ -1,29 +1,25 @@
+# HofX override of da/base/oci_uaa_pace_aod.yaml: identical except for the channel list
 - obs space:
     <<: *ObsSpace
     name: AodCRTM
-    obsdatain:
+    _obsdatain: &ObsDataIn
       engine:
         type: H5File
         obsfile: {{InDBDir}}/oci_uaa_pace_aod_obs_{{thisValidDate}}.h5
         missing file action: warn
-    obsdataout:
+    _obsdataout: &ObsDataOut
       engine:
         type: H5File
-        obsfile: {{OutDBDir}}/{{obsPrefix}}_oci_uaa_pace_aod.h5
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_oci_uaa_pace_aod{{ObsOutSuffix}}.h5
+    obsdatain:
+      <<: *{{ObsDataIn}}
+    {{ObsDataOut}}
     simulated variables: [aerosolOpticalDepth]
-    channels: &aodChannels 1-9
+    channels: &aodChannels 1-9 # all 9 OCI channels for verification (DA uses 1-8)
   obs error: *ObsErrorDiagonal
+  <<: *horizObsLoc
   obs operator:
-    name: AodCRTM
-    Absorbers: [H2O, O3]
+    <<: *aodCRTMObsOperator
     obs options:
+      <<: *AODCRTMObsOptions
       Sensor_ID: v.oci_uaa
-      EndianType: little_endian
-      CoefficientPath: {{CRTMTABLES}}
-      AerosolCoeff_File: AerosolCoeff.GOCART-GEOS5.nc4
-      Aerosol_Model: GOCART-GEOS5
-      AerosolCoeff_Format: netCDF
-      AerosolOption: {{aodAerosolOption}}
-      SpcCoeff_Format: netCDF
-      TauCoeff_Format: netCDF
-      model units coeff: 1e9

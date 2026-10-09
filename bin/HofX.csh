@@ -117,9 +117,17 @@ ln -sfv ${bgFileOther} ${bgFile}
 # use the background as the TemplateFieldsFileOuter
 ln -sfv ${bgFile} ${TemplateFieldsFileOuter}
 
+# resolve the DA-style plug placeholders, as bin/Variational.csh does, so HofX can share
+# config/jedi/ObsPlugs/da plugs (PrepJEDI.csh falls back to them)
+sed -i 's@{{ObsDataIn}}@ObsDataIn@' $myYAML
+sed -i 's@{{ObsDataOut}}@obsdataout: *ObsDataOut@' $myYAML
+sed -i 's@{{ObsOutSuffix}}@@g; s@{{MemberDir}}@@g' $myYAML
+
 # add the 'write multiple files' in obsdataout spec
 # (used to be in 'io pool' section of config/jedi/ObsPlugs/hofx/ObsAnchors.yaml)
-sed -i '/obsdataout/a\        write multiple files: true' $myYAML
+# Only after a plain 'obsdataout:' block or a DA-style '_obsdataout: &ObsDataOut' anchor,
+# never after the 'obsdataout: *ObsDataOut' alias; indent one level below the matched key.
+sed -i -E 's@^( *)(obsdataout:|_obsdataout: &ObsDataOut) *$@&\n\1  write multiple files: true@' $myYAML
 
 # Run the executable
 # ==================

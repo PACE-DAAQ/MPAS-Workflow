@@ -1,0 +1,150 @@
+##########################################################################################
+# Offline HofX of an EXISTING experiment (typically someone else's)
+#
+# Computes H(x) for an observation list of your choice on the 6-h backgrounds and,
+# optionally, the analyses that another experiment already produced -- without re-running
+# its forecasts or DA. Output is written under YOUR experiment directory:
+#   <your experiment>/Verification/bg/mean/<cycle>/dbOut/obsout_hofx_<observer>.h5
+#   <your experiment>/Verification/an/mean/<cycle>/dbOut/obsout_hofx_<observer>.h5
+#
+# How it works
+#   A normal 'Cycle' suite with DA and the forecast switched off (execute: False).
+#   Only their post tasks run:
+#     forecast:    post: [hofx]  -> HofX of CyclingFC/<cycle-6h>/mpasout.<cycle>.nc  ('bg')
+#     variational: post: [hofx]  -> HofX of CyclingDA/<cycle>/an/an.<cycle>.nc      ('an')
+#   Those paths are resolved relative to YOUR experiment directory, so CyclingFC and
+#   CyclingDA there must be symlinks to the source experiment (step 2 below).
+#
+# Steps
+#   1. Copy this file, then edit every line marked 'CHANGE'. Match the source experiment's
+#      mesh, model/physics and JEDI build: read its MPAS-Workflow/config/auto/*.csh
+#      (build.csh, model.csh, workflow.csh) if its scenario YAML is not readable.
+#   2. Create your experiment directory and link the source experiment's output:
+#        X=/glade/derecho/scratch/$USER/pandac/${USER}_<experiment name below>
+#        S=<source experiment directory>
+#        mkdir -p $X
+#        ln -sfn $S/CyclingFC $X/CyclingFC
+#        ln -sfn $S/CyclingDA $X/CyclingDA     # only if you want analysis HofX
+#      Run.py only re-creates $X/MPAS-Workflow, so these links survive re-runs.
+#   3. Check that every input is readable to you, including symlink TARGETS. The first-cycle
+#      background is often a link into the owner's private area; such cycles fail with
+#      "Stream 'input' attempted to read non-existent file .../templateFields...":
+#        find -L $S/CyclingFC $S/CyclingDA -maxdepth 3 -name '*.nc' ! -readable
+#   4. source env-setup/machine.sh; ./Run.py scenarios/<this file>
+#
+# Extending later (e.g. the source experiment has cycled further)
+#   Set 'restart cycle point' to the first cycle not yet done and move 'final cycle point';
+#   re-run Run.py. Completed cycles are kept. Set 'final cycle point' to the last cycle
+#   whose inputs exist: with execute: False nothing waits for the source run, so a missing
+#   background or analysis fails that cycle and the suite stalls.
+#
+# Things to know
+#   - Observers without an ObsPlugs/hofx/{base,filters} plug use the DA plug in
+#     ObsPlugs/da/ (bin/PrepJEDI.csh). Add a hofx/ plug only to deliberately differ from DA
+#     (e.g. hofx/filters/openaq_sfcpm.yaml drops Gaussian thinning).
+#   - An observer whose input file is missing for a cycle is silently dropped from that
+#     cycle's YAML; check obs coverage before interpreting counts.
+#   - Analyses only differ from backgrounds in the variables DA updates. Diagnostic fields
+#     the analysis file copies from the background (e.g. totPM25/totPM10 for OpenAQ) give
+#     identical bg and an HofX.
+#   - Input obs files can be reprocessed after a run; record their modification times if
+#     the HofX output will be compared against later runs.
+#   - To recompute a subset of observers without touching existing output, use a separate
+#     experiment name (e.g. suffix _<observer>) and merge the files afterwards.
+##########################################################################################
+
+experiment:
+  # SuiteName / directory: ${USER}_<name>. Use a name that identifies the source run.
+  name: <source experiment name>_hofx                         # CHANGE
+
+workflow:
+  # first cycle point: the source experiment's first cycle (its cold-start cycle).
+  # restart cycle point: one cycle later. Starting at the first cycle point would run the
+  #   first-background tasks, which write into CyclingFC/<first cycle> -- the source
+  #   experiment's directory, which you normally cannot write to.
+  first cycle point: 20240720T18                               # CHANGE
+  restart cycle point: 20240721T00                             # CHANGE (first + 6 h)
+  final cycle point: 20240915T18                               # CHANGE
+
+hpc:
+  # charge an allocation you belong to (the framework default may not be one)
+  CriticalAccount: NMMM0063                                    # CHANGE
+  NonCriticalAccount: NMMM0063                                 # CHANGE
+  SingleProcAccount: NMMM0063                                  # CHANGE
+
+build:
+  # Use the JEDI build the source experiment used (config/auto/build.csh: mpasBundle,
+  # bundleCompilerUsed) so the model state and operators match.
+  mpas bundle: /glade/derecho/scratch/syha/mpas_bundle_pm10_20260926/build   # CHANGE
+  bundle compiler used: gnu-cray                               # CHANGE
+  # needed by GOCART2G experiments for their emission file names
+  emission period: '20240701-20240930'                         # CHANGE or remove
+
+members:
+  n: 1  # deterministic run; HofX of ensemble members is not covered by this template
+
+model:
+  # must match the source experiment (config/auto/model.csh)
+  outerMesh: 60km                                              # CHANGE
+  innerMesh: 60km                                              # CHANGE
+  ensembleMesh: 60km                                           # CHANGE
+  # GOCART2G-specific settings; keep them consistent with the source run or remove
+  streams variant: cntl                                        # CHANGE or remove
+  do bburn prm: true                                           # CHANGE or remove
+  do frp: false                                                # CHANGE or remove
+
+externalanalyses:
+  # Link-only: reuse the MPAS init files the source run already converted, instead of
+  # downloading/ungribbing GFS again. The resource name is arbitrary; the directory holds
+  # <cycle>/x1.<nCells>.init.<date>.nc.
+  resource: "GFS.source_experiment"
+  resources:
+    GFS:
+      source_experiment:
+        60km:                                                  # CHANGE (= outerMesh)
+          directory: /path/to/source/experiment/ExternalAnalyses/60km   # CHANGE
+
+firstbackground:
+  resource: "PANDAC.GFS" # unused because restart cycle point > first cycle point
+
+variational:
+  # DA never runs. DAType only has to be valid; 3dvar needs no ensemble resource.
+  DAType: 3dvar
+  execute: False
+  post: [hofx]   # HofX of the analyses; use [] for background-only
+
+forecast:
+  execute: False
+  post: [hofx]   # HofX of the 6-h backgrounds
+
+observations:
+  resource: PANDACArchive
+  # Per-observer input locations/prefixes can be overridden here, e.g.:
+  # resources:
+  #   PANDACArchive:
+  #     IODADirectory:
+  #       hofx:
+  #         sfc: /glade/campaign/ncar/nmmm0081/input/obs/conv_obs
+
+hofx:
+  job:
+    60km:                                                      # CHANGE (= outerMesh)
+      # typical 60-km HofX with ~12 observers takes ~95 s; occasional I/O-bound runs
+      # exceed 600 s, so allow headroom and retry
+      seconds: 1500
+      retry: '2*PT2M'
+  # Gaussian-thinning distance (km) used by the filters that thin; match the DA run
+  radianceThinningDistance: 60.0                               # CHANGE
+  observers:                                                   # CHANGE
+  - modis_aqua_aod
+  - modis_terra_aod
+  - viirs_aod_db_n20
+  - viirs_aod_dt_n20
+  - viirs_aod_db_npp
+  - viirs_aod_dt_npp
+  - oci_uaa_pace_aod
+  - harp2_fmapol_pace_aod
+  - spexone_fmapol_pace_aod
+  - spexone_remotap_pace_aod
+  - aeronet_l15_aod
+  - openaq_sfcpm
