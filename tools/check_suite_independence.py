@@ -15,6 +15,8 @@ happened on 2026-10-09 while staging syha_r4_qfed_polar_new:
   3. The generated config/auto files were edited but the scenario yaml was not, so the suite and the
      thing that regenerates it disagreed. A later Run.py would have silently restored the old
      observers.
+  4. A plug copied from before 2026-09-28 still carried `select_mean: true`. Superobbing rejects
+     every superob here, so that observer assimilated nothing while every other check passed.
 
 check_experiment_config.py compares the science configuration of two experiments. This is the
 complementary check: that ONE suite is internally consistent and references nothing outside itself.
@@ -230,6 +232,22 @@ def main():
         m_file = re.search(r'obsfile:\s*\{\{InDBDir\}\}/(\S+?)_obs_', plug)
         if m_file and m_file.group(1) != observer:
             fail('file name', f'{observer}: base plug reads {m_file.group(1)}_obs_*.h5')
+    # ---------------------------------------------------------------- 6. superobbing
+    # select_mean: true has never worked in this project: it rejects every superob, because the
+    # reduced obs space carries missing values that the next Bounds Check flags. A plug copied from
+    # before 2026-09-28 still carries it, and the suite then assimilates nothing from that observer
+    # while every other check passes. syha_r4_qfed_polar_new hit exactly this on 2026-10-09.
+    for observer in observers:
+        plug = filters / f'{observer}.yaml'
+        if not plug.is_file():
+            continue
+        for line in plug.read_text().splitlines():
+            stripped = line.strip()
+            if stripped.startswith('#'):
+                continue
+            if re.match(r'select_mean:\s*true\b', stripped):
+                fail('superobbing', f'{observer}: select_mean is true; it rejects every superob')
+
     if observers and not any(f[0] in ('plugs', 'registry', 'file name') for f in failures):
         print(f'  OK   all {len(observers)} observers have plugs, a registered directory and a matching file name')
 
