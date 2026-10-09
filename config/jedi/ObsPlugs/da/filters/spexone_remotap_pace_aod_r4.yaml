@@ -1,0 +1,79 @@
+  obs filters:
+  - filter: PreQC
+    maxvalue: 0
+  - filter: Domain Check
+    where:
+    - variable:
+        name: latitude@MetaData
+      minvalue: -70
+      maxvalue: 70
+  - filter: Bounds Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 4,8,14
+    minvalue: 0
+    maxvalue: 4.9
+    action:
+      name: reject
+  # observation error for the 550-nm channel: sigma = 0.045 + 0.2*AOD, floored at 0.05 (same scale as the OCI
+  # product error); the file's retrieval uncertainty (~0.008) ignores representativeness on the 60-km mesh.
+  - filter: Perform Action
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 8
+    action:
+      name: assign error
+      error function:
+        name: ObsFunction/ObsErrorModelRamp
+        options:
+          xvar:
+            name: ObsValue/aerosolOpticalDepth
+            channels: 8
+          x0: [0.025]
+          x1: [1.0]
+          err0: [0.05]
+          err1: [0.245]
+  - filter: Gaussian Thinning
+    horizontal_mesh: 20.0
+    select_mean: false     # superobbing stays OFF: it rejected 100% of superobs (2026-09-28)
+    action:
+      name: reduce obs space
+  # superobbing (select_mean) can leave missing values in the reduced obs space;
+  # flag them before any Background Check, whose applyFilter asserts on missing obs.
+  - filter: Bounds Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 8
+    minvalue: 0
+    maxvalue: 4.9
+    action:
+      name: reject
+  - filter: Background Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 8
+    threshold: 8.0
+    action:
+      name: reject
+  # gross-error check on the assigned error
+  # 3-sigma background check: inflate the obs error x3 where |O-B| > 3 sigma
+  - filter: Background Check
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 8
+    threshold: 5.0
+    action:
+      name: inflate error
+      inflation factor: 2.0
+#  - filter: RejectList
+#    defer to post: true
+#    filter variables:
+#    - name: aerosolOpticalDepth
+#      channels: 1-18
+  - filter: Perform Action
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 4,14   # keep ch8 (550 nm) active; 440/870 nm monitored
+    action:
+      name: passivate
+

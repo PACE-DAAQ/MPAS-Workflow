@@ -101,7 +101,9 @@ observations:
         viirs_aod_db_n20: viirs_aod_db_n20-thinned0p8 # Thinned
         oci_uaa_pace_aod_multiwl: oci_uaa_pace_aod   # same IODA files as oci_uaa_pace_aod; 354/550/870 nm active
         harp2_fmapol_pace_aod: harp2_fmapol_pace_aod_v4        # files are <name>_v4_obs_<date>.h5
+        harp2_fmapol_pace_aod_bc_r4: harp2_fmapol_pace_aod_bc_r4   # polar_new: AERONET L2.0 bias-corrected copies (obs_bc/)
         spexone_remotap_pace_aod: spexone_remotap_pace_aod_v4
+        spexone_remotap_pace_aod_r4: spexone_remotap_pace_aod_v4   # polar_new: raw v4 RemoTAP, 20-km thinning, 550 nm (ch8) active
         spexone_fmapol_pace_aod: spexone_fmapol_pace_aod_v4
 
       IODADirectory:
