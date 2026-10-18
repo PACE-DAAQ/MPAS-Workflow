@@ -1,4 +1,12 @@
   obs filters:
+  # the OpenAQ file carries ObsError = 0; give every obs a nonzero error first so that
+  # rejected obs do not turn R^-1 into infinity in the minimizer
+  - filter: Perform Action
+    filter variables:
+    - name: particulatematter10Surface
+    action:
+      name: assign error
+      error parameter: 1.0e-08
   # best OpenAQ quality flag only (the file carries PreQC 0-4)
   - filter: PreQC
     maxvalue: 0
