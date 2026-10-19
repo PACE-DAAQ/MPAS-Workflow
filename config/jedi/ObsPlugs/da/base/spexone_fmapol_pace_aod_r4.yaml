@@ -1,0 +1,25 @@
+# Round four polar plug: raw v4 file (no bias correction), 60-km thinning hard-coded, 550-nm channel active.
+- obs space:
+    <<: *ObsSpace
+    name: AodCRTM
+    _obsdatain: &ObsDataIn
+      engine:
+        type: H5File
+        obsfile: {{InDBDir}}/spexone_fmapol_pace_aod_r4_obs_{{thisValidDate}}.h5
+        missing file action: warn
+    _obsdataout: &ObsDataOut
+      engine:
+        type: H5File
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_spexone_fmapol_pace_aod_r4{{ObsOutSuffix}}.h5
+    obsdatain:
+      <<: *{{ObsDataIn}}
+    {{ObsDataOut}}
+    simulated variables: [aerosolOpticalDepth]
+    channels: 7,22,32 # 443, 548, and 677nm for 550nm and AE comparison
+  obs error: *ObsErrorDiagonal
+  <<: *horizObsLoc
+  obs operator:
+    <<: *aodCRTMObsOperator
+    obs options:
+      <<: *AODCRTMObsOptions
+      Sensor_ID: v.spexone_fmapol

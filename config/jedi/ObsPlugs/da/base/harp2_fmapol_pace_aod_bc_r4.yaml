@@ -1,0 +1,27 @@
+# polar_new: HARP2 549 nm, land and ocean bias-corrected against AERONET Level 2.0 using
+# PreQC = 0 collocations, with the observation error refit on the corrected residual.
+# Reads the bias-corrected copies under obs_bc/; the filter plug thins to 20 km. 550-nm channel active.
+- obs space:
+    <<: *ObsSpace
+    name: AodCRTM
+    _obsdatain: &ObsDataIn
+      engine:
+        type: H5File
+        obsfile: {{InDBDir}}/harp2_fmapol_pace_aod_bc_r4_obs_{{thisValidDate}}.h5
+        missing file action: warn
+    _obsdataout: &ObsDataOut
+      engine:
+        type: H5File
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_harp2_fmapol_pace_aod_bc_r4{{ObsOutSuffix}}.h5
+    obsdatain:
+      <<: *{{ObsDataIn}}
+    {{ObsDataOut}}
+    simulated variables: [aerosolOpticalDepth]
+    channels: 1,2,3,4 # 550 nm among 4 channels
+  obs error: *ObsErrorDiagonal
+  <<: *horizObsLoc
+  obs operator:
+    <<: *aodCRTMObsOperator
+    obs options:
+      <<: *AODCRTMObsOptions
+      Sensor_ID: v.harp2_fmapol

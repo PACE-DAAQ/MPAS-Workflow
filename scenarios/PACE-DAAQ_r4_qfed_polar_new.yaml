@@ -1,0 +1,191 @@
+# ROUND FOUR, polar_new: r4_qfed_oci plus two polarimeters.
+#
+# Cycling 2024-07-20 18 UTC (seed background, no DA) through 2024-08-31 18 UTC, 6-h hybrid-3DEnVar
+# (0.8 ensemble / 0.2 static, 60-member pooled common-B), QFED + DiurnalProfile emissions, daily SST
+# update, hydrometeors carried between cycles. Domain 70S-70N. Extended forecasts deferred.
+#
+# Assimilated:
+#   oci_uaa_pace_aod_raw_r4      OCI 550 nm, raw (no bias correction), PreQC <= 1, 30-km thinning,
+#                                stepwise observation error. Unchanged from r4_qfed_oci.
+#   harp2_fmapol_pace_aod_bc_r4  HARP2 549 nm, PreQC = 0, 20-km thinning, land and ocean bias-
+#                                corrected against AERONET Level 2.0 (land +0.0350 + 0.3820*sat,
+#                                ocean -0.0428 + 0.3343*sat), observation error refit per surface
+#                                on the corrected residual.
+#   spexone_remotap_pace_aod_r4  SPEXone RemoTAP, PreQC = 0, 20-km thinning, raw, existing ramp
+#                                (RMSE 0.083 vs assigned 0.080).
+# Monitored only: aeronet_l20_aod (AERONET Level 2.0, held out).
+#
+# RemoTAP replaces SPEXone FastMAPOL, which has no land retrievals at any quality level and 5.4x
+# fewer PreQC = 0 records. Created 2026-10-09. Full derivation of the bias models, error curves and
+# the Desroziers audit behind them:
+#   /glade/campaign/mmm/parc/syha/Project/PACE/pandac/docs/obs_processing_draft_20261009.md
+experiment:
+  name: r4_qfed_polar_new
+externalanalyses:
+  resource: GFS.PANDAC
+  resources:
+    GFS:
+      PANDAC:
+        60km:
+          directory: /glade/derecho/scratch/syha/ExternalAnalyses_shared/60km
+firstbackground:
+  resource: PANDAC.GFS
+  resources:
+    PANDAC:
+      GFS:
+        60km:
+          directory: /glade/derecho/scratch/syha/pace_cycling_2024/ctl_2024072018_pm10   # CTL 2024-07-20 18Z forecast (scheme 1 x2.0 lineage), carries totPM10
+forecast:
+  IAU: false
+  updateATMVarsFromCold: true
+  updateSea: true   # daily SST/xice update (design requirement, activated 2026-09-26)
+  surfaceUpdateFile: /glade/campaign/ncar/nmmm0081/production_2024/fixed/x1.163842.sfc_update.daily.jul-sep2024.qc.nc
+  surfaceInputInterval: '24:00:00'
+  post: []
+  job:
+    defaults:
+      baseSeconds: 300    # 6-h forecast: 300 + 50 s per hour x 6 = 10 min (measured <= 9.4 min)
+      secondsPerForecastHR: 50
+      retry: 2*PT2M
+    60km:
+      baseSeconds: 300    # 6-h forecast: 300 + 50 s per hour x 6 = 10 min (measured <= 9.4 min)
+      secondsPerForecastHR: 50
+      nodes: 2
+      PEPerNode: 128
+build:
+  bundle compiler used: gnu-cray
+  mpas bundle: /glade/derecho/scratch/syha/mpas_bundle_pm10_20260926/build   # rebuilt 2026-09-26 with gocartMPAS PR 44 (totPM10)
+  forecast directory: /glade/campaign/mmm/parc/syha/Project/PACE/pandac/codex/model-exe-scheme1-ss200
+  init directory: /glade/campaign/ncar/nmmm0081/production_2024/code/gocartMPAS-init-build
+  gocart emission directory: /glade/derecho/scratch/syha/Emissions_qfedlt/60km
+  gocart background lut directory: /glade/campaign/ncar/nmmm0081/input/initialization/gocart2g_bkg
+  gocart optics directory: /glade/campaign/ncar/nmmm0081/input/mpas/optics/latest/
+  prm area directory: /glade/campaign/ncar/nmmm0081/input/Emissions/PRM
+  prm area file: FINNv2.5.1_modvrs_nrt_MOZART_{{year}}_{{grid}}.static_daily_jul01-sep30.nc
+  emission period: 20240701-20240930
+  forecast environment script: /glade/campaign/ncar/nmmm0081/production_2024/workflow/forecast_environment.csh
+hpc:
+  CriticalAccount: NMMM0081
+  CriticalQueue: main
+  CriticalPriority: premium
+  NonCriticalAccount: NMMM0081
+  NonCriticalQueue: main
+  NonCriticalPriority: premium
+  SingleProcAccount: NMMM0081
+  SingleProcQueue: casper@casper-pbs
+members:
+  n: 1
+ensembleforecast:
+  execute: false
+model:
+  outerMesh: 60km
+  innerMesh: 60km
+  ensembleMesh: 60km
+  streams variant: cntl
+  biob emissions: qfed
+  anth emissions: cams
+  biog emissions: cams
+  do bburn prm: true
+  do frp: false
+  carry persistent hno3: true
+  carry land state: true
+  carry hydrometeors: true
+  online emission factors: true
+  dust emission factor: 0.75
+  seasalt emission factor: 2.0
+  GraphInfoDir: /glade/campaign/ncar/nmmm0081/Data/MPAS-Workflow/pandac/MPAS_GRAPH
+  MPThompsonTablesDir: /glade/campaign/ncar/nmmm0081/input/mpas/MPThompsonTables
+  resources:
+    60km:
+      LSM: sf_noah
+observations:
+  resource: PANDACArchive
+  CRTMTABLES: /glade/campaign/ncar/nmmm0081/input/jedi/crtm_coeffs/
+  resources:
+    PANDACArchive:
+      IODADirectory:
+        da:
+          openaq_sfcpm: /glade/campaign/ncar/nmmm0081/input/obs/openaq_sfcpm
+        hofx:
+          openaq_sfcpm: /glade/campaign/ncar/nmmm0081/input/obs/openaq_sfcpm
+variational:
+  DAType: 3dhybrid
+  ensembleCovarianceWeight: 0.8
+  staticCovarianceWeight: 0.2
+  nInnerIterations:
+  - 60
+  aodChannel: 4
+  aodAerosolOption: aerosols_gocart2g_mpas
+  observers:
+  - oci_uaa_pace_aod_raw_r4
+  - harp2_fmapol_pace_aod_bc_r4
+  - spexone_remotap_pace_aod_r4
+  - aeronet_l20_aod
+  monitors:
+  - aeronet_l20_aod
+  radianceThinningDistance: 30.0
+  job:
+    60km:
+      60km:
+        3dhybrid:
+          nodes: 4
+          PEPerNode: 64   # 256 tasks total: local BUMP files are for 256 tasks; 2x128 OOM'd with the 60-member pool (Jul 21 test)
+          memory: 235GB
+          baseSeconds: 900   # 25 min total (polar 20 km measured 13.5 min; 60 km polar exceeded 20 min at 2024072112)
+          secondsPerEnVarMember: 10
+  covariance:
+    60km:
+      bumpCovDir: /glade/campaign/ncar/nmmm0081/input/jedi/bump/60km_augsep2024/nicas   # Aug-Sep 2024 NMC B (f48-f24, 31 pairs, du075/ss200 run); QFED f24-f12 B pending in bump/60km_augsep2024_qfed
+      bumpCovStdDevFile: /glade/campaign/ncar/nmmm0081/input/jedi/bump/60km_augsep2024/hdiag_var/merge/mpas.stddev.nc
+      bumpCovVBalDir: /glade/campaign/ncar/nmmm0081/input/jedi/bump/60km_augsep2024/v_bal
+  ensemble:
+    forecasts:
+      resource: COMMONB.PROD
+      COMMONB:
+        PROD:
+          60km:
+            maxMembers: 60
+            directory0: '/glade/derecho/scratch/syha/pace_cycling_2024/commonB/prod/pooled_{{prevDateTime}}'
+            filePrefix: mpasout
+            memberPrefix: mem
+            memberNDigits: 3
+            forecastDateOffsetHR: -6   # pools keyed by VALID time; PrepJEDI offset = window(6h) + this = 0
+    localization:
+      60km:
+        bumpLocPrefix: bumploc_1200km30km
+        bumpLocDir: /glade/campaign/ncar/nmmm0081/input/jedi/bump/60km/localization/loc_1200km30km
+  post: []
+extendedforecast:
+  # 5-day forecasts from every 00 UTC hybrid analysis (production verification: AERONET AOD, OpenAQ PM2.5/PM10)
+  execute: false   # deferred: enable after the cycling (5-day forecasts from every 00 UTC analysis)
+  meanTimes:   # 120-h extended forecasts OFF (2026-09-27); set back to 'T00, T12' to re-enable
+  ensTimes: None
+  lengthHR: 120
+  outIntervalHR: 6
+  DACycling: true
+  updateATMVarsFromCold: false
+  updateSea: true
+  surfaceUpdateFile: /glade/campaign/ncar/nmmm0081/production_2024/fixed/x1.163842.sfc_update.daily.jul-sep2024.qc.nc
+  surfaceInputInterval: '24:00:00'
+  post: []   # no extended forecast in the cycling run; set back to [hofx] for the 5-day forecast rerun (execute: true)
+  job:
+    60km:
+      baseSeconds: 300    # 6-h forecast: 300 + 50 s per hour x 6 = 10 min (measured <= 9.4 min)
+      secondsPerForecastHR: 50
+      nodes: 2
+      PEPerNode: 128
+hofx:
+  observers:
+  - aeronet_l20_aod
+  - oci_uaa_pace_aod
+workflow:
+  first cycle point: 20240720T18
+  restart cycle point: 20240721T00   # first cycle with a background; CyclingFC/2024072018 is the seed, no DA there
+  final cycle point: 20240831T18
+  max active cycle points: 3
+emissions:
+  mode: prebuilt
+  prm source: finn
+initic:
+  chemistry mode: prebuilt
+  chemistry prebuilt directory: /glade/campaign/ncar/nmmm0081/production_2024/ChemIC/{{thisValidDate}}

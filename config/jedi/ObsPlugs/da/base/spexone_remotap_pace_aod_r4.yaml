@@ -1,0 +1,27 @@
+# Round four polar_new: raw v4 RemoTAP replacing SPEXone FastMAPOL. 20-km thinning, 550 nm (ch8)
+# active, 8-sigma reject / 5-sigma inflate x2. Error ramp unchanged: the AERONET L2.0 collocation
+# gives RMSE 0.083 against an assigned sigma of 0.080 at its median AOD, a ratio of 1.04.
+- obs space:
+    <<: *ObsSpace
+    name: AodCRTM
+    _obsdatain: &ObsDataIn
+      engine:
+        type: H5File
+        obsfile: {{InDBDir}}/spexone_remotap_pace_aod_r4_obs_{{thisValidDate}}.h5
+        missing file action: warn
+    _obsdataout: &ObsDataOut
+      engine:
+        type: H5File
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_spexone_remotap_pace_aod_r4{{ObsOutSuffix}}.h5
+    obsdatain:
+      <<: *{{ObsDataIn}}
+    {{ObsDataOut}}
+    simulated variables: [aerosolOpticalDepth]
+    channels: 4,8,14 # 440, 550, and 870 nm among 18 channels
+  obs error: *ObsErrorDiagonal
+  <<: *horizObsLoc
+  obs operator:
+    <<: *aodCRTMObsOperator
+    obs options:
+      <<: *AODCRTMObsOptions
+      Sensor_ID: v.spexone_remotap

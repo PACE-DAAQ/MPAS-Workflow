@@ -1,0 +1,16 @@
+  obs filters:
+  # AERONET Level 2.0 is a held-out reference: H(x) is produced, nothing is assimilated.
+  - filter: PreQC
+    maxvalue: 1
+  - filter: Domain Check
+    where:
+    - variable:
+        name: latitude@MetaData
+      minvalue: -70
+      maxvalue: 70
+  - filter: Perform Action
+    filter variables:
+    - name: aerosolOpticalDepth
+      channels: 1-8
+    action:
+      name: passivate
