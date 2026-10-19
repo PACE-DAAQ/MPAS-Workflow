@@ -197,7 +197,12 @@ class ForecastOnlyCycle(SuiteBase):
     # per-lead conversions that cannot succeed -- for the common case of a scenario
     # that leaves both defaults alone. Require post AND something actually
     # scheduled to verify.
-    verifies = bool(ef['post']) and (ef['meanTimes'] is not None or ef['ensTimes'] is not None)
+    # ensTimes only schedules work for more than one member (ExtendedForecast
+    # sets doEnsemble = ensTimes is not None and NN > 1).
+    verifies = bool(ef['post']) and (
+      ef['meanTimes'] is not None or
+      (ef['ensTimes'] is not None and members.n > 1)
+    )
     icOffsets = ef['extLengths'] if verifies else [0]
 
     for k, c_ in self.c.items():
