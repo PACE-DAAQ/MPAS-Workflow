@@ -86,3 +86,7 @@ emissions:
     nodes: 1
     PEPerNode: 8
     memory: 96GB
+
+  # Optional PRM preparation; mesh and dates come from staged workflow inputs.
+  prm source vegetation: false
+  prm vegetation config: ''

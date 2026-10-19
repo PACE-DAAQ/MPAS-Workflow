@@ -267,6 +267,23 @@ end
 
 # Generate separately from emissions, using exactly the staged fire-size sources.
 if ( "$emissionsPrmVegetation" == "True" ) then
+  if ( "$emissionsPrmVegetationConfig" != "" ) then
+    set emissionPeriod = "${emissionYear}"
+    if ( $?EmissionPeriod ) then
+      if ( "$EmissionPeriod" != "" ) set emissionPeriod = "${EmissionPeriod}"
+    endif
+    set supportFire = "$emissionsPrmVegetationFireSize"
+    if ( "$supportFire" == "" ) then
+      set supportName = `echo "$PRMAreaFile" | sed 's@{{nCells}}@'${nCellsOuter}'@' | sed 's@{{year}}@'${emissionYear}'@' | sed 's@{{period}}@'${emissionPeriod}'@' | sed 's@{{grid}}@'${emissionsGridName}'@'`
+      set supportFire = "$outDir/$supportName"
+    endif
+    $py "$toolsDir/prepare_prm_support.py" --config "$emissionsPrmVegetationConfig" \
+      --mesh "$meshFile" --fire-size "$supportFire" --output "$outDir/prm_support"
+    if ( $status != 0 ) then
+      echo "ERROR: YAML PRM support preparation failed" > ./FAIL
+      exit 1
+    endif
+  else
   if ( "$emissionsPrmVegetationManifest" == "" || "$emissionsPrmVegetationFireSize" == "" ) then
     echo "ERROR: source vegetation requires manifest and fire size file" > ./FAIL
     exit 1
@@ -277,6 +294,7 @@ if ( "$emissionsPrmVegetation" == "True" ) then
   if ( $status != 0 ) then
     echo "ERROR: PRM source vegetation preparation failed" > ./FAIL
     exit 1
+  endif
   endif
 endif
 
