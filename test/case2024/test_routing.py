@@ -52,9 +52,14 @@ class Routing(unittest.TestCase):
             'if ( "$PhysicsSuite" == "MPAS-GOCART2G" && "$ArgDACycling" == "True" ) then',
             forecast,
         )
-        self.assertIn('if ( "$useAuxCarry" == "True" ) then', forecast)
+        # The carry source does not depend on the carry switches: every GOCART2G
+        # DA cycle passes the prior forecast as --aux-source.
+        self.assertNotIn('useAuxCarry', forecast)
+        self.assertIn('--aux-source', forecast)
         self.assertIn('--include-hydrometeors', forecast)
         self.assertIn('source config/environmentNPL.csh; python3 tools/copy_mpas_vars.py', forecast)
+        # The NPL child shell cds to mainScriptDir, so the IC paths must be absolute.
+        self.assertIn('${cwd}/${icFile}_tmp ${cwd}/${icFile}', forecast)
 
     def test_central_and_all_members(self):
         with tempfile.TemporaryDirectory() as d:
