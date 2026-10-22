@@ -685,7 +685,9 @@ if ("${updateATMVarsFromCold}" == True) then
   # forecast environment intentionally has no Python netCDF4 package, while
   # environmentNPL.csh supplies the supported NumPy/netCDF4 stack. A child csh
   # prevents the conda modules and libraries from leaking into atmosphere_model.
-  csh -f -c "cd ${mainScriptDir}; source config/environmentNPL.csh; python3 tools/copy_mpas_vars.py $carryFlags ${icFile}_tmp ${icFile}"
+  # The child cds to mainScriptDir to source the environment, so the IC paths
+  # must be absolute (icFile is relative to this forecast's work directory).
+  csh -f -c "cd ${mainScriptDir}; source config/environmentNPL.csh; python3 tools/copy_mpas_vars.py $carryFlags ${cwd}/${icFile}_tmp ${cwd}/${icFile}"
   # copy_mpas_vars.py fails fast when a cycling-state variable is missing. tcsh
   # does not abort on a non-zero child, so without this check the guard becomes a
   # silent no-op and the forecast runs from the untouched cold IC, discarding the
