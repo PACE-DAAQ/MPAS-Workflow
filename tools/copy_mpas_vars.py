@@ -25,12 +25,22 @@ init/restart stream, i.e. a Registry/streams change, not a change here.  So
 under sf_noahmp this recovers the soil column but not the canopy/snowpack
 state.
 
+Lower bounds (always on).  After the carry, every hydrometeor, number
+concentration and chemistry/aerosol scalar in the destination IC is raised to
+at least zero, and water vapour to at least 1e-12 (exact zero can make the
+shortwave-radiation humidity path singular).  Interpolated external analyses
+and JEDI analyses both produce small negative mixing ratios, and a negative
+scalar entering the model physics can crash atmosphere_model (SIGSEGV in the
+first few time steps).  Raised counts and the minimum value per variable are
+printed so the bounding is never silent.
+
 Static and boundary fields (isltyp, ivgtyp, xland, tmn, vegfra, sst, xice,
 seaice, skintemp) are deliberately NOT carried: they belong to the target
 cycle's analysis, and sst/xice in particular are refreshed by updateSea.
 """
 
 from netCDF4 import Dataset
+import numpy as np
 import sys
 
 argv = [a for a in sys.argv[1:]]
@@ -103,6 +113,47 @@ if include_land:
     optional_vars += land_vars
 if include_hydrometeors:
     optional_vars += hydrometeor_vars
+
+# Lower bounds for scalars that must never be negative: water vapour, the
+# hydrometeors, the microphysics number concentrations, all prognostic
+# chemistry/aerosol tracers (persistent_hno3 is a tracer too) and the prescribed
+# chemistry backgrounds. persistent_hno3 is listed explicitly because
+# --reset-hno3 removes it from vars_to_copy, yet the cold IC's own value must
+# still be bounded. Fields absent from the destination are skipped.
+water_vapour_vars = ["qv"]
+number_concentration_vars = ["ni", "nr", "nc"]
+background_chemistry_vars = ["background_h2o2", "background_oh", "background_no3", "background_hno3"]
+lower_bounds = dict.fromkeys(
+    hydrometeor_vars + number_concentration_vars
+    + vars_to_copy + ["persistent_hno3"] + background_chemistry_vars, 0.0)
+# Water vapour gets a small positive floor rather than zero: exact zero can make
+# the shortwave-radiation humidity path singular on some columns. This is a
+# numerical guard, not a physical bound -- keep it positive.
+QV_FLOOR = 1.0e-12
+lower_bounds.update(dict.fromkeys(water_vapour_vars, QV_FLOOR))
+
+
+def apply_lower_bounds(dataset, bounds):
+    """Raise values below each variable's bound in place.
+
+    Returns {name: (count, minimum_before, bound)}. The bound is cast to the
+    variable's type before comparing, so values already raised to a float32
+    floor are not counted again on a second pass.
+    """
+    raised = {}
+    for name, bound in bounds.items():
+        if name not in dataset.variables:
+            continue
+        variable = dataset.variables[name]
+        values = variable[:]
+        typed_bound = np.asarray(bound, dtype=variable.dtype)
+        count = int(np.ma.sum(values < typed_bound))
+        if count == 0:
+            continue
+        raised[name] = (count, float(np.ma.min(values)), bound)
+        variable[:] = np.ma.maximum(values, typed_bound)
+    return raised
+
 
 print(f"Opening source: {src_file}")
 src = Dataset(src_file, "r")
@@ -227,6 +278,15 @@ for v in opt_present:
     dst[v][:] = aux[v][:]
     opt_copied += 1
 
+raised_scalars = apply_lower_bounds(dst, lower_bounds)
+if raised_scalars:
+    total_raised = sum(count for count, _, _ in raised_scalars.values())
+    print(f"Scalar lower bounds: raised {total_raised} values in "
+          f"{len(raised_scalars)} variables:")
+    for name, (count, minimum, bound) in raised_scalars.items():
+        print(f"  raised {name}: {count} values below {bound:g}, minimum before {minimum:.4g}")
+else:
+    print("Scalar lower bounds: no values below their bounds")
 if aux_file:
     aux.close()
 src.close()
