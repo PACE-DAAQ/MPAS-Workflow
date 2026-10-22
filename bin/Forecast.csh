@@ -667,24 +667,13 @@ if ("${updateATMVarsFromCold}" == True) then
   if ( $?carryPersistentHno3 ) then
     if ( "$carryPersistentHno3" == "False" ) set carryFlags = ($carryFlags --reset-hno3)
   endif
-  # Persistent HNO3 and land are not analysis variables. Carry requested
-  # fields from the matching prior forecast even if JEDI omits them from its
-  # output. The auxiliary file contains GOCART cycling fields, so never apply
-  # this path to a non-GOCART physics suite merely because the model defaults
-  # define the carry switches.
-  set useAuxCarry = False
+  # Non-analysis chemistry, persistent HNO3, land and hydrometeors are not JEDI
+  # analysis variables, so in a GOCART2G DA cycle take them from the matching
+  # prior forecast (the background the DA started from) rather than from the
+  # analysis or recentered IC. The carry switches only decide which of HNO3,
+  # land and hydrometeors are carried, not where they come from. The auxiliary
+  # file holds GOCART cycling fields, so non-GOCART suites never use it.
   if ( "$PhysicsSuite" == "MPAS-GOCART2G" && "$ArgDACycling" == "True" ) then
-    if ( $?carryLandState ) then
-      if ( "$carryLandState" == "True" ) set useAuxCarry = True
-    endif
-    if ( $?carryPersistentHno3 ) then
-      if ( "$carryPersistentHno3" == "True" ) set useAuxCarry = True
-    endif
-    if ( $?carryHydrometeors ) then
-      if ( "$carryHydrometeors" == "True" ) set useAuxCarry = True
-    endif
-  endif
-  if ( "$useAuxCarry" == "True" ) then
     if ( "$ArgEmissionRole" == "ensemble" ) then
       set auxDir = "$prevCyclingEnsFCDirs[$ArgMember]"
     else
