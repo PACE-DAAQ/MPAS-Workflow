@@ -1,4 +1,4 @@
-"""copy_mpas_vars.py must clip negative water vapour, hydrometeors and aerosol scalars."""
+"""copy_mpas_vars.py must bound water vapour (>= 1e-12), hydrometeors and aerosol scalars (>= 0)."""
 import ast
 from pathlib import Path
 import subprocess
@@ -23,6 +23,7 @@ backgrounds = assignments['background_chemistry_vars']
 numbers = assignments['number_concentration_vars']
 clipped_names = ['qv'] + hydrometeors + aerosols + backgrounds
 untouched_name = 'theta'
+qv_floor = np.float32(1.0e-12)  # the float32 value the destination stores
 
 
 def write_file(path, value_by_name):
@@ -57,7 +58,7 @@ with tempfile.TemporaryDirectory() as tmp:
         for name in clipped_names:
             values = dataset[name][:]
             assert values.min() >= 0, f'{name} still negative: {values}'
-        assert dataset['qv'][0, 0] == 0.0 and dataset['qv'][0, 1] == 5.0
+        assert dataset['qv'][0, 0] == qv_floor and dataset['qv'][0, 1] == 5.0
         for name in backgrounds:
             assert dataset[name][0, 0] == 0.0, name
         for name in numbers:
@@ -67,8 +68,8 @@ with tempfile.TemporaryDirectory() as tmp:
                 continue
             assert dataset[name][0, 0] == 0.0 and dataset[name][0, 1] == 5.0, name
         assert dataset[untouched_name][0, 0] == -7.0, 'non-scalar field must not be clipped'
-    assert 'clipped qv: 1 values' in result.stdout, result.stdout
-    assert 'Non-negativity clip: set' in result.stdout
+    assert 'raised qv: 1 values below 1e-12' in result.stdout, result.stdout
+    assert 'Scalar lower bounds: raised' in result.stdout
 
     # Clean input: nothing to clip, and the log says so.
     write_file(tmp / 'clean_source.nc', {name: 4.0 for name in aerosols + hydrometeors})
@@ -78,7 +79,27 @@ with tempfile.TemporaryDirectory() as tmp:
     clean = subprocess.run(
         [sys.executable, str(script), '--include-hydrometeors', str(tmp / 'clean_source.nc'), str(clean_destination)],
         check=True, capture_output=True, text=True)
-    assert 'no negative scalar values found' in clean.stdout, clean.stdout
+    assert 'no values below their bounds' in clean.stdout, clean.stdout
+
+    # Exact-zero water vapour is raised to the floor (zero is not safe for the
+    # shortwave radiation); a second pass over the result finds nothing to raise
+    # in qv, i.e. the float32 floor value is not re-counted as below the bound.
+    zero_cold_values = {**{name: 2.0 for name in aerosols + hydrometeors + backgrounds}, 'qv': 0.0}
+    write_file(tmp / 'zero_cold.nc', zero_cold_values)
+    zero_destination = tmp / 'zero_out.nc'
+    zero_destination.write_bytes((tmp / 'zero_cold.nc').read_bytes())
+    zero = subprocess.run(
+        [sys.executable, str(script), '--include-hydrometeors', str(tmp / 'clean_source.nc'), str(zero_destination)],
+        check=True, capture_output=True, text=True)
+    with Dataset(zero_destination) as dataset:
+        assert dataset['qv'][0, 0] == qv_floor and dataset['qv'][0, 1] == 5.0
+    assert 'raised qv: 1 values below 1e-12, minimum before 0' in zero.stdout, zero.stdout
+    again = subprocess.run(
+        [sys.executable, str(script), '--include-hydrometeors', str(tmp / 'clean_source.nc'), str(zero_destination)],
+        check=True, capture_output=True, text=True)
+    assert 'no values below their bounds' in again.stdout, again.stdout
+    with Dataset(zero_destination) as dataset:
+        assert dataset['qv'][0, 0] == qv_floor
 
     # Reset mode: persistent_hno3 is not carried, so the cold IC's negative value
     # would reach the forecast unless it is clipped independently.
@@ -93,6 +114,6 @@ with tempfile.TemporaryDirectory() as tmp:
         check=True, capture_output=True, text=True)
     with Dataset(reset_destination) as dataset:
         assert dataset['persistent_hno3'][0, 0] == 0.0 and dataset['persistent_hno3'][0, 1] == 5.0
-    assert 'clipped persistent_hno3: 1 values' in reset.stdout, reset.stdout
+    assert 'raised persistent_hno3: 1 values below 0' in reset.stdout, reset.stdout
 
-print('PASS: negative qv, hydrometeors and all aerosol scalars are clipped at zero; other fields untouched')
+print('PASS: qv floored at 1e-12; hydrometeors and all aerosol scalars bounded at zero; other fields untouched')
