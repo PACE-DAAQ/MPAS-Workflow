@@ -87,10 +87,8 @@
         <var name="nh3_anth_ags"/>
         <var name="nh3_anth_awb"/>
         <var name="nh3_anth_ene"/>
-        <var name="nh3_anth_fef"/>
         <var name="nh3_anth_ind"/>
         <var name="nh3_anth_res"/>
-        <var name="nh3_anth_shp"/>
         <var name="nh3_anth_slv"/>
         <var name="nh3_anth_sum"/>
         <var name="nh3_anth_swd"/>

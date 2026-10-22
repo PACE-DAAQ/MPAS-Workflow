@@ -55,10 +55,14 @@ set updateATMVarsFromCold = "$12"
 set ArgRestartInterval = "$13"
 if ( "$ArgRestartInterval" == "" ) set ArgRestartInterval = none
 
-# ArgEmissionRole: str, optional; "central" (default) or "ensemble". Accepted for call
-# compatibility with ExtendedForecast; only "central" behaviour is implemented here.
+# ArgEmissionRole: str, optional; "central" (default) or "ensemble". The explicit role
+# protects central member 1 from ensemble-only inventory routing.
 set ArgEmissionRole = "$14"
 if ( "$ArgEmissionRole" == "" ) set ArgEmissionRole = central
+if ( "$ArgEmissionRole" != "central" && "$ArgEmissionRole" != "ensemble" ) then
+  echo "ERROR: invalid emission role $ArgEmissionRole"
+  exit 1
+endif
 
 # ArgSurfaceUpdateFile: str, optional time-varying surface (sst, xice) file, read through
 # the surface stream every ArgSurfaceInputInterval when ArgUpdateSea is True. Empty keeps
@@ -88,6 +92,7 @@ source config/auto/experiment.csh
 source config/auto/externalanalyses.csh
 source config/auto/members.csh
 source config/auto/model.csh
+if ( -e config/auto/ensembleforecast.csh ) source config/auto/ensembleforecast.csh
 source config/auto/invariantstream.csh
 source config/auto/workflow.csh
 # Guarded because only suites that construct an Emissions component generate this file;
@@ -358,6 +363,18 @@ sed -i 's@{{prmArea}}@'${prmAreaFile}'@' ${StreamsFile}
 ## Without this an unknown variant leaves {{anthBC}}/{{biobBC}}/... literal in the
 ## streams file and the task reports success until MPAS fails opening the name.
 rm -f ./FAIL
+if ( $?onlineEmissionFactors ) then
+  if ( "$onlineEmissionFactors" == "True" ) then
+    if ( ! $?nEnsFCMembers ) set nEnsFCMembers = 0
+    python3 ${mainScriptDir}/tools/emission_members.py --table "$emissionMemberTable" --count $nEnsFCMembers --role $ArgEmissionRole --member $ArgMember --dust $dustEmissionFactor --seasalt $seasaltEmissionFactor --csh emission_member.csh
+    if ( $status != 0 ) then
+      echo "ERROR: invalid emission member configuration" > ./FAIL
+      exit 1
+    endif
+    source emission_member.csh
+  endif
+endif
+
 source ${mainScriptDir}/bin/SetStreamsVariant.csh
 if ( -e ./FAIL ) then
   echo "ERROR ${0}: SetStreamsVariant.csh failed for the forecast streams file"
@@ -535,6 +552,14 @@ set prmBburn = `echo "${doBburnPrm}" | tr '[A-Z]' '[a-z]'`
 set prmFRP   = `echo "${doFrp}" | tr '[A-Z]' '[a-z]'`
 sed -i 's@PRMbburnFlag@'${prmBburn}'@' $NamelistFile
 sed -i 's@PRMfrpFlag@'${prmFRP}'@' $NamelistFile
+if ( $?selectedDustFactor ) then
+  python3 ${mainScriptDir}/tools/emission_members.py --dust $selectedDustFactor --seasalt $selectedSeasaltFactor --namelist $NamelistFile
+  if ( $status != 0 ) then
+    echo "ERROR: emission-factor namelist generation failed" > ./FAIL
+    exit 1
+  endif
+endif
+
 
 # Opt-in only: old model executables never see the new namelist key/stream.
 if ( $?emissionsPrmVegetation ) then
@@ -632,7 +657,26 @@ if ("${updateATMVarsFromCold}" == True) then
   #module load nco
   #ncks -A -v qbcphobic,qbcphilic,qbrphobic,qbrphilic,qocphobic,qocphilic,qdust1,qdust2,qdust3,qdust4,qdust5,qni1,qni2,qni3,qso2,qso2v,qso4,qso4v,qseas1,qseas2,qseas3,qseas4,qseas5,qdms,qnh3,qnh4a,qsoapa,qsoapbb,qsoapbg,background_dms,background_h2o2,background_oh,background_no3,background_hno3,background_ptrop,qmsa ${icFile}_tmp ${icFile}
   # Use the workflow-local copy helper from the latest mpas-gocart2g branch.
-  python3 ${mainScriptDir}/tools/copy_mpas_vars.py ${icFile}_tmp ${icFile}
+  set carryFlags = ()
+  if ( $?carryLandState ) then
+    if ( "$carryLandState" == "True" ) set carryFlags = ($carryFlags --include-land)
+  endif
+  if ( $?carryPersistentHno3 ) then
+    if ( "$carryPersistentHno3" == "False" ) set carryFlags = ($carryFlags --reset-hno3)
+  endif
+  # Persistent HNO3 and land are not analysis variables. Carry them from
+  # the matching prior forecast even if JEDI omits them from its output.
+  if ( "$ArgDACycling" == "True" && $?carryLandState && $?carryPersistentHno3 ) then
+    if ( "$ArgDACycling" == "True" ) then
+      if ( "$ArgEmissionRole" == "ensemble" ) then
+        set auxDir = "$prevCyclingEnsFCDirs[$ArgMember]"
+      else
+        set auxDir = "$prevCyclingFCDirs[$ArgMember]"
+      endif
+      set carryFlags = ($carryFlags --aux-source "${auxDir}/${FCFilePrefix}.${thisMPASFileDate}.nc")
+    endif
+  endif
+  python3 ${mainScriptDir}/tools/copy_mpas_vars.py $carryFlags ${icFile}_tmp ${icFile}
   # copy_mpas_vars.py fails fast when a cycling-state variable is missing. tcsh
   # does not abort on a non-zero child, so without this check the guard becomes a
   # silent no-op and the forecast runs from the untouched cold IC, discarding the

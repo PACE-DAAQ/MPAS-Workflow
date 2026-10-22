@@ -16,6 +16,8 @@ from initialize.data.Model import Model
 
 class Build(Component):
   variablesWithDefaults = {
+    'ens recenter directory': ['', str],
+    'forecast environment script': ['', str],
     ## mpas bundle
     # mpas-bundle build directory
     'mpas bundle': ['/replace/this/in/host/specific/code/below', str],
@@ -172,8 +174,9 @@ class Build(Component):
     self._set('RTPPBuildDir', self['mpas bundle']+'/bin')
 
     ## EnsRecenter (ensemble recentering; see EnsembleForecast / RecenterEnsemble.csh)
+    self._set('forecastEnvironmentScript', self['forecast environment script'])
     self._set('EnsRecenterEXE', 'mpasjedi_ens_recenter.x')
-    self._set('EnsRecenterBuildDir', self['mpas bundle']+'/bin')
+    self._set('EnsRecenterBuildDir', self['ens recenter directory'] or self['mpas bundle']+'/bin')
 
     ## RTPS
     self._set('RTPSEXE', 'mpasjedi_rtps.x')

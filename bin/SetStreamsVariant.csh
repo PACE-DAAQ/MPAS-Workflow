@@ -81,7 +81,17 @@ if ( "$streamsVariant" == "" ) set streamsVariant = cntl
 # When the scenario sets 'model: member variants: [...]' (exported as the memberVariants array) and
 # this is an ensemble member (ArgMember is set by Forecast.csh), member NN uses memberVariants[NN]
 # instead of the scenario-wide 'streams variant'. Members beyond the list keep streamsVariant.
-if ( $?memberVariants && $?ArgMember ) then
+# The only exception is a deterministic central forecast (ArgEmissionRole central and
+# members: n <= 1): it keeps streamsVariant, so it never picks up ensemble row 1 when an
+# EnsembleForecast runs beside it. EnsembleForecast members (role ensemble) and the members of a
+# multi-member central ensemble (members: n > 1, e.g. ForecastFromExternalAnalyses) still use
+# memberVariants, as do callers that do not export nMembers.
+if ( ! $?ArgEmissionRole ) set ArgEmissionRole = central
+set useMemberVariant = True
+if ( "$ArgEmissionRole" == "central" && $?nMembers ) then
+  if ( "$nMembers" <= 1 ) set useMemberVariant = False
+endif
+if ( "$useMemberVariant" == "True" && $?memberVariants && $?ArgMember ) then
   if ( $#memberVariants > 0 && $ArgMember >= 1 && $ArgMember <= $#memberVariants ) then
     set streamsVariant = "$memberVariants[$ArgMember]"
     echo "SetStreamsVariant.csh (INFO): ensemble member $ArgMember uses streams variant '$streamsVariant'"
