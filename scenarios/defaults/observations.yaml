@@ -103,6 +103,8 @@ observations:
         oci_uaa_pace_aod_raw_r4: oci_uaa_pace_aod   # round four: raw (uncorrected) OCI files, stepwise obs error on raw AOD
         oci_uaa_pace_aod_multiwl: oci_uaa_pace_aod   # same IODA files as oci_uaa_pace_aod; 354/550/870 nm active
         oci_uaa_pace_aod_multiwl_raw_r4: oci_uaa_pace_aod   # round four multiwl: same raw OCI files, channels 1,4,6 active
+        openaq_pm25_gocart: openaq_sfcpm   # OpenAQ PM2.5 through the GOCART InsituPM operator, same files
+        openaq_pm10_gocart: openaq_sfcpm   # OpenAQ PM10 through the GOCART InsituPM operator, same files
         harp2_fmapol_pace_aod: harp2_fmapol_pace_aod_v4        # files are <name>_v4_obs_<date>.h5
         harp2_fmapol_pace_aod_r4: harp2_fmapol_pace_aod_v4   # round four polar: raw v4 files, 550 nm active
         harp2_fmapol_pace_aod_bc_r4: harp2_fmapol_pace_aod_bc_r4   # polar_new: AERONET L2.0 bias-corrected copies (obs_bc/)
@@ -169,6 +171,8 @@ observations:
           oci_uaa_pace_aod_raw_r4: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
           oci_uaa_pace_aod_multiwl: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
           oci_uaa_pace_aod_multiwl_raw_r4: /glade/campaign/ncar/nmmm0081/input/obs/oci_uaa_pace_aod
+          openaq_pm25_gocart: /glade/campaign/ncar/nmmm0081/input/obs/openaq_sfcpm   # InsituPM GOCART operator, same files as openaq_sfcpm
+          openaq_pm10_gocart: /glade/campaign/ncar/nmmm0081/input/obs/openaq_sfcpm
           modis_aqua_aod:   /glade/campaign/ncar/nmmm0081/input/obs/modis_aqua_aod
           modis_terra_aod:  /glade/campaign/ncar/nmmm0081/input/obs/modis_terra_aod
           viirs_aod_db_n20: /glade/campaign/ncar/nmmm0081/input/obs/viirs_aod_db_n20-thinned0p8

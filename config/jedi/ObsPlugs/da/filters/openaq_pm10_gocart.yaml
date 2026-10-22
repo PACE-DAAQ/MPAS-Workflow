@@ -1,0 +1,63 @@
+  obs filters:
+  # the OpenAQ file carries ObsError = 0; give every obs a nonzero error first so that
+  # rejected obs do not turn R^-1 into infinity in the minimizer
+  - filter: Perform Action
+    filter variables:
+    - name: particulatematter10Surface
+    action:
+      name: assign error
+      error parameter: 1.0e-08
+  # best OpenAQ quality flag only (the file carries PreQC 0-4)
+  - filter: PreQC
+    maxvalue: 0
+  # North America only
+  - filter: Domain Check
+    where:
+    - variable:
+        name: latitude@MetaData
+      minvalue: 14
+      maxvalue: 72
+    - variable:
+        name: longitude@MetaData
+      minvalue: -170
+      maxvalue: -50
+  - filter: Bounds Check
+    filter variables:
+    - name: particulatematter10Surface
+    minvalue: 0.0
+    maxvalue: 6.00e-06
+    action:
+      name: reject
+  # error: ramp from the floor to 40 % of the value, keyed on the observation (kg m-3)
+  - filter: Perform Action
+    filter variables:
+    - name: particulatematter10Surface
+    action:
+      name: assign error
+      error function:
+        name: ObsFunction/ObsErrorModelRamp
+        options:
+          xvar:
+            name: ObsValue/particulatematter10Surface
+          x0: [3.75e-09]
+          x1: [1.00e-06]
+          err0: [1.50e-09]
+          err1: [4.00e-07]
+  - filter: Gaussian Thinning
+    horizontal_mesh: 60
+    action:
+      name: reduce obs space
+  - filter: Bounds Check
+    filter variables:
+    - name: particulatematter10Surface
+    minvalue: 0.0
+    maxvalue: 6.00e-06
+    action:
+      name: reject
+  # loose check: with an error proportional to the observation, a tight check only rejects model overestimates
+  - filter: Background Check
+    filter variables:
+    - name: particulatematter10Surface
+    threshold: 8
+    action:
+      name: reject

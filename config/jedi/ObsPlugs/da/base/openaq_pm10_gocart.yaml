@@ -1,0 +1,43 @@
+- obs space:
+    <<: *ObsSpace
+    name: openaq_pm10_gocart
+    _obsdatain: &ObsDataIn
+      engine:
+        type: H5File
+        obsfile: {{InDBDir}}/openaq_pm10_gocart_obs_{{thisValidDate}}.h5
+        missing file action: warn
+    _obsdataout: &ObsDataOut
+      engine:
+        type: H5File
+        obsfile: {{OutDBDir}}{{MemberDir}}/{{obsPrefix}}_openaq_pm10_gocart{{ObsOutSuffix}}.h5
+    obsdatain:
+      <<: *{{ObsDataIn}}
+    {{ObsDataOut}}
+    simulated variables: [particulatematter10Surface]
+  obs error: *ObsErrorDiagonal
+  <<: *horizObsLoc
+  obs operator:
+    name: InsituPM
+    model: GOCART
+    tracer_geovals:
+      - mass_fraction_of_hydrophobic_black_carbon_in_air
+      - mass_fraction_of_hydrophilic_black_carbon_in_air
+      - mass_fraction_of_hydrophobic_brown_carbon_in_air
+      - mass_fraction_of_hydrophilic_brown_carbon_in_air
+      - mass_fraction_of_hydrophobic_organic_carbon_in_air
+      - mass_fraction_of_hydrophilic_organic_carbon_in_air
+      - mass_fraction_of_dust001_in_air
+      - mass_fraction_of_dust002_in_air
+      - mass_fraction_of_dust003_in_air
+      - mass_fraction_of_dust004_in_air
+      - mass_fraction_of_dust005_in_air
+      - mass_fraction_of_sea_salt001_in_air
+      - mass_fraction_of_sea_salt002_in_air
+      - mass_fraction_of_sea_salt003_in_air
+      - mass_fraction_of_sea_salt004_in_air
+      - mass_fraction_of_sea_salt005_in_air
+      - mass_fraction_of_sulfate_in_air
+      - mass_fraction_of_nitrate001_in_air
+      - mass_fraction_of_nitrate002_in_air
+      - mass_fraction_of_nitrate003_in_air
+    tracer_weights: [1, 1, 1, 1, 1, 1, 1, 1, 1, 0.737, 0, 1, 1, 1, 1, 0, 1.54, 1.41, 0.808, 0.164]
