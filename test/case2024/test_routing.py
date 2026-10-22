@@ -40,6 +40,27 @@ class Routing(unittest.TestCase):
         for value in [-1, 'nan', 'inf']:
             with self.assertRaises(ValueError): factor(value)
 
+    def test_cycling_state_defaults_and_gocart_aux_gate(self):
+        from initialize.data.Model import Model
+
+        self.assertEqual(Model.variablesWithDefaults['carry persistent hno3'], [True, bool])
+        self.assertEqual(Model.variablesWithDefaults['carry land state'], [True, bool])
+        self.assertEqual(Model.variablesWithDefaults['carry hydrometeors'], [True, bool])
+
+        forecast = (ROOT / 'bin/Forecast.csh').read_text()
+        self.assertIn(
+            'if ( "$PhysicsSuite" == "MPAS-GOCART2G" && "$ArgDACycling" == "True" ) then',
+            forecast,
+        )
+        # The carry source does not depend on the carry switches: every GOCART2G
+        # DA cycle passes the prior forecast as --aux-source.
+        self.assertNotIn('useAuxCarry', forecast)
+        self.assertIn('--aux-source', forecast)
+        self.assertIn('--include-hydrometeors', forecast)
+        self.assertIn('source config/environmentNPL.csh; python3 tools/copy_mpas_vars.py', forecast)
+        # The NPL child shell cds to mainScriptDir, so the IC paths must be absolute.
+        self.assertIn('${cwd}/${icFile}_tmp ${cwd}/${icFile}', forecast)
+
     def test_central_and_all_members(self):
         with tempfile.TemporaryDirectory() as d:
             d = Path(d)

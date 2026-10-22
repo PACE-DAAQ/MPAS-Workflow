@@ -661,22 +661,33 @@ if ("${updateATMVarsFromCold}" == True) then
   if ( $?carryLandState ) then
     if ( "$carryLandState" == "True" ) set carryFlags = ($carryFlags --include-land)
   endif
+  if ( $?carryHydrometeors ) then
+    if ( "$carryHydrometeors" == "True" ) set carryFlags = ($carryFlags --include-hydrometeors)
+  endif
   if ( $?carryPersistentHno3 ) then
     if ( "$carryPersistentHno3" == "False" ) set carryFlags = ($carryFlags --reset-hno3)
   endif
-  # Persistent HNO3 and land are not analysis variables. Carry them from
-  # the matching prior forecast even if JEDI omits them from its output.
-  if ( "$ArgDACycling" == "True" && $?carryLandState && $?carryPersistentHno3 ) then
-    if ( "$ArgDACycling" == "True" ) then
-      if ( "$ArgEmissionRole" == "ensemble" ) then
-        set auxDir = "$prevCyclingEnsFCDirs[$ArgMember]"
-      else
-        set auxDir = "$prevCyclingFCDirs[$ArgMember]"
-      endif
-      set carryFlags = ($carryFlags --aux-source "${auxDir}/${FCFilePrefix}.${thisMPASFileDate}.nc")
+  # Non-analysis chemistry, persistent HNO3, land and hydrometeors are not JEDI
+  # analysis variables, so in a GOCART2G DA cycle take them from the matching
+  # prior forecast (the background the DA started from) rather than from the
+  # analysis or recentered IC. The carry switches only decide which of HNO3,
+  # land and hydrometeors are carried, not where they come from. The auxiliary
+  # file holds GOCART cycling fields, so non-GOCART suites never use it.
+  if ( "$PhysicsSuite" == "MPAS-GOCART2G" && "$ArgDACycling" == "True" ) then
+    if ( "$ArgEmissionRole" == "ensemble" ) then
+      set auxDir = "$prevCyclingEnsFCDirs[$ArgMember]"
+    else
+      set auxDir = "$prevCyclingFCDirs[$ArgMember]"
     endif
+    set carryFlags = ($carryFlags --aux-source "${auxDir}/${FCFilePrefix}.${thisMPASFileDate}.nc")
   endif
-  python3 ${mainScriptDir}/tools/copy_mpas_vars.py $carryFlags ${icFile}_tmp ${icFile}
+  # Run the NetCDF state transfer in its own process/environment. The compiled
+  # forecast environment intentionally has no Python netCDF4 package, while
+  # environmentNPL.csh supplies the supported NumPy/netCDF4 stack. A child csh
+  # prevents the conda modules and libraries from leaking into atmosphere_model.
+  # The child cds to mainScriptDir to source the environment, so the IC paths
+  # must be absolute (icFile is relative to this forecast's work directory).
+  csh -f -c "cd ${mainScriptDir}; source config/environmentNPL.csh; python3 tools/copy_mpas_vars.py $carryFlags ${cwd}/${icFile}_tmp ${cwd}/${icFile}"
   # copy_mpas_vars.py fails fast when a cycling-state variable is missing. tcsh
   # does not abort on a non-zero child, so without this check the guard becomes a
   # silent no-op and the forecast runs from the untouched cold IC, discarding the
