@@ -80,8 +80,8 @@
     config_mynn_mixchems = true
     config_ntiedtke_ctrchems = true
     config_ntiedtke_scavchems = true
-/
     config_microp_re           = true
+/
 
 &soundings
     config_sounding_interval = 'none'
