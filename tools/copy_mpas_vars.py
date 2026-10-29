@@ -111,7 +111,7 @@ land_vars = [
 # carried condensate would otherwise start with zero number and Thompson would
 # rebuild it from its lower limits (nc = 2 m-3, ni = nr = 1e-12).
 number_concentration_vars = ["ni", "nr", "nc"]
-hydrometeor_vars = ["qc", "qr", "qi", "qs", "qg"] + number_concentration_vars
+hydrometeor_vars = ["qc", "qr", "qi", "qs", "qg", "ni", "nr", "nc"]
 
 optional_vars = []
 if include_land:
