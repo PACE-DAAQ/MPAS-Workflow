@@ -509,6 +509,15 @@ sed -i 's@modelDT@'${TimeStep}'@' $NamelistFile
 sed -i 's@diffusionLengthScale@'${DiffusionLengthScale}'@' $NamelistFile
 set configDODACycling = `echo "$ArgDACycling" | sed 's/\(.*\)/\L\1/'` # converts to lower-case
 sed -i 's@configDODACycling@'${configDODACycling}'@' $NamelistFile
+# Keep the namelist SST switch consistent with ArgUpdateSea. A template that sets
+# config_sst_update = true while the surface stream input_interval is 'none'
+# (ArgUpdateSea False, e.g. ColdForecast) makes physics_run_init abort in
+# mpas_set_timeInterval while parsing 'none' as an alarm interval.
+if ("${ArgUpdateSea}" == True) then
+  sed -i 's@config_sst_update *=.*@config_sst_update          = true@' $NamelistFile
+else
+  sed -i 's@config_sst_update *=.*@config_sst_update          = false@' $NamelistFile
+endif
 if ( ${self_IAU} == True ) then
   sed -i 's@{{IAU}}@on@' $NamelistFile
   echo "$0 (INFO): IAU is turned on."
