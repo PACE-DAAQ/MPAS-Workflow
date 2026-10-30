@@ -499,21 +499,19 @@ if( -e ${NamelistFile}) rm ${NamelistFile}
 cp -v $ModelConfigDir/forecast/$NamelistFile .
 sed -i 's@startTime@'${StartDate}'@' $NamelistFile
 sed -i 's@fcLength@'${self_FCLengthHR}':00:00@' $NamelistFile
-if ( "${ArgUpdateSea}" == True && "${ArgSurfaceUpdateFile}" != "" ) then
-  # a time-varying surface file is only read when config_sst_update is true
-  sed -i 's@config_sst_update *= *false@config_sst_update = true@' $NamelistFile
-endif
 sed -i 's@nCells@'${nCells}'@' $NamelistFile
 sed -i 's@{{meshRatio}}@'${meshRatio}'@' $NamelistFile
 sed -i 's@modelDT@'${TimeStep}'@' $NamelistFile
 sed -i 's@diffusionLengthScale@'${DiffusionLengthScale}'@' $NamelistFile
 set configDODACycling = `echo "$ArgDACycling" | sed 's/\(.*\)/\L\1/'` # converts to lower-case
 sed -i 's@configDODACycling@'${configDODACycling}'@' $NamelistFile
-# Keep the namelist SST switch consistent with ArgUpdateSea. A template that sets
+# Keep the namelist SST switch consistent with the surface stream: true only when a
+# time-varying surface file is read (ArgUpdateSea True with ArgSurfaceUpdateFile),
+# false otherwise, whatever the template says. A template that sets
 # config_sst_update = true while the surface stream input_interval is 'none'
 # (ArgUpdateSea False, e.g. ColdForecast) makes physics_run_init abort in
 # mpas_set_timeInterval while parsing 'none' as an alarm interval.
-if ("${ArgUpdateSea}" == True) then
+if ("${ArgUpdateSea}" == True && "${ArgSurfaceUpdateFile}" != "") then
   sed -i 's@config_sst_update *=.*@config_sst_update          = true@' $NamelistFile
 else
   sed -i 's@config_sst_update *=.*@config_sst_update          = false@' $NamelistFile
