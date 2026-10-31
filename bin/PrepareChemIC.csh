@@ -79,9 +79,6 @@ else
 endif
 
 set chem_cmd = "$py -m mpas_inputs.merra_chem ${initicChemistrySourceConfig} --valid ${thisValidDate} --output-dir ${WorkDir}"
-if ( "${initicChemistryProcessorDirectory}" != "" ) then
-  set chem_cmd = "${chem_cmd} --processor-dir ${initicChemistryProcessorDirectory}"
-endif
 echo "$0 (INFO): ${chem_cmd}"
 eval ${chem_cmd}
 if ( $status != 0 ) then
