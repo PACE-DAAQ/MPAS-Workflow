@@ -5,8 +5,6 @@
 # (HNO3 and NH3): 2019 monthly OVP archive, because the OVP product is
 # unavailable after 2019. CO, ISOPRENE, and HNO3COND are intentionally not
 # required because the current model IC path does not consume them.
-# This follows the resolution in
-# MPAS-Workflow issue #2 and the supplied create_gocartMPAS_ic.bash workflow.
 # No network fallback is enabled by default: missing controlled chemistry input
 # is fatal so provenance cannot silently change.
 processor config: merra_processor.yaml
