@@ -240,6 +240,16 @@ if ( "${initicChemistryMode}" != "off" ) then
     echo "ERROR ${0}: unresolved placeholder in ${StreamsFileInit}" > ./FAIL
     exit 1
   endif
+  ## PRM fire-statistics file. With config_init_bburnPRM = true, init_atmosphere reads the four
+  ## prm_lowbc_* streams, but only the emission inventories are linked here, so every init run
+  ## logs "attempted to read non-existent file" for the PRM file and initializes fire size and
+  ## FRP to zero (harmless: the forecast re-reads the file itself). Link it when it exists.
+  ## prmAreaFileResolved is set by SetStreamsVariant.csh (sourced above); PRMAreaDir by config/auto/build.csh.
+  if ( $?PRMAreaDir && $?prmAreaFileResolved ) then
+    if ( -f ${PRMAreaDir}/${prmAreaFileResolved} ) then
+      ln -sfv ${PRMAreaDir}/${prmAreaFileResolved} ./
+    endif
+  endif
 endif
 
 ## copy/modify dynamic namelist
