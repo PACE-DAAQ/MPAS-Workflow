@@ -11,6 +11,22 @@ import sys
 import yaml
 
 
+class _AnchorReuseLoader(yaml.SafeLoader):
+    """SafeLoader that accepts re-defined anchors (the later definition wins).
+
+    The generated JEDI yamls define the same anchor once per observer (e.g.
+    `_obsdatain: &ObsDataIn`). eckit accepts that, but PyYAML's composer rejects
+    it with "found duplicate anchor".
+    """
+
+    def compose_node(self, parent, index):
+        if not self.check_event(yaml.AliasEvent):
+            anchor = self.peek_event().anchor
+            if anchor is not None:
+                self.anchors.pop(anchor, None)
+        return super().compose_node(parent, index)
+
+
 def namelists(value):
     if isinstance(value, dict):
         for key, child in value.items():
@@ -30,7 +46,7 @@ def check(config, directory=Path('.')):
         # Legacy workflow templates use an unquoted %member% pattern accepted
         # by eckit; quote that scalar for PyYAML without changing the run file.
         text = re.sub(r"(?m)^(\s*pattern:\s*)(%[A-Za-z0-9_]+%)(\s*)$", r"\1'\2'\3", text)
-        data = yaml.safe_load(text)
+        data = yaml.load(text, Loader=_AnchorReuseLoader)
     paths = set(namelists(data))
     if not paths:
         raise ValueError('No geometry nml_file found in JEDI configuration')
