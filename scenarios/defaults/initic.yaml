@@ -41,7 +41,6 @@ initic:
   # Quoted: unquoted 'off' is a YAML 1.1 boolean and would be read as False.
   chemistry mode: 'off'
   chemistry source config: ''
-  chemistry processor directory: ''
   chemistry work directory: 'ChemIC/{{thisValidDate}}'
   chemistry prebuilt directory: ''
   # Empty => Build.gocart background lut directory; may be set to the ACOM

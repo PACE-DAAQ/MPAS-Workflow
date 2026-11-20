@@ -23,7 +23,6 @@ class InitIC(Component):
   variablesWithDefaults = {
     'chemistry mode': ['off', str, ['off', 'prebuilt', 'workflow']],
     'chemistry source config': ['', str],
-    'chemistry processor directory': ['', str],
     'chemistry work directory': ['ChemIC/{{thisValidDate}}', str],
     'chemistry prebuilt directory': ['', str],
     'chemistry background directory': ['', str],
@@ -54,7 +53,6 @@ class InitIC(Component):
     self._set('chemistry mode', chemistryMode)
     self._set('initicChemistryMode', chemistryMode)
     self._set('initicChemistrySourceConfig', self['chemistry source config'])
-    self._set('initicChemistryProcessorDirectory', self['chemistry processor directory'])
     self._set('initicChemistryWorkDir', self['chemistry work directory'])
     self._set('initicChemistryPrebuiltDir', self['chemistry prebuilt directory'])
     self._set('initicChemistryBackgroundDir', self['chemistry background directory'])

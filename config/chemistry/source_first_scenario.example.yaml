@@ -24,7 +24,6 @@ emissions:
 initic:
   chemistry mode: workflow
   chemistry source config: config/chemistry/merra2_source.example.yaml
-  chemistry processor directory: ${INIT_MPAS_GOCART2G_DIR}
   chemistry background directory: /glade/campaign/ncar/nmmm0081/input/initialization/gocart2g_bkg
 
 build:
