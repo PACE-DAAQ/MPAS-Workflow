@@ -60,7 +60,7 @@ class ForecastFromExternalAnalyses(SuiteBase):
     # Per-lead-time external analyses, observations and chemistry ICs exist so
     # the extended forecast can be verified against analyses/obs valid at each
     # lead time. With no post-processing requested they are pure overhead, and
-    # the analysis ones cannot succeed: GetGFSAnalysisFromRDA/UngribExternalAnalysis
+    # the analysis ones cannot succeed: GetGFSAnalysisFromGDEX/UngribExternalAnalysis
     # fetch only the analysis at the cycle time, so ExternalAnalysisToMPAS-<N>hr
     # has no source for N > 0 and init_atmosphere aborts. Fall back to the
     # components' own default of [0] -- just the analysis time.

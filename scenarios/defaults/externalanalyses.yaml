@@ -39,12 +39,21 @@ externalanalyses:
           directory: "/glade/campaign/ncar/nmmm0081/input/jedi/externalAnalyses/60kmMeshGFS"
         30km:
           directory: "/glade/campaign/mmm/parc/taosun/pandac/30kmMeshGFS/MPAS_IC_NEW"
+        15km:
+          directory: "/glade/campaign/mmm/parc/taosun/pandac/15kmMeshGFS/MPAS_IC"
+        15-3km:
+          directory: "/glade/campaign/mmm/parc/taosun/pandac/15km3kmVMeshGFS/MPAS_IC"
         60-3km:
           directory: "/glade/campaign/mmm/parc/taosun/pandac/60km3kmVMeshGFS/MPAS_IC_NEW"
-      RDA:
+      SIO:
+        30km:
+          directory: "/glade/campaign/univ/ucsd0041/ivette/files_2023/ivette_GenerateExternalAnalyses_2023case_new_gwd/ExternalAnalyses/30km"
+        60km:
+          directory: "/glade/campaign/univ/ucsd0041/ivette/files_2023/ivette_GenerateExternalAnalyses_2023case_new_gwd/ExternalAnalyses/60km"
+      CampaignOnline:
         common:
           PrepareExternalAnalysisTasks:
-          - "GetGFSAnalysisFromRDA"
+          - "GetGFSAnalysisFromGDEX"
           - "UngribExternalAnalysis"
           - "ExternalAnalysisToMPAS-{{mesh}}"
           - "ExternalAnalysisReady__"
@@ -90,3 +99,15 @@ externalanalyses:
           - "GetGDASAnalysisFromFTP"
           #Vtable: /glade/campaign/mmm/parc/liuz/pandac_common/vtables/Vtable.GFS.O3MR
           retry: '40*PT10M'
+
+    ERA5:
+      CampaignOnline:
+        common:
+          UngribPrefix: ERA5
+          PrepareExternalAnalysisTasks:
+          - "GetERA5AnalysisFromGDEX"
+          - "ExternalAnalysisToMPAS-{{mesh}}"
+          - "ExternalAnalysisReady__"
+          job:
+            GetAnalysisFrom:
+              retry: '3*PT5S'

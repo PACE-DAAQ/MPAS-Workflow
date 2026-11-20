@@ -43,11 +43,11 @@ fields:
   - isltyp
   - snowh
   - vegfra
-  - lai
   - smois
   - tslb
   - vorticity
   - w
+  - refl10cm
 
   # GOCART2G prognostic/persistent chemistry that is not directly part of the
   # current JEDI analysis-variable list.  These fields must remain available

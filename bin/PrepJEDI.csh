@@ -275,7 +275,11 @@ cd ${WorkDir}
 if ( ${thisValidDate} == ${nextFirstCycleDate} ) then
   set biasCorrectionDir = $initialVARBCcoeff
 else
-  set biasCorrectionDir = ${DAWorkDir}/$prevValidDate/$OutDBDir
+  # {{MemberDir}} is substituted per member in the YAML preparation stage, so that each EDA member
+  # reads its own coefficients from the previous cycle (e.g., /mem001, /mem002, ...).
+  # For deterministic variational (nMembers = 1), {{MemberDir}} is substituted with an empty
+  # string, so this is equivalent to ${DAWorkDir}/$prevValidDate/$OutDBDir.
+  set biasCorrectionDir = "${DAWorkDir}/$prevValidDate/${OutDBDir}{{MemberDir}}"
 endif
 # For EnKF, offline bias correction can be applied for bias correction
 if ( "$ArgAppType" == enkf ) then
@@ -344,8 +348,15 @@ foreach instrument ($observers)
         endif
       else
         if ( ! -f ${InDBDir}/${instrument}_obs_${thisValidDate}.h5 ) then
-          ln -sf ${biasCorrectionDir}/satbias_${i}.h5 ${DAWorkDir}/${thisValidDate}/${OutDBDir}
-          ln -sf ${biasCorrectionDir}/satbias_cov_${i}.h5 ${DAWorkDir}/${thisValidDate}/${OutDBDir}
+          set member = 1
+          while ( $member <= ${nMembers} )
+            set memDir = `${memberDir} $nMembers $member`
+            set memBiasCorrectionDir = `echo "${biasCorrectionDir}" | sed 's@{{MemberDir}}@'${memDir}'@'`
+            mkdir -p ${DAWorkDir}/${thisValidDate}/${OutDBDir}${memDir}
+            ln -sf ${memBiasCorrectionDir}/satbias_${i}.h5 ${DAWorkDir}/${thisValidDate}/${OutDBDir}${memDir}
+            ln -sf ${memBiasCorrectionDir}/satbias_cov_${i}.h5 ${DAWorkDir}/${thisValidDate}/${OutDBDir}${memDir}
+            @ member++
+          end
         endif         
       endif
     endif
@@ -532,7 +543,7 @@ sed -i 's@{{geoPrefix}}@'${geoPrefix}'_'${AppCategory}'@g' $thisYAML
 sed -i 's@{{diagPrefix}}@'${diagPrefix}'_'${AppCategory}'@g' $thisYAML
 
 # satellite bias correction directories
-sed -i 's@{{biasCorrectionDir}}@'${biasCorrectionDir}'@g' $prevYAML
+sed -i 's@{{biasCorrectionDir}}@'"${biasCorrectionDir}"'@g' $prevYAML
 sed -i 's@{{fixedTlapmeanCov}}@'${fixedTlapmeanCov}'@g' $prevYAML
 
 # method for the tropopause pressure determination
@@ -642,13 +653,6 @@ cat >>! ${thisSEDF} << EOF
 ${indent}- <<: *iterationConfig\
 EOF
 
-  if ( $iOuter == 1 ) then
-cat >>! ${thisSEDF} << EOF
-${indent}  diagnostics:\
-${indent}    departures: ombg\
-EOF
-  endif
-
   if ( $iOuter < $nOuterIterations ) then
     set nn = $nn\\
   endif
@@ -698,15 +702,29 @@ EOF
   sed -i 's@{{anStatePrefix}}@'${ANFilePrefix}'@g' $prevYAML
   sed -i 's@{{anStateDir}}@'${WorkDir}'/'${analysisSubDir}'@g' $prevYAML
 
-  # Hybrid Jb weights
-  # =================
-  if ( "$DAType" == "3dhybrid" || "$DAType" == "3dhybrid-crossed" || "$DAType" == "4dhybrid" ) then
-    sed -i 's@{{staticCovarianceWeight}}@'${staticCovarianceWeight}'@' $prevYAML
-    sed -i 's@{{ensembleCovarianceWeight}}@'${ensembleCovarianceWeight}'@' $prevYAML
+  # Nonlinear Jb evaluation
+  # =======================
+  # `jb evaluation: true` requires `full inverse: true` under `background error`
+  if ( "$jbEvaluation" == "True" ) then
+    sed -i 's@{{JbEvaluation}}@true@g' $prevYAML
+  else
+    sed -i 's@{{JbEvaluation}}@false@g' $prevYAML
   endif
 
-  if ( "$DAType" == "3dhybrid-allsky" ) then
-    sed -i 's@{{hybridCoefficientsDir}}@'${hybridCoefficientsDir}'@' $prevYAML
+  # Hybrid Jb weights
+  # =================
+  if ( "$DAType" =~ *"hybrid"* ) then
+    sed -i 's@{{staticCovarianceWeight}}@'${staticCovarianceWeight}'@' $prevYAML
+    sed -i 's@{{ensembleCovarianceWeight}}@'${ensembleCovarianceWeight}'@' $prevYAML
+    sed -i 's@{{hybridEnsembleWeightFile}}@'${hybridEnsembleWeightFile}'@' $prevYAML
+    sed -i 's@{{hybridStaticWeightFile}}@'${hybridStaticWeightFile}'@' $prevYAML
+    if ( ${hybridBECWeightFromFile} == "True" ) then
+       sed -i 's@{{staticBECWeight}}@*staticWeightFromFile@' $prevYAML
+       sed -i 's@{{ensembleBECWeight}}@*ensembleWeightFromFile@' $prevYAML
+    else
+       sed -i 's@{{staticBECWeight}}@*staticWeightFromValue@' $prevYAML
+       sed -i 's@{{ensembleBECWeight}}@*ensembleWeightFromValue@' $prevYAML
+    endif
   endif
 
   # Static Jb term
@@ -725,12 +743,27 @@ EOF
   #    end
   #  endif
     set VarSub = ""
+    set VarSub3D = ""
+    set VarSub2D = ""
     foreach var ($Variables)
       set VarSub = "$VarSub$var,"
+      if ( $var == "air_pressure_at_surface" ) then
+         set VarSub2D = "$VarSub2D$var,"
+      else if ( "$var" =~ mass_fraction_of_*_in_air ) then
+         # GOCART2G aerosol control variables have their own BUMP_NICAS grid entry
+         # (listed explicitly in the variational application yamls); keep them out of
+         # the 3D meteorological grid so the static B grid layout matches the NICAS files
+      else
+         set VarSub3D = "$VarSub3D$var,"
+      endif
     end
     # remove trailing comma
     set VarSub = `echo "$VarSub" | sed 's/.$//'`
+    set VarSub2D = `echo "$VarSub2D" | sed 's/.$//'`
+    set VarSub3D = `echo "$VarSub3D" | sed 's/.$//'`
     sed -i 's@{{bumpCovControlVariables}}@'$VarSub'@' $prevYAML
+    sed -i 's@{{bump3dControlVariables}}@'${VarSub3D}'@' $prevYAML
+    sed -i 's@{{bump2dControlVariables}}@'${VarSub2D}'@' $prevYAML
 
     # substitute bumpCov* file descriptors
     sed -i 's@{{bumpCovPrefix}}@'${bumpCovPrefix}'@' $prevYAML
