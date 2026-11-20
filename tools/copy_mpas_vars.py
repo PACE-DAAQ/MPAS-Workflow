@@ -7,7 +7,8 @@ backgrounds.  Two groups of state can be carried across the cycle:
 
   chemistry (always)  prognostic GOCART2G scalars plus persistent HNO3;
   land (--include-land)  prognostic soil and snow state;
-  hydrometeors (--include-hydrometeors) cloud, rain, ice, snow and graupel.
+  hydrometeors (--include-hydrometeors) cloud, rain, ice, snow and graupel,
+                                        with cloud, rain and ice number.
 
 Land cycling matters when meteorology is re-initialised from analysis every
 cycle: without it the land surface cold-starts from the analysis each time and
@@ -105,8 +106,12 @@ land_vars = [
 
 # Thompson microphysics prognostic condensates. Water vapour is refreshed with
 # the meteorological analysis; these five hydrometeor species are carried to
-# avoid cold-starting cloud condensate at every six-hour cycle.
-hydrometeor_vars = ["qc", "qr", "qi", "qs", "qg"]
+# avoid cold-starting cloud condensate at every six-hour cycle. The cloud, rain
+# and ice number concentrations travel with them: the cold IC has none, so
+# carried condensate would otherwise start with zero number and Thompson would
+# rebuild it from its lower limits (nc = 2 m-3, ni = nr = 1e-12).
+number_concentration_vars = ["ni", "nr", "nc"]
+hydrometeor_vars = ["qc", "qr", "qi", "qs", "qg", "ni", "nr", "nc"]
 
 optional_vars = []
 if include_land:
@@ -121,7 +126,6 @@ if include_hydrometeors:
 # --reset-hno3 removes it from vars_to_copy, yet the cold IC's own value must
 # still be bounded. Fields absent from the destination are skipped.
 water_vapour_vars = ["qv"]
-number_concentration_vars = ["ni", "nr", "nc"]
 background_chemistry_vars = ["background_h2o2", "background_oh", "background_no3", "background_hno3"]
 lower_bounds = dict.fromkeys(
     hydrometeor_vars + number_concentration_vars
@@ -182,12 +186,12 @@ else:
     print("Land cycling disabled (pass --include-land to carry soil/snow state)")
 if include_hydrometeors:
     print(f"Hydrometeor cycling ENABLED: will also carry {hydrometeor_vars}")
-    # The staged GFS init files contain qc/qr but not always qi/qs/qg. These
-    # fields are registered MPAS scalars and are present in the prior forecast,
-    # so add missing variables to the cold IC before copying them. Every species
-    # must exist in the source: carrying only some of them would silently defeat
-    # "carry all hydrometeors", so a gap is fatal and is checked before the
-    # destination is modified.
+    # The staged GFS init files contain qc/qr but not always qi/qs/qg, and never
+    # ni/nr/nc. These fields are registered MPAS scalars and are present in the
+    # prior forecast, so add missing variables to the cold IC before copying
+    # them. Every species must exist in the source: carrying only some of them
+    # would silently defeat "carry all hydrometeors", so a gap is fatal and is
+    # checked before the destination is modified.
     missing_hydrometeors = [name for name in hydrometeor_vars if name not in aux.variables]
     if missing_hydrometeors:
         raise KeyError(
