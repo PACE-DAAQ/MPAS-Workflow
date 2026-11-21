@@ -103,7 +103,6 @@ sed -i 's@{{ObsOutSuffix}}@@' $myYAML
 # (used to be in 'io pool' section of config/jedi/ObsPlugs/variational/ObsAnchors.yaml)
 sed -i '/_obsdataout/a\          write multiple files: true' $myYAML
 
- #106-122
 # Fail before MPI if required radiation tables are missing or empty.
 python "${pyDir}/check_jedi_tables.py" "$myYAML"
 if ( $status != 0 ) then
@@ -111,7 +110,11 @@ if ( $status != 0 ) then
   exit 1
 endif
 
-mpiexec ./${myEXE} $myYAML ./jedi.log >& jedi.log.all
+if ( $?numProcessors && "$numProcessors" != "None" ) then
+  mpiexec -np ${numProcessors} ./${myEXE} $myYAML ./jedi.log >& jedi.log.all
+else
+  mpiexec ./${myEXE} $myYAML ./jedi.log >& jedi.log.all
+endif
 
 #WITH DEBUGGER
 #module load arm-forge/19.1

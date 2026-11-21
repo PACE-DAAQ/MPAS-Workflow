@@ -17,22 +17,20 @@ _member: &memberConfig
   state variables: &incvars [{{AnalysisVariables}}]
   stream name: ensemble
 output:
-  filename: {{anStateDir}}{{MemberDir}}/{{anStatePrefix}}.$Y-$M-$D_$h.$m.$s.nc
-  stream name: analysis
+  analysis:
+    filename: {{anStateDir}}{{MemberDir}}/{{anStatePrefix}}.$Y-$M-$D_$h.$m.$s.nc
+    stream name: analysis
 variational:
   minimizer:
 {{VariationalMinimizer}}
   iterations:
 {{VariationalIterations}}
-final:
-  diagnostics:
-    departures: oman
 cost function:
   cost type: 3D-Var
   time window:
     begin: {{windowBegin}}
     length: {{windowLength}}
-  jb evaluation: false
+  jb evaluation: {{JbEvaluation}}
   geometry:
     nml_file: {{OuterNamelistFile}}
     streams_file: {{OuterStreamsFile}}{{StreamsFileMember}}
@@ -44,9 +42,16 @@ cost function:
     date: *analysisDate
   background error:
     covariance model: hybrid
+    full inverse: {{JbEvaluation}}
+    no outer loop update: true
     components:
     - weight:
-        value: {{staticCovarianceWeight}}
+        _staticWeightFromFile: &staticWeightFromFile
+          stream name: control
+          filename: {{hybridStaticWeightFile}}
+        _staticWeightFromValue: &staticWeightFromValue
+          value: {{staticCovarianceWeight}}
+        <<: {{staticBECWeight}}
       covariance:
         covariance model: SABER
         saber central block:
@@ -61,9 +66,9 @@ cost function:
               read local nicas: true
             grids:
               - model:
-                  variables: [air_horizontal_streamfunction,air_horizontal_velocity_potential,air_temperature,water_vapor_mixing_ratio_wrt_moist_air]
+                  variables: [{{bump3dControlVariables}}]
               - model:
-                  variables: [air_pressure_at_surface]
+                  variables: [{{bump2dControlVariables}}]
               # aerosol control variables: without this grid entry BUMP_NICAS is not applied to them
               # (Dirac test 2026-09-22 showed a single-cell, i.e. diagonal, aerosol response)
               - model:
@@ -97,7 +102,12 @@ cost function:
           input variables: *ctlvars
           output variables: *incvars
     - weight:
-        value: {{ensembleCovarianceWeight}}
+        _ensembleWeightFromFile: &ensembleWeightFromFile
+          stream name: control
+          filename: {{hybridEnsembleWeightFile}}
+        _ensembleWeightFromValue: &ensembleWeightFromValue
+          value: {{ensembleCovarianceWeight}}
+        <<: {{ensembleBECWeight}}
       covariance:
         covariance model: ensemble
         localization:

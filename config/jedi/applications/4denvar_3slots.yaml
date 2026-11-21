@@ -23,23 +23,21 @@ _member config3: &memberConfig3
   <<: *memberConfig1
   date: &date3 {{thisISO8601Date3}}
 output:
-  filename: {{anStateDir}}{{MemberDir}}/{{anStatePrefix}}.$Y-$M-$D_$h.$m.$s.nc
-  stream name: analysis
+  analysis:
+    filename: {{anStateDir}}{{MemberDir}}/{{anStatePrefix}}.$Y-$M-$D_$h.$m.$s.nc
+    stream name: analysis
 variational:
   minimizer:
 {{VariationalMinimizer}}
   iterations:
 {{VariationalIterations}}
-final:
-  diagnostics:
-    departures: oman
 cost function:
   cost type: 4D-Ens-Var
   time window:
     begin: {{windowBegin}}
     length: {{windowLength}}
   subwindow: {{subwindowLength}}
-  jb evaluation: false
+  jb evaluation: {{JbEvaluation}}
   geometry:
     nml_file: {{OuterNamelistFile}}
     streams_file: {{OuterStreamsFile}}{{StreamsFileMember}}
@@ -58,6 +56,8 @@ cost function:
       date: *date3
   background error:
     covariance model: ensemble
+    full inverse: {{JbEvaluation}}
+    no outer loop update: true
     localization:
       localization method: SABER
       saber central block:

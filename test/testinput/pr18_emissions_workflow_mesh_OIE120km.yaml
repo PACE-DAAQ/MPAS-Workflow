@@ -205,12 +205,12 @@ observations:
   # Observations declares 'resource' as a required variable, so it must be present for the suite
   # to be generated.  Same value as the 120 km baseline scenario; nothing is fetched because the
   # variational family does not execute.
-  resource: GladeRDAOnline
+  resource: CampaignOnline
 
 externalanalyses:
   # Same as the 120 km baseline scenario.  Left at default 'execute' so the graph keeps exactly
   # the shape a real cycling experiment has; nothing downstream consumes its output here.
-  resource: "GFS.RDA"
+  resource: "GFS.CampaignOnline"
 
 # ==================================================================================================
 # WHAT THIS SCENARIO DOES *NOT* EXERCISE (be aware before approving on this test alone):
