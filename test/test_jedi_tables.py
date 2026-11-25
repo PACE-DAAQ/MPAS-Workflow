@@ -33,6 +33,15 @@ class TablesTests(unittest.TestCase):
             config.write_text('cost function:\n  geometry:\n    nml_file: nml\n  background:\n    pattern: %iMember%\n')
             self.assertEqual(len(check(config,root)),2)
 
+    def test_repeated_anchor_accepted(self):
+        # Generated yamls define the same anchor once per observer; eckit takes the later one.
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);config=self.fixture(root)
+            config.write_text('geometry:\n  nml_file: nml\nobservers:\n'
+                              '- _obsdatain: &ObsDataIn {obsfile: a.h5}\n  obsdatain: *ObsDataIn\n'
+                              '- _obsdatain: &ObsDataIn {obsfile: b.h5}\n  obsdatain: *ObsDataIn\n')
+            self.assertEqual(len(check(config,root)),2)
+
     def test_non_rrtmg_does_not_require_tables(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);config=self.fixture(root)
