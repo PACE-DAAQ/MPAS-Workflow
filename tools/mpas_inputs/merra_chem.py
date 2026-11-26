@@ -2,18 +2,20 @@
 """Prepare MERRA-2/GMI chemistry intermediates for MPAS init_atmosphere.
 
 The wrapper intentionally starts from the raw aerosol and OVP resources rather
-than a prebuilt MPAS chemistry file.  It drives the project's
-``init_MPAS-GOCART2G/run_processing.py`` and makes missing required chemistry
-fields fatal by default.  HNO3/NH3 scaling is supported as an explicit
+than a prebuilt MPAS chemistry file.  It resolves and validates the sources,
+writes a per-run converter configuration, and calls ``merra_intermediate`` to
+write the WPS intermediate files; missing required chemistry fields are fatal
+by default.  HNO3/NH3 scaling is supported as an explicit
 sensitivity on the raw chemistry source (separate from emission scaling).
 """
 from __future__ import annotations
-import argparse, calendar, importlib.util, json, os, sys, tempfile
+import argparse, calendar, json, os, sys, tempfile
 from datetime import datetime
 from pathlib import Path
 import yaml
 
 from .resource import obtain, link_or_copy
+from . import merra_intermediate
 
 
 def _source_date(valid: datetime, src_cfg: dict) -> datetime:
@@ -36,21 +38,6 @@ def _vars(path: Path):
 
 def _required_for_file(species_map, file_key):
     return {str(x["source"]) for x in species_map if str(x.get("file", "prefix_in_1")) == file_key}
-
-
-def _load_processor(processor_dir: Path | None):
-    """Load an optional external processor, else use the bundled issue-#2 converter."""
-    if processor_dir is None:
-        from . import merra_intermediate as mod
-        return mod
-    path = processor_dir / "run_processing.py"
-    if not path.exists():
-        raise FileNotFoundError(path)
-    spec = importlib.util.spec_from_file_location("mpas_gocart_merra_processor", path)
-    mod = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(mod)
-    return mod
 
 
 def _template_vars(valid: datetime, sd: datetime):
@@ -116,9 +103,9 @@ def _resolve_input(cfg: dict, key: str, file_key: str, species, valid: datetime,
     }
 
 
-def _run_processor_once(base_proc_cfg: dict, cfg: dict, processor_dir: Path,
+def _run_processor_once(base_proc_cfg: dict, cfg: dict,
                         resolved: dict, valid: datetime, out: Path, work: Path):
-    """Run the legacy converter for exactly one target valid time."""
+    """Run the converter for exactly one target valid time."""
     import copy
     proc_cfg = copy.deepcopy(base_proc_cfg)
     p = proc_cfg["control_params"]
@@ -129,7 +116,7 @@ def _run_processor_once(base_proc_cfg: dict, cfg: dict, processor_dir: Path,
         suffix_key = f"suffix_in_{idx}"
         suffix = str(scfg.get("processor suffix", p.get(suffix_key, ".nc4")))
         alias_prefix = work / f"source_{idx}."
-        # run_processing.py forms prefix + YYYYMMDD + suffix.
+        # The converter forms each source path as prefix + YYYYMMDD + suffix.
         alias = Path(str(alias_prefix) + valid.strftime("%Y%m%d") + suffix)
         link_or_copy(src, alias)
         p[file_key] = str(alias_prefix)
@@ -145,21 +132,16 @@ def _run_processor_once(base_proc_cfg: dict, cfg: dict, processor_dir: Path,
     scaling = _apply_scaling(proc_cfg, cfg)
     tmpcfg = work / "processor_config.yaml"
     tmpcfg.write_text(yaml.safe_dump(proc_cfg, sort_keys=False))
-    mod = _load_processor(processor_dir)
-    mod.run_conversion(str(tmpcfg))
+    merra_intermediate.run_conversion(str(tmpcfg))
     expected = out / f"MERRA2:{valid:%Y-%m-%d_%H}"
     if not expected.exists():
         raise RuntimeError(f"MERRA chemistry processor did not create: {expected}")
     return expected, scaling
 
 
-def prepare(config_file: str, valid: datetime, output_dir: str,
-            processor_dir_override: str | None = None):
+def prepare(config_file: str, valid: datetime, output_dir: str):
     config_path = Path(config_file).expanduser().resolve()
     cfg = yaml.safe_load(config_path.read_text())
-    processor_raw = processor_dir_override or cfg.get("processor directory", "")
-    processor_raw = os.path.expandvars(str(processor_raw)).strip()
-    processor_dir = Path(processor_raw).expanduser() if processor_raw else None
     base_raw = os.path.expandvars(str(cfg.get("processor config", "merra_processor.yaml")))
     base_cfg = Path(base_raw).expanduser()
     if not base_cfg.is_absolute():
@@ -210,7 +192,7 @@ def prepare(config_file: str, valid: datetime, output_dir: str,
             resolved[file_key] = (src, scfg, sd)
             target_meta[key] = meta
         expected, scaling = _run_processor_once(
-            base_proc_cfg, cfg, processor_dir, resolved, target, out,
+            base_proc_cfg, cfg, resolved, target, out,
             out / f"work_{target:%Y%m%d_%H}")
         outputs = [expected]
         provenance["inputs"][f"{target:%H}"] = target_meta
@@ -248,8 +230,7 @@ def prepare(config_file: str, valid: datetime, output_dir: str,
         provenance["scaling"] = _apply_scaling(proc_cfg, cfg)
         tmpcfg = work / "processor_config.yaml"
         tmpcfg.write_text(yaml.safe_dump(proc_cfg, sort_keys=False))
-        mod = _load_processor(processor_dir)
-        mod.run_conversion(str(tmpcfg))
+        merra_intermediate.run_conversion(str(tmpcfg))
         outputs = [
             out / f"MERRA2:{valid:%Y-%m-%d}_{h:02d}"
             for h in range(0, 24, interval)
@@ -265,8 +246,8 @@ def prepare(config_file: str, valid: datetime, output_dir: str,
     return outputs
 
 def main():
-    ap=argparse.ArgumentParser(); ap.add_argument("config"); ap.add_argument("--valid", required=True); ap.add_argument("--output-dir", required=True); ap.add_argument("--processor-dir", default=None)
+    ap=argparse.ArgumentParser(); ap.add_argument("config"); ap.add_argument("--valid", required=True); ap.add_argument("--output-dir", required=True)
     a=ap.parse_args(); valid=datetime.strptime(a.valid, "%Y%m%d%H")
-    prepare(a.config, valid, a.output_dir, a.processor_dir)
+    prepare(a.config, valid, a.output_dir)
 
 if __name__ == "__main__": main()

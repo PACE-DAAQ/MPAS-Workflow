@@ -1,168 +1,184 @@
-"""MERRA2-GMI -> WPS-intermediate converter used by PrepareChemIC.
+"""Write MERRA-2 / MERRA2-GMI chemistry fields as WPS intermediate files for init_atmosphere.
 
-Adapted from the project MERRA-IC ``run_processing.py`` supplied with issue #2
-integration material.  MPAS-Workflow's wrapper validates all required source
-fields before calling this converter, so missing chemistry cannot silently
-become zero in normal workflow use.
+Called by ``merra_chem.py`` (PrepareChemIC) through ``run_conversion(config_path)``.  The
+configuration (``config/chemistry/merra_processor.yaml``, templated at run time) names the source
+files, the output prefix, the time stepping, and the species mapping.  One intermediate file is
+written per valid time, ``<prefix_out><YYYY-mm-dd_HH>``, holding every mapped field plus the
+layer-centre pressure derived from the pressure-thickness field.
+
+Intermediate-file layout (WPS "version 5" format, big-endian Fortran unformatted records):
+for every 2-D slab, a record with the format version, a record with the field metadata,
+a record with the lat-lon grid description, a record with the wind-rotation flag, and a record
+with the slab itself as 32-bit floats in row-major (lat, lon) order.  3-D fields are written
+one slab per model layer, numbered from the surface upward, so the top-of-file layer index 1
+is the lowest MERRA-2 layer.
+
+A missing source file or a missing source variable is an error: the workflow must never start a
+forecast from silently zeroed chemistry.
 """
-import os
-import sys
-import yaml
 import struct
-import numpy as np
-from netCDF4 import Dataset
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-def write_fortran_record(file_handle, *args):
-    """
-    Simulates a Fortran 'unformatted' write for WPS Intermediate files.
-    """
-    payload = b""
-    for val, fmt in args:
-        if 's' in fmt:
-            length = int(fmt.replace('s', ''))
-            payload += str(val).ljust(length)[:length].encode('ascii')
-        elif fmt == '?':
-            payload += struct.pack('>i', 1 if val else 0)
-        elif fmt == 'b':
-            payload += val
-        else:
-            payload += struct.pack(f'>{fmt}', val)
+import numpy as np
+import yaml
+from netCDF4 import Dataset
 
-    record_size = len(payload)
-    file_handle.write(struct.pack('>i', record_size))
-    file_handle.write(payload)
-    file_handle.write(struct.pack('>i', record_size))
+FORMAT_VERSION = 5
+PROJECTION_LATLON = 0
+START_LOCATION = "SWCORNER"
+EARTH_RADIUS_KM = 6367470 * 0.001
+MAP_SOURCE = "MERRA2"
+PRESSURE_FIELD = ("PRES", "Pa", "Pressure center of layers", "Calculated from DELP")
+MODEL_TOP_PA = 1.0
 
-def run_conversion(config_path='config.yaml'):
-    # 1. LOAD CONFIGURATION
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
 
-    p = config['control_params']
-    species_map = config['species_map']
+@dataclass
+class Grid:
+    """Regular lat-lon grid of the source files, as the intermediate header describes it."""
+    nlon: int
+    nlat: int
+    nlev: int
+    start_lat: float
+    start_lon: float
+    delta_lat: float
+    delta_lon: float
 
-    # 2. SETUP TIME PARAMETERS
-    start_dt = datetime(p['start_year'], p['start_month'], p['start_day'], p['start_hour'])
-    total_intervals = p['num_days'] * (24 // p['interval_hr'])
+    @classmethod
+    def from_dataset(cls, nc):
+        lat = nc.variables["lat"][:]
+        lon = nc.variables["lon"][:]
+        return cls(nlon=len(nc.dimensions["lon"]), nlat=len(nc.dimensions["lat"]), nlev=len(nc.dimensions["lev"]),
+                   start_lat=float(lat[0]), start_lon=float(lon[0]),
+                   delta_lat=float(lat[1] - lat[0]), delta_lon=float(lon[1] - lon[0]))
 
-    # Constants for WPS Header
-    IFV, IPROJ = 5, 0
-    EARTH_RADIUS = 6367470 * 0.001
-    IS_WIND_EARTH_REL = False
-    STARTLOC = 'SWCORNER'
 
-    active_handles = {}
+def fixed_string(text, width):
+    """Fortran CHARACTER(width): ASCII, right-padded with blanks, truncated if longer."""
+    return str(text).ljust(width)[:width].encode("ascii")
 
-    current_dt = start_dt
-    for step in range(total_intervals):
-        hdate = current_dt.strftime("%Y-%m-%d_%H:00:00")
-        fname_out = f"{p['prefix_out']}{current_dt.strftime('%Y-%m-%d_%H')}"
 
-        print(f"\n--- Processing Interval: {hdate} ---")
+def fortran_record(payload):
+    """Wrap a byte payload in the 4-byte big-endian length markers of an unformatted record."""
+    marker = struct.pack(">i", len(payload))
+    return marker + payload + marker
 
-        sfcpres, dpres = None, None
-        nlat, nlon, nlev = None, None, None
-        startlat, startlon, deltalat, deltalon = None, None, None, None
 
-        with open(fname_out, 'wb') as f_out:
-            for spc in species_map:
-                field = spc['target']
-                src_var = spc['source']
-                file_key = spc.get('file', 'prefix_in_1')
+def write_slab(out, hdate, field, units, description, map_source, level, grid, slab):
+    """Write one 2-D field (the five records of the version-5 intermediate format)."""
+    out.write(fortran_record(struct.pack(">i", FORMAT_VERSION)))
+    header = (fixed_string(hdate, 24) + struct.pack(">f", 0.0) + fixed_string(map_source, 32)
+              + fixed_string(field, 9) + fixed_string(units, 25) + fixed_string(description, 46)
+              + struct.pack(">f", float(level)) + struct.pack(">iii", grid.nlon, grid.nlat, PROJECTION_LATLON))
+    out.write(fortran_record(header))
+    projection = (fixed_string(START_LOCATION, 8)
+                  + struct.pack(">fffff", grid.start_lat, grid.start_lon, grid.delta_lat, grid.delta_lon, EARTH_RADIUS_KM))
+    out.write(fortran_record(projection))
+    out.write(fortran_record(struct.pack(">i", 0)))          # winds are not grid-relative
+    out.write(fortran_record(slab.astype(">f4").tobytes()))
 
-                key_index = file_key.split('_')[-1]
-                suffix_key = f"suffix_in_{key_index}"
-                file_suffix = p.get(suffix_key, ".nc4")
-                target_fname = f"{p[file_key]}{current_dt.strftime('%Y%m%d')}{file_suffix}"
 
-                if file_key not in active_handles or active_handles[file_key]['name'] != target_fname:
-                    if file_key in active_handles:
-                        active_handles[file_key]['nc'].close()
+def write_field(out, hdate, field, units, description, map_source, grid, data):
+    """Write a 2-D field as level 1, or a 3-D (lev, lat, lon) field surface-up as levels 1..nlev."""
+    if data.ndim == 2:
+        write_slab(out, hdate, field, units, description, map_source, 1, grid, data)
+        return
+    nlev = data.shape[0]
+    for level in range(1, nlev + 1):
+        source_layer = nlev - level           # MERRA-2 stores layers top-down
+        write_slab(out, hdate, field, units, description, map_source, level, grid, data[source_layer])
 
-                    if os.path.exists(target_fname):
-                        print(f"  > Opening Source {file_key}: {os.path.basename(target_fname)}")
-                        active_handles[file_key] = {
-                            'nc': Dataset(target_fname, 'r'),
-                            'name': target_fname
-                        }
-                    else:
-                        print(f"  ! WARNING: File not found: {target_fname}")
-                        if file_key in active_handles: del active_handles[file_key]
 
-                if file_key in active_handles:
-                    nc = active_handles[file_key]['nc']
+def layer_centre_pressure(delta_p, nlev, grid):
+    """Pressure at layer centres from the top of the model down, accumulated layer by layer."""
+    pressure = np.zeros((nlev, grid.nlat, grid.nlon), dtype="f4")
+    pressure[0] = MODEL_TOP_PA + 0.5 * delta_p[0]
+    for k in range(1, nlev):
+        pressure[k] = pressure[k - 1] + 0.5 * (delta_p[k - 1] + delta_p[k])
+    return pressure
 
-                    if nlat is None:
-                        nlat, nlon, nlev = len(nc.dimensions['lat']), len(nc.dimensions['lon']), len(nc.dimensions['lev'])
-                        y1d, x1d = nc.variables['lat'][:], nc.variables['lon'][:]
-                        startlat, startlon = float(y1d[0]), float(x1d[0])
-                        deltalat, deltalon = float(y1d[1]-y1d[0]), float(x1d[1]-x1d[0])
 
-                    file_n_times = len(nc.dimensions['time'])
-                    t_idx = (current_dt.hour // p['interval_hr']) if file_n_times > 1 else 0
+class SourceFiles:
+    """Open the source NetCDF files named by the configuration, one handle per file key."""
 
-                    if src_var in nc.variables:
-                        print(f"  ! Processing {src_var}")
-                        data = nc.variables[src_var][t_idx, :] * spc.get('weight', 1.0)
-                        is_3d = (data.ndim == 3)
-                        curr_nlev = data.shape[0] if is_3d else 1
-                    else:
-                        raise KeyError(f"Required MERRA chemistry field {src_var!r} is missing from {target_fname}")
-                else:
-                    raise FileNotFoundError(f"Required MERRA chemistry source is unavailable: {target_fname}")
+    def __init__(self, params):
+        self.params = params
+        self.handles = {}
 
-                levels = range(curr_nlev) if is_3d else [0]
-                for k in levels:
-                    kk = (curr_nlev - 1 - k) if is_3d else 0
-                    slab = (data[kk, :, :] if is_3d else data).astype('>f4')
-                    xlvl = float(k + 1)
+    def path_for(self, file_key, when):
+        suffix = self.params.get("suffix_in_" + file_key.split("_")[-1], ".nc4")
+        return f"{self.params[file_key]}{when:%Y%m%d}{suffix}"
 
-                    write_fortran_record(f_out, (IFV, 'i'))
-                    write_fortran_record(f_out, (hdate, '24s'), (0.0, 'f'), ("MERRA2", '32s'),
-                                         (field, '9s'), (spc['units'], '25s'), (spc['desc'], '46s'),
-                                         (xlvl, 'f'), (nlon, 'i'), (nlat, 'i'), (IPROJ, 'i'))
-                    write_fortran_record(f_out, (STARTLOC, '8s'), (startlat, 'f'), (startlon, 'f'),
-                                         (deltalat, 'f'), (deltalon, 'f'), (EARTH_RADIUS, 'f'))
-                    write_fortran_record(f_out, (IS_WIND_EARTH_REL, '?'))
-                    write_fortran_record(f_out, (slab.tobytes(), 'b'))
+    def dataset(self, file_key, when):
+        path = self.path_for(file_key, when)
+        entry = self.handles.get(file_key)
+        if entry is None or entry[0] != path:
+            if entry is not None:
+                entry[1].close()
+            try:
+                nc = Dataset(path, "r")
+            except OSError as err:
+                raise FileNotFoundError(f"Required MERRA chemistry source is unavailable: {path}") from err
+            self.handles[file_key] = (path, nc)
+        return self.handles[file_key][1]
 
-                if field == 'PS': sfcpres = data
-                if field == 'DPRES': dpres = data
+    def close(self):
+        for _, nc in self.handles.values():
+            nc.close()
+        self.handles = {}
 
-            # --- 6. CALCULATE AND WRITE 'PRES' (Layer Center Pressure) ---
-            # This happens AFTER the species loop finishes for the current interval
-            if dpres is not None:
-                print(f"  -> Calculating and writing 3D Pressure (PRES)")
-                pres_3d = np.zeros((nlev, nlat, nlon), dtype='f4')
-                ptop = 1.0  # Pa
 
-                pres_3d[0, :, :] = ptop + 0.5 * dpres[0, :, :]
-                for k in range(1, nlev):
-                    pres_3d[k, :, :] = pres_3d[k-1, :, :] + 0.5 * (dpres[k-1, :, :] + dpres[k, :, :])
+def read_field(nc, variable, when, interval_hr, path):
+    """One time slice of a variable; files with a single time use it for every hour."""
+    if variable not in nc.variables:
+        raise KeyError(f"Required MERRA chemistry field {variable!r} is missing from {path}")
+    time_index = when.hour // interval_hr if len(nc.dimensions["time"]) > 1 else 0
+    return nc.variables[variable][time_index, :]
 
-                # Metadata for PRES
-                field_pres, units_pres = 'PRES', 'Pa'
-                desc_pres = 'Pressure center of layers'
-                map_src_pres = "Calculated from DELP"
 
-                for k in range(nlev):
-                    kk = (nlev - 1 - k)
-                    slab = pres_3d[kk, :, :].astype('>f4')
-                    xlvl = float(k + 1)
+def convert_one_time(when, params, species_map, sources):
+    """Write the intermediate file for one valid time."""
+    hdate = when.strftime("%Y-%m-%d_%H:00:00")
+    output_path = f"{params['prefix_out']}{when:%Y-%m-%d_%H}"
+    print(f"\n--- Processing Interval: {hdate} ---")
+    grid = None
+    delta_p = None
+    with open(output_path, "wb") as out:
+        for entry in species_map:
+            file_key = entry.get("file", "prefix_in_1")
+            nc = sources.dataset(file_key, when)
+            if grid is None:
+                grid = Grid.from_dataset(nc)
+            data = read_field(nc, entry["source"], when, params["interval_hr"], sources.path_for(file_key, when))
+            data = data * entry.get("weight", 1.0)
+            print(f"  ! Processing {entry['source']}")
+            write_field(out, hdate, entry["target"], entry["units"], entry["desc"], MAP_SOURCE, grid, data)
+            if entry["target"] == "DPRES":
+                delta_p = data
+        if delta_p is not None:
+            print("  -> Calculating and writing 3D Pressure (PRES)")
+            field, units, description, map_source = PRESSURE_FIELD
+            pressure = layer_centre_pressure(delta_p, grid.nlev, grid)
+            write_field(out, hdate, field, units, description, map_source, grid, pressure)
+    return output_path
 
-                    write_fortran_record(f_out, (IFV, 'i'))
-                    write_fortran_record(f_out, (hdate, '24s'), (0.0, 'f'), (map_src_pres, '32s'),
-                                         (field_pres, '9s'), (units_pres, '25s'), (desc_pres, '46s'),
-                                         (xlvl, 'f'), (nlon, 'i'), (nlat, 'i'), (IPROJ, 'i'))
-                    write_fortran_record(f_out, (STARTLOC, '8s'), (startlat, 'f'), (startlon, 'f'),
-                                         (deltalat, 'f'), (deltalon, 'f'), (EARTH_RADIUS, 'f'))
-                    write_fortran_record(f_out, (IS_WIND_EARTH_REL, '?'))
-                    write_fortran_record(f_out, (slab.tobytes(), 'b'))
 
-        current_dt += timedelta(hours=p['interval_hr'])
+def run_conversion(config_path="config.yaml"):
+    """Entry point used by merra_chem.py: convert every interval described by the configuration."""
+    with open(config_path, "r") as handle:
+        config = yaml.safe_load(handle)
+    params = config["control_params"]
+    species_map = config["species_map"]
+    start = datetime(params["start_year"], params["start_month"], params["start_day"], params["start_hour"])
+    steps = params["num_days"] * (24 // params["interval_hr"])
+    sources = SourceFiles(params)
+    try:
+        for step in range(steps):
+            convert_one_time(start + timedelta(hours=step * params["interval_hr"]), params, species_map, sources)
+    finally:
+        sources.close()
 
-    for h in active_handles.values(): h['nc'].close()
 
 if __name__ == "__main__":
-    run_conversion()
+    import sys
+    run_conversion(sys.argv[1] if len(sys.argv) > 1 else "config.yaml")

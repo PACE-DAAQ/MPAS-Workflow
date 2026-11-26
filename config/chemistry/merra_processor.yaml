@@ -1,4 +1,5 @@
-# Chemistry field mapping derived from the project MERRA-IC configuration supplied for MPAS-GOCART2G.
+# MERRA-2 / MERRA2-GMI source fields mapped to the MPAS-GOCART2G chemistry initial-condition fields
+# written by tools/mpas_inputs/merra_intermediate.py (control_params are overwritten at run time).
 control_params:
   start_year: 2000
   start_month: 1
