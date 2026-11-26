@@ -195,10 +195,10 @@ build:
 externalanalyses:
   # same resource as test/testinput/3dvar_OIE120km_ColdStart.yaml; only needed
   # so ExternalAnalyses/InvariantStream can be built
-  resource: "GFS.RDA"
+  resource: "GFS.CampaignOnline"
 
 observations:
-  resource: GladeRDAOnline
+  resource: CampaignOnline
 
 variational:
   DAType: 3dvar

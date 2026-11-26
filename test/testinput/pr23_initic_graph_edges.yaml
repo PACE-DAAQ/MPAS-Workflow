@@ -120,10 +120,10 @@ externalanalyses:
   # "ExternalAnalysisToMPAS-{{mesh}}": InitIC computes __used from exactly that
   # string, so with a link-only resource (GFS.PANDAC, GEFSMERRA.PANDAC) InitIC
   # emits no tasks at all and the test would silently prove nothing.
-  # GFS.RDA's task list is
-  #   GetGFSAnalysisFromRDA => UngribExternalAnalysis
+  # GFS.CampaignOnline's task list is
+  #   GetGFSAnalysisFromGDEX => UngribExternalAnalysis
   #     => ExternalAnalysisToMPAS-120km => ExternalAnalysisReady__
-  resource: "GFS.RDA"
+  resource: "GFS.CampaignOnline"
 
 initic:
   # The point of the test: 'workflow' is the only chemistry mode for which

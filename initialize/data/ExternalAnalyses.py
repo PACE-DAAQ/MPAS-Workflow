@@ -26,7 +26,7 @@ class ExternalAnalyses(Component):
     ## resource:
     # used to select from among available options (e.g., see defaults)
     # must be in quotes
-    # e.g., "GFS.RDA", "GFS.NCEPFTP", "GFS.PANDAC", "GFS.GFS_ungrib"
+    # e.g., "GFS.CampaignOnline", "GFS.NCEPFTP", "GFS.PANDAC", "GFS.GFS_ungrib"
     'resource': str,
   }
 
@@ -136,8 +136,11 @@ class ExternalAnalyses(Component):
       'queue': {'def': hpc['SharedQueue']},
       'account': {'def': hpc['CriticalAccount']},
     }
-    ungribjob = Resource(self._conf, attr, ('job', 'ungrib'))
-    self.__ungribtask = TaskLookup[hpc.system](ungribjob)
+    if self['externalanalyses__UngribPrefix'] == 'GFS':
+        ungribjob = Resource(self._conf, attr, ('job', 'ungrib'))
+        self.__ungribtask = TaskLookup[hpc.system](ungribjob)
+    else:
+        self.__ungribtask = None
 
     #########
     # outputs
@@ -193,8 +196,27 @@ class ExternalAnalyses(Component):
   [['''+base+''']]
     inherit = '''+base+zeroHR]
 
-      # GFS RDA
-      base = 'GetGFSAnalysisFromRDA'
+      # ERA5 GDEX
+      base = 'GetERA5AnalysisFromGDEX'
+      queue = 'GetExternalAnalyses'
+      if base in self['PrepareExternalAnalysisOuter']:
+        subqueues.append(queue)
+        taskNames[base] = base+dtLen
+        self._tasks += ['''
+  [['''+taskNames[base]+''']]
+    inherit = '''+queue+''', SingleBatch
+    script = $origin/bin/'''+base+'''.csh '''+dt_work_Args+'''
+    execution time limit = PT20M
+    execution retry delays = '''+self.__getRetry]
+
+        # generic 0hr task name for external classes/tasks to grab
+        if dt == 0:
+          self._tasks += ['''
+  [['''+base+''']]
+    inherit = '''+base+zeroHR]
+
+      # GFS GDEX
+      base = 'GetGFSAnalysisFromGDEX'
       queue = 'GetExternalAnalyses'
       if base in self['PrepareExternalAnalysisOuter']:
         subqueues.append(queue)
@@ -234,13 +256,13 @@ class ExternalAnalyses(Component):
       # ungrib
       base = 'UngribExternalAnalysis'
       queue = 'UngribExternalAnalyses'
-      if base in self['PrepareExternalAnalysisOuter']:
-        subqueues.append(queue)
-        taskNames[base] = base+dtLen
+      subqueues.append(queue)
+      taskNames[base] = base+dtLen
+      if self.__ungribtask is not None:
         self._tasks += ['''
-  [['''+taskNames[base]+''']]
-    inherit = '''+queue+''', BATCH
-    script = $origin/bin/'''+base+'''.csh '''+dt_work_Args+'''
+[['''+taskNames[base]+''']]
+  inherit = '''+queue+''', BATCH
+  script = $origin/bin/'''+base+'''.csh '''+dt_work_Args+'''
 '''+self.__ungribtask.job()+self.__ungribtask.directives()]
 
         # generic 0hr task name for external classes/tasks to grab

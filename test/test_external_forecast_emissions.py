@@ -16,7 +16,7 @@ class ExternalForecastEmissionsTests(unittest.TestCase):
         t['experiment'] = {'name': 'external_emissions_test'}
         t['hpc'].update({'top directory': '/tmp/external-emissions-tests',
                          'TMPDIR': '/tmp/external-emissions-tests/tmp'})
-        t['externalanalyses'] = {'resource': 'GEFSMERRA.PANDAC' if ensemble else 'GFS.RDA'}
+        t['externalanalyses'] = {'resource': 'GEFSMERRA.PANDAC' if ensemble else 'GFS.CampaignOnline'}
         t['members'] = {'n': 2 if ensemble else 1}
         t['extendedforecast'] = {'meanTimes': None if ensemble else 'T00',
                                 'ensTimes': 'T00' if ensemble else None,

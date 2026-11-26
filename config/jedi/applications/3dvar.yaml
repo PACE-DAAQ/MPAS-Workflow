@@ -6,21 +6,20 @@ _iteration: &iterationConfig
     deallocate non-da fields: true
   gradient norm reduction: 1e-3
 output:
-  filename: {{anStateDir}}{{MemberDir}}/{{anStatePrefix}}.$Y-$M-$D_$h.$m.$s.nc
-  stream name: analysis
+  analysis:
+    filename: {{anStateDir}}{{MemberDir}}/{{anStatePrefix}}.$Y-$M-$D_$h.$m.$s.nc
+    stream name: analysis
 variational:
   minimizer:
 {{VariationalMinimizer}}
   iterations:
 {{VariationalIterations}}
-final:
-  diagnostics:
-    departures: oman
 cost function:
   cost type: 3D-Var
   time window:
     begin: {{windowBegin}}
     length: {{windowLength}}
+  jb evaluation: {{JbEvaluation}}
   geometry:
     nml_file: {{OuterNamelistFile}}
     streams_file: {{OuterStreamsFile}}{{StreamsFileMember}}
@@ -32,6 +31,8 @@ cost function:
     date: &analysisDate {{thisISO8601Date}}
   background error:
     covariance model: SABER
+    full inverse: {{JbEvaluation}}
+    no outer loop update: true
     saber central block:
       saber block name: BUMP_NICAS
       active variables: &ctlvars [{{bumpCovControlVariables}}]
@@ -44,9 +45,9 @@ cost function:
           read local nicas: true
         grids:
           - model:
-              variables: [air_horizontal_streamfunction,air_horizontal_velocity_potential,air_temperature,water_vapor_mixing_ratio_wrt_moist_air]
+              variables: [{{bump3dControlVariables}}]
           - model:
-              variables: [air_pressure_at_surface]
+              variables: [{{bump2dControlVariables}}]
           # aerosol control variables: without this grid entry BUMP_NICAS is not applied to them
           # (Dirac test 2026-09-22 showed a single-cell, i.e. diagonal, aerosol response)
           - model:

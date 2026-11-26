@@ -17,22 +17,20 @@ _member: &memberConfig
   state variables: &incvars [{{AnalysisVariables}}]
   stream name: ensemble
 output:
-  filename: {{anStateDir}}{{MemberDir}}/{{anStatePrefix}}.$Y-$M-$D_$h.$m.$s.nc
-  stream name: analysis
+  analysis:
+    filename: {{anStateDir}}{{MemberDir}}/{{anStatePrefix}}.$Y-$M-$D_$h.$m.$s.nc
+    stream name: analysis
 variational:
   minimizer:
 {{VariationalMinimizer}}
   iterations:
 {{VariationalIterations}}
-final:
-  diagnostics:
-    departures: oman
 cost function:
   cost type: 3D-Var
   time window:
     begin: {{windowBegin}}
     length: {{windowLength}}
-  jb evaluation: false
+  jb evaluation: {{JbEvaluation}}
   geometry:
     nml_file: {{OuterNamelistFile}}
     streams_file: {{OuterStreamsFile}}{{StreamsFileMember}}
@@ -44,6 +42,8 @@ cost function:
     date: *analysisDate
   background error:
     covariance model: ensemble
+    full inverse: {{JbEvaluation}}
+    no outer loop update: true
     localization:
       localization method: SABER
       saber central block:
